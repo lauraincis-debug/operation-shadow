@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Operation Shadow — Jeu d'infiltration</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<header>
+  <h1>Opération Shadow</h1>
+  <p>Infiltration — Évitez les projecteurs. Atteignez la zone d'extraction.</p>
+</header>
+
+<main>
+  <div id="game-area">
+    <canvas id="game"></canvas>
+    <div id="overlay">
+      <h2 id="overlay-title">Mission en cours</h2>
+      <p id="overlay-text">Déplacez votre opérateur avec <kbd>WASD</kbd> ou les <kbd>flèches</kbd>. Évitez les faisceaux rouges. Atteignez la zone verte.</p>
+      <button class="btn" id="btn-start">Commencer l'opération</button>
+      <div class="controls" style="margin-top:.6rem;">
+        <kbd>W</kbd> <kbd>A</kbd> <kbd>S</kbd> <kbd>D</kbd>
+        <kbd>Flèches</kbd>
+      </div>
+    </div>
+  </div>
+
+  <div id="hud">
+    <span class="badge ok">Statut : Actif</span>
+    <span class="badge">Contrôles : WASD / Flèches</span>
+    <span class="badge danger">Détection : Éviter les spots</span>
+  </div>
+</main>
+
+<footer>
+  Jeu indépendant — Réalisé dans le cadre du dépôt <strong>operation-shadow</strong>
+</footer>
+
+<script src="js/game.js"></script>
+</body>
+</html>
