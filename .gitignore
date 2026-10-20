@@ -1,0 +1,9 @@
+# Opération Shadow — fichiers temporaire
+*.tmp
+*.log
+.DS_Store
+node_modules/
+.coverage
+# Build (si nécessaire plus tard)
+dist/
+build/
