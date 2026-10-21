@@ -1,10 +1,10 @@
 {
-  "status": "LIVE_INTERNET_HARVEST_V6_2_LIVE_CERTIFIED_OK",
-  "version": "6.2.0-live-certified",
-  "harvestedAt": "2026-10-21T13:50:57.724Z",
-  "sha256Integrity": "4b18fea371efdc080a2504dc",
+  "status": "LIVE_INTERNET_HARVEST_V6_4_CERTIFIED_OK",
+  "version": "6.4.0-certified-integral",
+  "harvestedAt": "2026-10-21T14:57:52.746Z",
+  "sha256Integrity": "a301c322590703bef7f953ad",
   "totalMatchesAcross4Days": 887,
-  "currentlyLiveOngoingMatchesCount": 8,
+  "currentlyLiveOngoingMatchesCount": 12,
   "countsBySport": {
     "soccer": 105,
     "basketball": 29,
@@ -20,6 +20,13 @@
       "sport": "tennis",
       "competition": "Tennis ATP Tour 🎾 • BNP Paribas Fortis European Open (Men's Singles)",
       "match": "Clement Chidekh vs Jacob Fearnley",
+      "score": "1-0",
+      "liveStatus": "🔴 DIRECT 2nd"
+    },
+    {
+      "sport": "tennis",
+      "competition": "Tennis ATP Tour 🎾 • Almaty Open (Men's Singles)",
+      "match": "Stefanos Tsitsipas vs Mikhail Kukushkin",
       "score": "0-0",
       "liveStatus": "🔴 DIRECT 1st"
     },
@@ -34,6 +41,13 @@
       "sport": "tennis",
       "competition": "Tennis ATP Tour 🎾 • BNP Paribas Fortis European Open (Men's Singles)",
       "match": "Clement Chidekh vs Jacob Fearnley",
+      "score": "1-0",
+      "liveStatus": "🔴 DIRECT 2nd"
+    },
+    {
+      "sport": "tennis",
+      "competition": "Tennis ATP Tour 🎾 • Almaty Open (Men's Singles)",
+      "match": "Stefanos Tsitsipas vs Mikhail Kukushkin",
       "score": "0-0",
       "liveStatus": "🔴 DIRECT 1st"
     },
@@ -48,6 +62,13 @@
       "sport": "tennis",
       "competition": "Tennis ATP Tour 🎾 • BNP Paribas Fortis European Open (Men's Singles)",
       "match": "Clement Chidekh vs Jacob Fearnley",
+      "score": "1-0",
+      "liveStatus": "🔴 DIRECT 2nd"
+    },
+    {
+      "sport": "tennis",
+      "competition": "Tennis ATP Tour 🎾 • Almaty Open (Men's Singles)",
+      "match": "Stefanos Tsitsipas vs Mikhail Kukushkin",
       "score": "0-0",
       "liveStatus": "🔴 DIRECT 1st"
     },
@@ -62,15 +83,8 @@
       "sport": "tennis",
       "competition": "Tennis ATP Tour 🎾 • BNP Paribas Fortis European Open (Men's Singles)",
       "match": "Clement Chidekh vs Jacob Fearnley",
-      "score": "0-0",
-      "liveStatus": "🔴 DIRECT 1st"
-    },
-    {
-      "sport": "tennis",
-      "competition": "Tennis ATP Tour 🎾 • Grand Prix Auvergne-Rhône-Alpes (Men's Singles)",
-      "match": "Stan Wawrinka vs Martin Landaluce",
-      "score": "1-1",
-      "liveStatus": "🔴 DIRECT 3rd"
+      "score": "1-0",
+      "liveStatus": "🔴 DIRECT 2nd"
     }
   ]
 }
