@@ -1,8 +1,8 @@
 {
   "status": "LIVE_INTERNET_HARVEST_V6_1_CERTIFIED_OK",
   "version": "6.1.0-certified",
-  "harvestedAt": "2026-10-21T10:29:10.438Z",
-  "sha256Integrity": "84a4523be11ea4b5a923e931",
+  "harvestedAt": "2026-10-21T10:31:34.932Z",
+  "sha256Integrity": "8859e8ca2a72551a781a3b08",
   "totalMatchesAcross4Days": 871,
   "countsBySport": {
     "soccer": 105,
@@ -12,10 +12,101 @@
     "hockey": 27,
     "baseball": 1
   },
-  "deepDossiersPreloaded": 0,
-  "verifiedOfficialVideosCount": 0,
+  "deepDossiersPreloaded": 40,
+  "verifiedOfficialVideosCount": 136,
   "unmatchedOrWrongDateVideosBlocked": 50,
-  "sampleCertifiedOfficialVideos": [],
+  "sampleCertifiedOfficialVideos": [
+    {
+      "provider": "ESPN Official Stream",
+      "title": "Luke Evangelista tallies goal vs. Avalanche",
+      "verifiedTeams": "Devils vs Avalanche",
+      "publishedAt": "2026-10-20T23:31:31Z",
+      "verifiedDateFr": "mar. 20 oct. 2026, 23:31",
+      "deltaHoursFromKickoff": 0.5,
+      "hasDirectMp4": true
+    },
+    {
+      "provider": "ESPN Official Stream",
+      "title": "Cale Makar beautifully sets up Gabriel Landeskog for an Avs goal",
+      "verifiedTeams": "Devils vs Avalanche",
+      "publishedAt": "2026-10-20T23:40:34Z",
+      "verifiedDateFr": "mar. 20 oct. 2026, 23:40",
+      "deltaHoursFromKickoff": 0.7,
+      "hasDirectMp4": true
+    },
+    {
+      "provider": "ESPN Official Stream",
+      "title": "Declan Chisholm scores goal for Devils",
+      "verifiedTeams": "Devils vs Avalanche",
+      "publishedAt": "2026-10-21T00:36:13Z",
+      "verifiedDateFr": "mer. 21 oct. 2026, 00:36",
+      "deltaHoursFromKickoff": 1.6,
+      "hasDirectMp4": true
+    },
+    {
+      "provider": "ESPN Official Stream",
+      "title": "Arseny Gritsyuk lights the lamp for Devils",
+      "verifiedTeams": "Devils vs Avalanche",
+      "publishedAt": "2026-10-21T01:11:49Z",
+      "verifiedDateFr": "mer. 21 oct. 2026, 01:11",
+      "deltaHoursFromKickoff": 2.2,
+      "hasDirectMp4": true
+    },
+    {
+      "provider": "ESPN Official Stream",
+      "title": "Jake Allen makes beautiful save",
+      "verifiedTeams": "Devils vs Avalanche",
+      "publishedAt": "2026-10-21T01:15:38Z",
+      "verifiedDateFr": "mer. 21 oct. 2026, 01:15",
+      "deltaHoursFromKickoff": 2.3,
+      "hasDirectMp4": true
+    },
+    {
+      "provider": "ESPN Official Stream",
+      "title": "Jesper Boqvist lights the lamp for Devils",
+      "verifiedTeams": "Devils vs Avalanche",
+      "publishedAt": "2026-10-21T01:36:32Z",
+      "verifiedDateFr": "mer. 21 oct. 2026, 01:36",
+      "deltaHoursFromKickoff": 2.6,
+      "hasDirectMp4": true
+    },
+    {
+      "provider": "ESPN Official Stream",
+      "title": "Artturi Lehkonen scores goal vs. Devils",
+      "verifiedTeams": "Devils vs Avalanche",
+      "publishedAt": "2026-10-21T01:38:12Z",
+      "verifiedDateFr": "mer. 21 oct. 2026, 01:38",
+      "deltaHoursFromKickoff": 2.6,
+      "hasDirectMp4": true
+    },
+    {
+      "provider": "ESPN Official Stream",
+      "title": "Artturi Lehkonen scores goal vs. Devils",
+      "verifiedTeams": "Devils vs Avalanche",
+      "publishedAt": "2026-10-21T01:41:59Z",
+      "verifiedDateFr": "mer. 21 oct. 2026, 01:41",
+      "deltaHoursFromKickoff": 2.7,
+      "hasDirectMp4": true
+    },
+    {
+      "provider": "ESPN Official Stream",
+      "title": "Minnesota Wild vs. Edmonton Oilers: Game Highlights",
+      "verifiedTeams": "Oilers vs Wild",
+      "publishedAt": "2026-10-21T04:25:47Z",
+      "verifiedDateFr": "mer. 21 oct. 2026, 04:25",
+      "deltaHoursFromKickoff": 3.4,
+      "hasDirectMp4": true
+    },
+    {
+      "provider": "ESPN Official Stream",
+      "title": "Jesper Wallstedt makes beautiful save",
+      "verifiedTeams": "Oilers vs Wild",
+      "publishedAt": "2026-10-21T01:23:32Z",
+      "verifiedDateFr": "mer. 21 oct. 2026, 01:23",
+      "deltaHoursFromKickoff": 0.4,
+      "hasDirectMp4": true
+    }
+  ],
   "sampleVerifiedRealMatches": [
     {
       "sport": "soccer",
