@@ -2,7 +2,7 @@
   "cloeAgentAbidjanLiveUrl": "https://cloe-agent-abidjan.web.app",
   "footballAiLiveUrl": "https://football-ai-43e33.web.app",
   "cloeIaUltraLiveUrl": "https://cloe-ia-ultra.web.app",
-  "version": "6.2.0-live-certified",
-  "securityAuditStatus": "ALL_AUDIT2_REMEDIATED_PLUS_LIVE_VIDEO_AND_BETCLIC_SCANNER",
-  "updatedAt": "2026-10-21T13:27:12Z"
+  "version": "6.3.0-certified-integral",
+  "securityAuditStatus": "ALL_AUDIT3_P0_P1_P2_REMEDIATED_100_PERCENT",
+  "updatedAt": "2026-10-21T13:47:56Z"
 }
