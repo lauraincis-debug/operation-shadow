@@ -43,7 +43,9 @@ export default function InPlayTab({
   const inProgressMatches = useMemo(
     () =>
       liveMatches.filter(
-        (m) => !m.completed && (m.inProgress || typeof m.scoreHome === "number")
+        (m) =>
+          !m.completed &&
+          (m.state === "in" || m.inProgress || typeof m.scoreHome === "number")
       ),
     [liveMatches]
   );
@@ -84,11 +86,12 @@ export default function InPlayTab({
     setLeague(m.league || "ucl");
     setScoreHome(typeof m.scoreHome === "number" ? m.scoreHome : 0);
     setScoreAway(typeof m.scoreAway === "number" ? m.scoreAway : 0);
-    const parsedMin = parseInt(String(m.statusDetail || "45"), 10);
-    setMinute(Number.isFinite(parsedMin) ? Math.min(95, Math.max(1, parsedMin)) : 55);
+    const minMatch = String(m.statusText || m.statusDetail || "").match(/(\d{1,3})/);
+    const parsedMin = minMatch ? parseInt(minMatch[1], 10) : 45;
+    setMinute(Number.isFinite(parsedMin) ? Math.min(95, Math.max(1, parsedMin)) : 45);
     setRedCardsHome(0);
     setRedCardsAway(0);
-    setMomentum(15);
+    setMomentum(12);
   };
 
   const alertColors = {

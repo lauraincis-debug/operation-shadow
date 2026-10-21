@@ -1411,11 +1411,11 @@ export default function FootballAI() {
               <div className="fai-brand-title">
                 <span className="fai-gradient-text">⚡ OMNI-SPORT &amp; FOOTBALL AI</span>
                 <span className="fai-badge-version">
-                  ULTRA v6.0 • ZÉRO-HALLUCINATION • GEN #{genNumber}
+                  ULTRA v6.1 CERTIFIÉE • ZÉRO-HALLUCINATION • GEN #{genNumber}
                 </span>
               </div>
               <div className="fai-brand-sub">
-                44 Compétitions Live • 7 Sports (Foot, NBA, Tennis, NFL, NHL, MLB, UFC) • Dates &amp; Stades Exacts • H2H • Anti-Biais
+                44 Compétitions Live • 7 Sports • Vidéos Officielles Certifiées • Dates &amp; Stades Exacts • Kelly Strict Anti-Perte
               </div>
             </div>
 
@@ -1479,6 +1479,36 @@ export default function FootballAI() {
       </header>
 
       <main className="fai-main">
+        {/* BANDEAU P2 ONBOARDING CLAIR : GUIDE 1re UTILISATION & PROTECTION ANTI-PERTE */}
+        <details
+          style={{
+            marginBottom: 14,
+            background: "linear-gradient(135deg, rgba(0, 229, 255, 0.08), rgba(0, 230, 118, 0.06))",
+            border: "1px solid rgba(0, 229, 255, 0.3)",
+            borderRadius: 12,
+            padding: "10px 14px",
+            fontSize: 12.5,
+            color: "#e2e8f0",
+          }}
+        >
+          <summary style={{ cursor: "pointer", fontWeight: 800, color: "#00e5ff" }}>
+            🧭 Première visite ? Mode Guidé Débutant &amp; Règles d&apos;Or Anti-Perte Financière (cliquer pour ouvrir/fermer)
+          </summary>
+          <div style={{ marginTop: 8, display: "grid", gap: 6, color: "#cbd5e1", lineHeight: 1.5 }}>
+            <div>
+              • <strong>1. Privilégiez les badges verts « 🔒 VERROU ULTRA-FIABLE »</strong> (onglet Live) et évitez strictement les matchs marqués <strong>« ⛔ NO-BET • PIÈGE »</strong>.
+            </div>
+            <div>
+              • <strong>2. Une probabilité de 75 % signifie 3 victoires sur 4, jamais 100 % :</strong> ne misez jamais plus de <strong>2 % à 5 %</strong> de votre capital sur un ticket.
+            </div>
+            <div>
+              • <strong>3. Vérifiez toujours la vraie cote de votre bookmaker (1xBet / Sportcash)</strong> dans le Gestionnaire de Bankroll : si l&apos;espérance passe en négatif, le calculateur Kelly bloque la mise à <strong>0 FCFA</strong>.
+            </div>
+            <div>
+              • <strong>4. Vidéos &amp; Buteurs :</strong> l&apos;onglet <strong>🎥 Vidéo IA</strong> récupère lui-même les séquences officielles sur Internet en vérifiant <strong>le bon match ET la date exacte (±36h)</strong>, et les paris Buteurs ne doivent être validés qu&apos;à <strong>H-60 min</strong> (compositions officielles).
+            </div>
+          </div>
+        </details>
         {/* ======================================================
             ONGLET LIVE : MATCHS D'AUJOURD'HUI, DEMAIN & API / OPTA
            ====================================================== */}
@@ -2279,10 +2309,15 @@ export default function FootballAI() {
           <VideoAnalysisTab
             activeHome={activeMatch.home}
             activeAway={activeMatch.away}
+            liveMatches={enrichedLiveFeed.matches || []}
             videoInsight={videoInsight}
+            onSelectTargetMatch={(h, a) => {
+              setForm((prev) => ({ ...prev, home: h, away: a }));
+              setActiveMatch((prev) => ({ ...prev, home: h, away: a }));
+            }}
             onVideoInsightReady={(res) => {
               setVideoInsight(res);
-              triggerToast(`🎥 Vidéo analysée — Pressing ${res.pressingScore}/100 !`);
+              triggerToast(`🎥 Vidéo certifiée analysée — Pressing ${res.pressingScore}/100 !`);
             }}
             onClearVideoInsight={() => {
               setVideoInsight(null);

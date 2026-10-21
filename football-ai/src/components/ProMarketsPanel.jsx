@@ -30,10 +30,23 @@ export default function ProMarketsPanel({ pred, matchContext, onAddCustomMarket 
         <span>🎯 Marchés Pros Haute Valeur — Buteurs • Corners • Cartons • Mi-Temps</span>
       </div>
 
-      {/* 1. BUTEURS LES PLUS PROBABLES */}
+      {/* 1. BUTEURS LES PLUS PROBABLES AVEC PROTECTION COMPOSITIONS OFFICIELLES H-60 */}
       <div style={{ marginBottom: 16 }}>
-        <div style={{ fontSize: 12, fontWeight: 800, color: "#00e5ff", marginBottom: 8 }}>
+        <div style={{ fontSize: 12, fontWeight: 800, color: "#00e5ff", marginBottom: 6 }}>
           ⚽ Top Buteurs Probables du Match (Modèle Poisson Individuel)
+        </div>
+        <div
+          style={{
+            fontSize: 11,
+            color: "#ffea00",
+            background: "rgba(255, 234, 0, 0.08)",
+            border: "1px solid rgba(255, 234, 0, 0.3)",
+            borderRadius: 8,
+            padding: "6px 10px",
+            marginBottom: 8,
+          }}
+        >
+          ⚠️ <strong>Protection Financière Buteurs :</strong> ne validez un pari Buteur qu&apos;après publication de la composition officielle (<strong>H-60 min avant le coup d&apos;envoi</strong>). Un remplaçant entrant à la 85e minute n&apos;est pas remboursé chez la majorité des bookmakers.
         </div>
         <div
           style={{

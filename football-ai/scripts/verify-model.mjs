@@ -302,3 +302,104 @@ console.log(
   `✓ Moteur v6.0 Omni-Sport & Anti-Biais validé : 7 Sports (NBA ${sportSamples[0].probs[0]}%, Tennis ${sportSamples[1].probs[0]}%, NFL ${sportSamples[2].probs[0]}%, NHL, MLB, UFC), Garde Anti-Clonage & Protection 2-Matchs validés !`
 );
 
+// 13. Vérification v6.1 CERTIFIÉE (Audit P0 + P1 + P2 + Vidéo Internet Stricte Bon Match & Bonne Date) :
+const { verifyOfficialVideoCandidate, analyzeOfficialInternetMatchClip } = await import(
+  "../src/engine/videoAnalyzer.js"
+);
+
+const targetLiveMatch = {
+  home: "PSG",
+  away: "Real Madrid",
+  kickoffIso: "2026-10-21T19:00:00Z",
+  state: "in",
+};
+
+// 13a. Clip officiel exact du bon match et de la bonne date -> ACCEPTÉ & CERTIFIÉ
+const validClip = {
+  homeTeam: "PSG",
+  awayTeam: "Real Madrid",
+  dateIso: "2026-10-21T19:42:00Z",
+  title: "PSG vs Real Madrid — But & Pressing Haut (42e)",
+  mp4Url: "https://media.video-cdn.espn.com/motion/2026/1021/clip.mp4",
+};
+const okVideoCheck = verifyOfficialVideoCandidate(validClip, targetLiveMatch);
+assert.equal(okVideoCheck.verified, true, "Vidéo officielle du bon match & bonne date DOIT être certifiée");
+assert.ok(okVideoCheck.deltaHours <= 2, "Écart horaire exact contrôlé");
+
+// 13b. Clip des MÊMES équipes mais d'une ANCIENNE DATE (45 jours plus tôt) -> BLOQUÉ STRICTEMENT !
+const wrongDateClip = {
+  homeTeam: "PSG",
+  awayTeam: "Real Madrid",
+  dateIso: "2026-09-05T19:00:00Z",
+  title: "PSG vs Real Madrid — Ancien match",
+};
+const oldDateCheck = verifyOfficialVideoCandidate(wrongDateClip, targetLiveMatch);
+assert.equal(oldDateCheck.verified, false, "Vidéo d'une ancienne date DOIT être strictement rejetée !");
+
+// 13c. Clip du MÊME JOUR mais MAUVAIS ADVERSAIRE -> BLOQUÉ STRICTEMENT !
+const wrongOpponentClip = {
+  homeTeam: "PSG",
+  awayTeam: "Lyon",
+  dateIso: "2026-10-21T19:30:00Z",
+  title: "PSG vs Lyon",
+};
+const wrongTeamCheck = verifyOfficialVideoCandidate(wrongOpponentClip, targetLiveMatch);
+assert.equal(wrongTeamCheck.verified, false, "Vidéo d'un autre adversaire DOIT être strictement rejetée !");
+
+// 13d. Match PAS ENCORE COMMENCÉ (state = "pre") -> REFUS HONNÊTE ANTI-HALLUCINATION !
+const preMatchCheck = verifyOfficialVideoCandidate(validClip, {
+  ...targetLiveMatch,
+  state: "pre",
+  kickoffIso: "2026-10-22T20:00:00Z",
+});
+assert.equal(preMatchCheck.verified, false, "Match non commencé DOIT refuser toute fausse vidéo live !");
+
+// 13e. Audit Multi-Sport sur Ticket Mixte (NBA + Tennis + Football) sans bug Elo 1500/1650 !
+const mixedTicketAudit = auditCouponSlip(
+  [
+    {
+      id: 1,
+      sport: "basketball",
+      home: "Boston Celtics",
+      away: "LA Lakers",
+      homeRecord: "48-14",
+      awayRecord: "36-26",
+      selectedMarket: { label: "Victoire Boston Celtics", pct: 74, bookOdd: 1.42 },
+    },
+    {
+      id: 2,
+      sport: "tennis",
+      home: "Jannik Sinner",
+      away: "Carlos Alcaraz",
+      homeRecord: "52-6",
+      awayRecord: "46-9",
+      selectedMarket: { label: "Victoire Jannik Sinner", pct: 56, bookOdd: 1.82 },
+    },
+  ],
+  finalUltra
+);
+const mixedLegList = mixedTicketAudit.legReports || mixedTicketAudit.legs || [];
+assert.ok(mixedTicketAudit && mixedLegList.length === 2, "Audit multi-sport NBA + Tennis opérationnel");
+assert.ok(
+  !mixedLegList[0].saferAlternative ||
+    !mixedLegList[0].saferAlternative.label.includes("Buts dans le match"),
+  "Zéro recommandation Football erronée sur un match NBA/Tennis !"
+);
+
+// 13f. Double verrou interne : tout appel sans certificat valide LÈVE UNE ERREUR immédiate !
+await assert.rejects(
+  () => analyzeOfficialInternetMatchClip(validClip, targetLiveMatch, null),
+  /Impossible d'analyser une vidéo non certifiée/
+);
+
+const certifiedClipInsight = await analyzeOfficialInternetMatchClip(
+  { ...validClip, verification: okVideoCheck },
+  targetLiveMatch,
+  null
+);
+assert.equal(certifiedClipInsight.isVerifiedInternetVideo, true, "Analyse tactique certifiée opérationnelle");
+console.log(
+  `✓ Audit Complet v6.1 CERTIFIÉE validé à 100% : Vidéo Internet (Bon Match + Date Exacte ✅ | Ancienne Date ⛔ | Mauvais Club ⛔ | Avant Coup d'Envoi ⛔ | Double Verrou Interne ✅), Audit Multi-Sport NBA/Tennis (${mixedTicketAudit.grade}) & Kelly Anti-Perte !`
+);
+
+

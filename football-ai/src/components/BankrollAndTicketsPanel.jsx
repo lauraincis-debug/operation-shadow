@@ -34,6 +34,7 @@ export default function BankrollAndTicketsPanel({
   const [bankroll, setBankroll] = useState(() => loadBankrollState(currency));
   const [externalText, setExternalText] = useState("");
   const [showExternalImporter, setShowExternalImporter] = useState(false);
+  const [realBookmakerTotalOdd, setRealBookmakerTotalOdd] = useState("");
 
   const ticketAudit = useMemo(
     () => auditCouponSlip(coupon, modelState),
@@ -59,24 +60,50 @@ export default function BankrollAndTicketsPanel({
     [liveMatches, modelState]
   );
 
-  // Calculateur de mise optimale Kelly fractionnaire (1/4 Kelly plafonné à 5% pour zéro risque de ruine)
+  // Calculateur de mise optimale Kelly fractionnaire (1/4 Kelly STRICT — 0 FCFA si EV <= 0 !)
   const kellyStakeInfo = useMemo(() => {
     if (!couponSummary || coupon.length === 0) return null;
-    const b = Math.max(0.05, couponSummary.combinedBookOdd - 1);
+    const customOdd = parseFloat(realBookmakerTotalOdd);
+    const effectiveOdd =
+      Number.isFinite(customOdd) && customOdd > 1.01
+        ? customOdd
+        : couponSummary.combinedBookOdd;
+    const b = Math.max(0.02, effectiveOdd - 1);
     const p = Math.min(0.95, Math.max(0.02, couponSummary.combinedProbPct / 100));
     const q = 1 - p;
     const rawKelly = (b * p - q) / b;
-    const safePct =
-      rawKelly > 0 ? Math.min(0.05, Math.max(0.01, rawKelly * 0.25)) : 0.015;
+    const evPct = Math.round((p * effectiveOdd - 1) * 1000) / 10;
+
+    // P0 : ZÉRO MISE CONSEILLÉE SI L'ESPÉRANCE MATHÉMATIQUE EST NÉGATIVE OU NULLE !
+    if (rawKelly <= 0) {
+      return {
+        isNegativeEv: true,
+        evPct,
+        effectiveOdd,
+        pct: 0,
+        amount: 0,
+      };
+    }
+
+    const safePct = Math.min(0.05, Math.max(0.005, rawKelly * 0.25));
     const suggestedAmount =
       currency === "EUR"
         ? Math.max(1, Math.round(bankroll.currentCapital * safePct * 10) / 10)
         : Math.max(200, Math.round((bankroll.currentCapital * safePct) / 100) * 100);
     return {
+      isNegativeEv: false,
+      evPct,
+      effectiveOdd,
       pct: Math.round(safePct * 1000) / 10,
       amount: suggestedAmount,
     };
-  }, [couponSummary, coupon.length, bankroll.currentCapital, currency]);
+  }, [
+    couponSummary,
+    coupon.length,
+    bankroll.currentCapital,
+    currency,
+    realBookmakerTotalOdd,
+  ]);
 
   const recordBetOutcome = (won) => {
     if (!couponSummary || coupon.length === 0) {
@@ -400,7 +427,50 @@ export default function BankrollAndTicketsPanel({
           </div>
         </div>
 
-        {/* Barre d'actions Kelly + Bilan Ticket */}
+        {/* Barre d'actions Kelly STRICT + Saisie Vraie Cote Bookmaker + Bilan Ticket */}
+        {coupon.length > 0 && (
+          <div
+            style={{
+              marginTop: 12,
+              padding: "10px 12px",
+              borderRadius: 10,
+              background: "rgba(0, 229, 255, 0.05)",
+              border: "1px solid rgba(0, 229, 255, 0.2)",
+              display: "flex",
+              gap: 10,
+              alignItems: "center",
+              flexWrap: "wrap",
+            }}
+          >
+            <span style={{ fontSize: 12, color: "#cbd5e1", fontWeight: 700 }}>
+              🧾 Cote totale réelle de votre bookmaker (1xBet / Sportcash) :
+            </span>
+            <input
+              type="number"
+              step="0.01"
+              min="1.02"
+              placeholder={couponSummary?.combinedBookOdd?.toFixed(2) || "Ex: 1.85"}
+              value={realBookmakerTotalOdd}
+              onChange={(e) => setRealBookmakerTotalOdd(e.target.value)}
+              className="fai-input"
+              style={{ width: 130, padding: "5px 10px" }}
+            />
+            {kellyStakeInfo && (
+              <span
+                style={{
+                  fontSize: 12,
+                  fontWeight: 800,
+                  color: kellyStakeInfo.isNegativeEv ? "#ff5252" : "#00e676",
+                }}
+              >
+                {kellyStakeInfo.isNegativeEv
+                  ? `🛑 ESPÉRANCE NÉGATIVE (${kellyStakeInfo.evPct}%) — NE PAS PARIER À CETTE COTE (0 ${currency})`
+                  : `✅ VALUE BET CONFIRMÉ (+${kellyStakeInfo.evPct}% EV) — Kelly ¼ : ${fmtMoney(kellyStakeInfo.amount)}`}
+              </span>
+            )}
+          </div>
+        )}
+
         <div
           style={{
             display: "flex",
@@ -411,7 +481,7 @@ export default function BankrollAndTicketsPanel({
             marginTop: 12,
           }}
         >
-          {kellyStakeInfo && (
+          {kellyStakeInfo && !kellyStakeInfo.isNegativeEv && (
             <button
               type="button"
               className="fai-btn-ghost"

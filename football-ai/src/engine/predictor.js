@@ -1055,7 +1055,7 @@ export function computeFullPrediction(
       prob: dc1X,
       pct: Math.round(dc1X * 100),
       fairOdd: Math.round((1 / Math.max(dc1X, 0.05)) * 100) / 100,
-      marketOdd: Math.max(1.04, Math.round((0.95 / Math.max(dc1X, 0.05)) * 100) / 100),
+      marketOdd: Math.max(1.04, Math.round((0.90 / Math.max(dc1X, 0.05)) * 100) / 100),
     },
     {
       code: "X2",
@@ -1064,7 +1064,7 @@ export function computeFullPrediction(
       prob: dcX2,
       pct: Math.round(dcX2 * 100),
       fairOdd: Math.round((1 / Math.max(dcX2, 0.05)) * 100) / 100,
-      marketOdd: Math.max(1.04, Math.round((0.95 / Math.max(dcX2, 0.05)) * 100) / 100),
+      marketOdd: Math.max(1.04, Math.round((0.90 / Math.max(dcX2, 0.05)) * 100) / 100),
     },
     {
       code: "12",
@@ -1073,7 +1073,7 @@ export function computeFullPrediction(
       prob: dc12,
       pct: Math.round(dc12 * 100),
       fairOdd: Math.round((1 / Math.max(dc12, 0.05)) * 100) / 100,
-      marketOdd: Math.max(1.04, Math.round((0.95 / Math.max(dc12, 0.05)) * 100) / 100),
+      marketOdd: Math.max(1.04, Math.round((0.90 / Math.max(dc12, 0.05)) * 100) / 100),
     },
     {
       code: "O15",
@@ -1082,7 +1082,7 @@ export function computeFullPrediction(
       prob: dc.over15,
       pct: Math.round(dc.over15 * 100),
       fairOdd: Math.round((1 / Math.max(dc.over15, 0.05)) * 100) / 100,
-      marketOdd: Math.max(1.05, Math.round((0.95 / Math.max(dc.over15, 0.05)) * 100) / 100),
+      marketOdd: Math.max(1.05, Math.round((0.90 / Math.max(dc.over15, 0.05)) * 100) / 100),
     },
     {
       code: "O25",
@@ -1091,7 +1091,7 @@ export function computeFullPrediction(
       prob: dc.over25,
       pct: Math.round(dc.over25 * 100),
       fairOdd: Math.round((1 / Math.max(dc.over25, 0.05)) * 100) / 100,
-      marketOdd: Math.max(1.08, Math.round((0.95 / Math.max(dc.over25, 0.05)) * 100) / 100),
+      marketOdd: Math.max(1.08, Math.round((0.90 / Math.max(dc.over25, 0.05)) * 100) / 100),
     },
     {
       code: "U25",
@@ -1100,7 +1100,7 @@ export function computeFullPrediction(
       prob: dc.under25,
       pct: Math.round(dc.under25 * 100),
       fairOdd: Math.round((1 / Math.max(dc.under25, 0.05)) * 100) / 100,
-      marketOdd: Math.max(1.08, Math.round((0.95 / Math.max(dc.under25, 0.05)) * 100) / 100),
+      marketOdd: Math.max(1.08, Math.round((0.90 / Math.max(dc.under25, 0.05)) * 100) / 100),
     },
     {
       code: "BTTS_Y",
@@ -1109,7 +1109,7 @@ export function computeFullPrediction(
       prob: dc.bttsYes,
       pct: Math.round(dc.bttsYes * 100),
       fairOdd: Math.round((1 / Math.max(dc.bttsYes, 0.05)) * 100) / 100,
-      marketOdd: Math.max(1.08, Math.round((0.95 / Math.max(dc.bttsYes, 0.05)) * 100) / 100),
+      marketOdd: Math.max(1.08, Math.round((0.90 / Math.max(dc.bttsYes, 0.05)) * 100) / 100),
     },
     {
       code: "BTTS_N",

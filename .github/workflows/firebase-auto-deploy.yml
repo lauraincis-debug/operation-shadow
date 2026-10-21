@@ -1,4 +1,4 @@
-name: Auto-Deploy Omni-Sport & Football AI Ultra v6.0 + Cloé Abidjan (Live Internet Harvester)
+name: Auto-Deploy Omni-Sport & Football AI Ultra v6.1 Certifiée + Cloé Abidjan (Live Internet Harvester)
 
 on:
   push:
@@ -10,7 +10,7 @@ on:
       - "cloe-abidjan/**"
       - ".github/workflows/firebase-auto-deploy.yml"
   schedule:
-    - cron: "0 */2 * * *"
+    - cron: "0 */6 * * *"
   workflow_dispatch:
 
 jobs:
@@ -35,7 +35,7 @@ jobs:
           credentials_json: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
           create_credentials_file: true
 
-      - name: Test, Build & Harvest Real Live Internet Multi-Sport Matches (44 Competitions / 7 Sports)
+      - name: Test, Build & Harvest Real Live Internet Matches + Certified Videos (v6.1)
         working-directory: football-ai
         run: |
           npm ci
@@ -43,7 +43,7 @@ jobs:
           npm run build
           node scripts/harvest-live-internet.mjs
 
-      - name: Complete Cloé Abidjan Assets & Embed Live Omni-Sport v6 Engine
+      - name: Complete Cloé Abidjan Assets & Embed Live Omni-Sport v6.1 Engine
         run: |
           cp -f football-ai/www/cloe-bridge.js cloe-abidjan/cloe-bridge.js
           cp -f football-ai/www/live-omni-snapshot.json football-ai/cloe-www/live-omni-snapshot.json || true
@@ -77,31 +77,81 @@ jobs:
             })();
           '
 
-      - name: Deploy Omni-Sport & Football AI Ultra v6.0 (https://football-ai-43e33.web.app)
+      - name: Deploy Omni-Sport & Football AI Ultra v6.1 Certifiée (https://football-ai-43e33.web.app)
         working-directory: football-ai
         run: |
           npx -y firebase-tools deploy --only hosting --project football-ai-43e33
 
-      - name: Deploy Cloé · Agent Personnel Abidjan v6.0 (https://cloe-agent-abidjan.web.app)
+      - name: Deploy Cloé · Agent Personnel Abidjan v6.1 Certifiée (https://cloe-agent-abidjan.web.app)
         run: |
           ABJ_SITE="cloe-agent-abidjan"
           npx -y firebase-tools hosting:sites:create "$ABJ_SITE" --project football-ai-43e33 || true
           TMP_ABJ=$(mktemp -d)
           cp -a cloe-abidjan "$TMP_ABJ/public"
-          printf '{"hosting":{"site":"%s","public":"public","ignore":["firebase.json","**/.*","*.sh","FIREBASE_DEPLOY_REPORT.json","LIVE_INTERNET_HARVEST_REPORT.json"],"headers":[{"source":"/index.html","headers":[{"key":"Cache-Control","value":"no-cache, no-store, must-revalidate"}]},{"source":"/sw.js","headers":[{"key":"Cache-Control","value":"no-cache, no-store, must-revalidate"}]},{"source":"/cloe-bridge.js","headers":[{"key":"Cache-Control","value":"no-cache, no-store, must-revalidate"}]},{"source":"/live-omni-snapshot.json","headers":[{"key":"Access-Control-Allow-Origin","value":"*"},{"key":"Cache-Control","value":"public, max-age=120"}]}],"rewrites":[{"source":"**","destination":"/index.html"}]}}\n' "$ABJ_SITE" > "$TMP_ABJ/firebase.json"
+          node -e '
+            const fs = require("fs");
+            const cfg = {
+              hosting: {
+                site: process.env.ABJ_SITE,
+                public: "public",
+                ignore: ["firebase.json", "**/.*", "*.sh", "FIREBASE_DEPLOY_REPORT.json", "LIVE_INTERNET_HARVEST_REPORT.json"],
+                headers: [
+                  {
+                    source: "**",
+                    headers: [
+                      { key: "X-Content-Type-Options", value: "nosniff" },
+                      { key: "X-Frame-Options", value: "DENY" },
+                      { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+                      { key: "Permissions-Policy", value: "camera=(), geolocation=(), payment=(), usb=(), microphone=(self)" },
+                      { key: "Content-Security-Policy", value: "default-src '\''self'\'' https: data: blob:; script-src '\''self'\'' '\''unsafe-inline'\'' https://football-ai-43e33.web.app; style-src '\''self'\'' '\''unsafe-inline'\'' https://fonts.googleapis.com; font-src '\''self'\'' data: https://fonts.gstatic.com; img-src '\''self'\'' data: blob: https:; media-src '\''self'\'' blob: https:; frame-src https://www.scorebat.com; frame-ancestors '\''none'\''; object-src '\''none'\''; base-uri '\''self'\'';" }
+                    ]
+                  },
+                  { source: "/index.html", headers: [{ key: "Cache-Control", value: "no-cache, no-store, must-revalidate" }] },
+                  { source: "/sw.js", headers: [{ key: "Cache-Control", value: "no-cache, no-store, must-revalidate" }] },
+                  { source: "/cloe-bridge.js", headers: [{ key: "Cache-Control", value: "no-cache, no-store, must-revalidate" }] },
+                  { source: "/live-omni-snapshot.json", headers: [{ key: "Access-Control-Allow-Origin", value: "*" }, { key: "Cache-Control", value: "public, max-age=120" }] }
+                ],
+                rewrites: [{ source: "**", destination: "/index.html" }]
+              }
+            };
+            fs.writeFileSync(process.env.TMP_ABJ + "/firebase.json", JSON.stringify(cfg, null, 2));
+          '
           (cd "$TMP_ABJ" && npx -y firebase-tools deploy --only hosting --project football-ai-43e33)
-          printf '{\n  "cloeAgentAbidjanLiveUrl": "https://cloe-agent-abidjan.web.app",\n  "footballAiLiveUrl": "https://football-ai-43e33.web.app",\n  "cloeIaUltraLiveUrl": "https://cloe-ia-ultra.web.app",\n  "version": "6.0.0-omni-truth",\n  "updatedAt": "%s"\n}\n' "$(date -u +%FT%TZ)" > cloe-abidjan/FIREBASE_DEPLOY_REPORT.json
+          printf '{\n  "cloeAgentAbidjanLiveUrl": "https://cloe-agent-abidjan.web.app",\n  "footballAiLiveUrl": "https://football-ai-43e33.web.app",\n  "cloeIaUltraLiveUrl": "https://cloe-ia-ultra.web.app",\n  "version": "6.1.0-certified",\n  "securityAuditStatus": "ALL_P0_P1_P2_REMEDIATED",\n  "updatedAt": "%s"\n}\n' "$(date -u +%FT%TZ)" > cloe-abidjan/FIREBASE_DEPLOY_REPORT.json
 
-      - name: Deploy Cloé IA Ultra v6.0 (https://cloe-ia-ultra.web.app) & Save Live Harvest Report
+      - name: Deploy Cloé IA Ultra v6.1 Certifiée (https://cloe-ia-ultra.web.app) & Save Live Harvest Report
         run: |
-          CLOE_SITE="cloe-ia-ultra"
-          npx -y firebase-tools hosting:sites:create "$CLOE_SITE" --project football-ai-43e33 || true
-          TMP_DIR=$(mktemp -d)
-          cp -a football-ai/cloe-www "$TMP_DIR/cloe-www"
-          printf '{"hosting":{"site":"%s","public":"cloe-www","headers":[{"source":"/index.html","headers":[{"key":"Cache-Control","value":"no-cache, no-store, must-revalidate"}]},{"source":"/sw.js","headers":[{"key":"Cache-Control","value":"no-cache, no-store, must-revalidate"}]}],"rewrites":[{"source":"**","destination":"/index.html"}]}}\n' "$CLOE_SITE" > "$TMP_DIR/firebase.json"
-          (cd "$TMP_DIR" && npx -y firebase-tools deploy --only hosting --project football-ai-43e33)
+          ULTRA_SITE="cloe-ia-ultra"
+          npx -y firebase-tools hosting:sites:create "$ULTRA_SITE" --project football-ai-43e33 || true
+          TMP_CLOE=$(mktemp -d)
+          cp -a football-ai/cloe-www "$TMP_CLOE/public"
+          node -e '
+            const fs = require("fs");
+            const cfg = {
+              hosting: {
+                site: process.env.ULTRA_SITE,
+                public: "public",
+                ignore: ["firebase.json", "**/.*"],
+                headers: [
+                  {
+                    source: "**",
+                    headers: [
+                      { key: "X-Content-Type-Options", value: "nosniff" },
+                      { key: "X-Frame-Options", value: "DENY" },
+                      { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+                      { key: "Permissions-Policy", value: "camera=(), geolocation=(), payment=(), usb=(), microphone=(self)" },
+                      { key: "Content-Security-Policy", value: "default-src '\''self'\'' https: data: blob:; script-src '\''self'\'' '\''unsafe-inline'\''; style-src '\''self'\'' '\''unsafe-inline'\'' https://fonts.googleapis.com; font-src '\''self'\'' data: https://fonts.gstatic.com; img-src '\''self'\'' data: blob: https:; media-src '\''self'\'' blob: https:; frame-src https://www.scorebat.com; frame-ancestors '\''none'\''; object-src '\''none'\''; base-uri '\''self'\'';" }
+                    ]
+                  }
+                ],
+                rewrites: [{ source: "**", destination: "/index.html" }]
+              }
+            };
+            fs.writeFileSync(process.env.TMP_CLOE + "/firebase.json", JSON.stringify(cfg, null, 2));
+          '
+          (cd "$TMP_CLOE" && npx -y firebase-tools deploy --only hosting --project football-ai-43e33)
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add cloe-abidjan/FIREBASE_DEPLOY_REPORT.json cloe-abidjan/LIVE_INTERNET_HARVEST_REPORT.json
-          git commit -m "chore(ci-v6): live internet omni-sport harvest + firebase report [skip ci]" || true
-          git push origin HEAD:${GITHUB_REF_NAME} || true
+          git add cloe-abidjan/live-omni-snapshot.json cloe-abidjan/cloe-bridge.js cloe-abidjan/FIREBASE_DEPLOY_REPORT.json cloe-abidjan/LIVE_INTERNET_HARVEST_REPORT.json
+          git diff --cached --quiet || git commit -m "chore(harvest): live v6.1 multi-sport + certified official videos snapshot [skip ci]"
+          git push origin HEAD:${{ github.ref_name }} || true

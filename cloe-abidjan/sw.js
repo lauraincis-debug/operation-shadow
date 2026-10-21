@@ -1,4 +1,4 @@
-const CACHE = 'Cloé-v36-omnisport-v6';
+const CACHE = 'Cloé-v37-certified-v6-1';
 const ASSETS = ['./', './index.html', './cloe-bridge.js', './manifest.json', './icon-192.png', './icon-512.png'];
 
 self.addEventListener('install', e => {

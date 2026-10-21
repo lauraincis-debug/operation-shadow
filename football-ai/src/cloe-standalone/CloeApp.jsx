@@ -56,7 +56,7 @@ export default function CloeApp() {
   const [messages, setMessages] = useState([
     {
       role: "cloe",
-      text: "Bonjour ! Je suis Cloé IA Ultra v5 Legend, reliée en temps réel à ton moteur Football AI Ultra v5 (https://football-ai-43e33.web.app).\n\nTu peux lancer un 📞 Appel Vocal Mains-Libres en direct, ton ☀️ Briefing Vocal Matinal, me demander les 🏆 simulations 10 000× (CAN, Champions League, Coupe du Monde), les ⚽ Buteurs / Corners / Cartons, n'importe quel match parmi 🌍 167 clubs & nations (LDC CAF, Ligue 1 CI, Saudi Pro League, Europe, Amériques), ou l'📸 Audit Survie de ton Ticket & Bankroll !",
+      text: "Bonjour ! Je suis Cloé IA Ultra v6.1 Certifiée, reliée en temps réel à ton moteur Omni-Sport & Football AI Ultra v6.1 (https://football-ai-43e33.web.app).\n\nTu peux lancer un 📞 Appel Vocal Mains-Libres en direct, ton ☀️ Briefing Vocal Matinal, me demander les 🌐 7 Sports en direct (Football 32 ligues, NBA, Tennis ATP/WTA, NFL, NHL, MLB, UFC), les 🎥 Vidéos officielles certifiées (bon match + date exacte), les 🏆 simulations 10 000× ou l'📸 Audit Survie & Kelly Strict de ton Ticket !",
       rated: null,
     },
   ]);
@@ -155,21 +155,41 @@ export default function CloeApp() {
 
   async function callOptionalCloudLlm(userPrompt, groundedContext) {
     if (!mem.llmApiKey?.trim()) return null;
+    // P2 : Disjoncteur budgétaire journalier strict (max 60 requêtes Cloud/jour)
+    try {
+      const todayKey = new Date().toISOString().slice(0, 10);
+      const quota = JSON.parse(localStorage.getItem("cloe_daily_llm_guard") || "{}");
+      const used = quota.day === todayKey ? Number(quota.count) || 0 : 0;
+      if (used >= 60) {
+        return null; // Bascule automatique sur le moteur local gratuit
+      }
+      localStorage.setItem(
+        "cloe_daily_llm_guard",
+        JSON.stringify({ day: todayKey, count: used + 1 })
+      );
+    } catch {
+      // ignore
+    }
+
     const key = mem.llmApiKey.trim();
     const sysPrompt =
-      `Tu es Cloé, l'assistante IA personnelle brillante, chaleureuse et auto-évolutive de ${mem.userName}. ` +
+      `Tu es Cloé v6.1 Certifiée, l'assistante IA personnelle brillante, chaleureuse et auto-évolutive de ${mem.userName}. ` +
       `Tu réponds toujours en français clair, structuré et précis. ` +
       `Règles apprises par Cloé : ${mem.lessons.join(" | ")}. ` +
       `Notes actives de l'utilisateur : ${mem.notes.filter((n) => !n.done).map((n) => n.text).join(" ; ")}. ` +
-      `Données exactes calculées en temps réel par Football AI Ultra v4 : ${groundedContext}`;
+      `Données exactes calculées en temps réel par Omni-Sport & Football AI Ultra v6.1 Certifiée : ${groundedContext}`;
 
     try {
       if (mem.llmProvider === "gemini") {
+        // SEC-04 : Clé transmise uniquement dans l'en-tête HTTP x-goog-api-key, jamais exposée dans l'URL !
         const res = await fetch(
-          `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${encodeURIComponent(key)}`,
+          "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent",
           {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            headers: {
+              "Content-Type": "application/json",
+              "x-goog-api-key": key,
+            },
             body: JSON.stringify({
               contents: [{ parts: [{ text: `${sysPrompt}\n\nQuestion : ${userPrompt}` }] }],
             }),

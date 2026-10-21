@@ -8,6 +8,7 @@ import {
   parseOmniEspnEvent,
 } from "../src/services/liveMatchesApi.js";
 import { normalizeKey } from "../src/data/clubs.js";
+import { verifyOfficialVideoCandidate } from "../src/engine/videoAnalyzer.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const OUT_WWW = resolve(__dirname, "../www/live-omni-snapshot.json");
@@ -48,11 +49,42 @@ async function harvestDay(offset) {
   });
 }
 
-async function harvestTopDossier(m) {
+async function harvestTopDossierAndVideos(m, verifiedVideosOut) {
   if (!m.sportPath || !m.rawEventId) return null;
   const url = `https://site.api.espn.com/apis/site/v2/sports/${m.sportPath}/summary?event=${m.rawEventId}`;
   const json = await fetchJsonSafe(url, 6000);
   if (!json) return null;
+
+  // Extraire et VÉRIFIER STRICTEMENT (bon match + date exacte ±36h) toutes les vidéos officielles ESPN !
+  const vids = Array.isArray(json.videos) ? json.videos : [];
+  for (let i = 0; i < vids.length; i++) {
+    const v = vids[i];
+    const mp4Url =
+      v?.links?.source?.HD?.href ||
+      v?.links?.source?.full?.href ||
+      v?.links?.source?.href ||
+      v?.links?.mobile?.source?.href ||
+      "";
+    const candidate = {
+      id: `espn-${m.rawEventId}-${v.id || i}`,
+      provider: "ESPN Official Stream",
+      sameOfficialEventId: true,
+      homeTeam: m.home,
+      awayTeam: m.away,
+      competition: m.leagueLabel || "",
+      title: v.headline || v.title || `${m.home} vs ${m.away}`,
+      description: v.description || "",
+      dateIso: v.originalPublishDate || v.lastModified || m.kickoffIso,
+      durationSec: v.duration || null,
+      thumbnail: v.thumbnail || "",
+      mp4Url: mp4Url.startsWith("http://") ? mp4Url.replace("http://", "https://") : mp4Url,
+      embedSrc: "",
+    };
+    const check = verifyOfficialVideoCandidate(candidate, m);
+    if (check.verified) {
+      verifiedVideosOut.push({ ...candidate, verification: check });
+    }
+  }
 
   const gi = json.gameInfo || {};
   const vObj = gi.venue || {};
@@ -114,15 +146,58 @@ for (const off of [-1, 0, 1, 2]) {
 
 const allMatches = Object.values(days).flat();
 const dossiers = {};
+const verifiedVideos = [];
 
-// Pré-charger les dossiers H2H/Stade/Blessés des 18 affiches principales multi-sports
-const priorityMatches = allMatches.slice(0, 18);
+// Prioriser les matchs en direct ("in") et tout juste terminés ("post") pour les vidéos officielles !
+const liveAndRecentFirst = [
+  ...allMatches.filter((m) => m.state === "in"),
+  ...allMatches.filter((m) => m.state === "post"),
+  ...allMatches.filter((m) => m.state !== "in" && m.state !== "post"),
+].slice(0, 26);
+
 await Promise.all(
-  priorityMatches.map(async (m) => {
-    const d = await harvestTopDossier(m);
+  liveAndRecentFirst.map(async (m) => {
+    const d = await harvestTopDossierAndVideos(m, verifiedVideos);
     if (d) dossiers[m.externalId] = d;
   })
 );
+
+// Récolter également le flux vidéo mondial ScoreBat v3 et certifier chaque clip (bon match + date exacte ±36h)
+let scorebatRejectedWrongMatchOrDate = 0;
+const sbJson = await fetchJsonSafe("https://www.scorebat.com/video-api/v3/", 6000);
+if (Array.isArray(sbJson?.response)) {
+  for (let idx = 0; idx < sbJson.response.length; idx++) {
+    const item = sbJson.response[idx];
+    const side1 = item?.side1?.name || (item?.title || "").split(" - ")[0] || "";
+    const side2 = item?.side2?.name || (item?.title || "").split(" - ")[1] || "";
+    const srcMatch = String(item?.embed || "").match(/src=['"](https:\/\/[^'"]+)['"]/i);
+    const embedSrc = srcMatch ? srcMatch[1] : "";
+    const cand = {
+      id: `scorebat-${idx}`,
+      provider: "ScoreBat Live Video Feed",
+      sameOfficialEventId: false,
+      homeTeam: side1.trim(),
+      awayTeam: side2.trim(),
+      competition: item?.competition || "",
+      title: `${side1.trim()} vs ${side2.trim()} — ${item?.videos?.[0]?.title || "Temps forts officiels"}`,
+      description: `Compétition officielle : ${item?.competition || "Football"}`,
+      dateIso: item?.date || "",
+      durationSec: 120,
+      thumbnail: item?.thumbnail || "",
+      mp4Url: "",
+      embedSrc,
+    };
+    const matchingOfficialGame = allMatches.find((m) => verifyOfficialVideoCandidate(cand, m).verified);
+    if (matchingOfficialGame) {
+      verifiedVideos.push({
+        ...cand,
+        verification: verifyOfficialVideoCandidate(cand, matchingOfficialGame),
+      });
+    } else {
+      scorebatRejectedWrongMatchOrDate++;
+    }
+  }
+}
 
 const bySport = {};
 for (const m of allMatches) {
@@ -131,15 +206,17 @@ for (const m of allMatches) {
 
 const now = new Date();
 const payload = {
-  version: "6.0.0-omni-truth",
+  version: "6.1.0-certified",
   generatedAtIso: now.toISOString(),
   generatedAtFr: now.toLocaleString("fr-FR", { timeZone: "UTC" }) + " UTC",
   totalMatchesHarvested: allMatches.length,
   countsBySport: bySport,
   dossiersCount: Object.keys(dossiers).length,
+  verifiedVideosCount: verifiedVideos.length,
   sha256Integrity: "",
   days,
   dossiers,
+  verifiedVideos: verifiedVideos.slice(0, 60),
 };
 
 payload.sha256Integrity = createHash("sha256")
@@ -163,16 +240,30 @@ const sampleMatches = allMatches.slice(0, 12).map((m) => ({
   score: m.scoreHome !== null ? `${m.scoreHome}-${m.scoreAway}` : null,
 }));
 
+const sampleVideos = verifiedVideos.slice(0, 10).map((v) => ({
+  provider: v.provider,
+  title: v.title,
+  verifiedTeams: `${v.homeTeam} vs ${v.awayTeam}`,
+  publishedAt: v.dateIso,
+  verifiedDateFr: v.verification?.videoDateFr,
+  deltaHoursFromKickoff: v.verification?.deltaHours,
+  hasDirectMp4: Boolean(v.mp4Url),
+}));
+
 writeFileSync(
   OUT_REPORT,
   JSON.stringify(
     {
-      status: allMatches.length > 0 ? "LIVE_INTERNET_HARVEST_OK" : "OFFLINE_SANDBOX_BUILD",
+      status: allMatches.length > 0 ? "LIVE_INTERNET_HARVEST_V6_1_CERTIFIED_OK" : "OFFLINE_SANDBOX_BUILD",
+      version: "6.1.0-certified",
       harvestedAt: payload.generatedAtIso,
       sha256Integrity: payload.sha256Integrity,
       totalMatchesAcross4Days: allMatches.length,
       countsBySport: bySport,
       deepDossiersPreloaded: Object.keys(dossiers).length,
+      verifiedOfficialVideosCount: verifiedVideos.length,
+      unmatchedOrWrongDateVideosBlocked: scorebatRejectedWrongMatchOrDate,
+      sampleCertifiedOfficialVideos: sampleVideos,
       sampleVerifiedRealMatches: sampleMatches,
     },
     null,
@@ -182,5 +273,5 @@ writeFileSync(
 );
 
 console.log(
-  `✓ Harvest Internet Omni-Sport v6 terminé : ${allMatches.length} vrais matchs récoltés (${JSON.stringify(bySport)})`
+  `✓ Harvest Internet Omni-Sport v6.1 Certifiée terminé : ${allMatches.length} vrais matchs + ${verifiedVideos.length} vidéos officielles certifiées (bon match + date exacte)`
 );

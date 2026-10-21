@@ -44,7 +44,7 @@ export default function CloeBridgeTab({
   const [messages, setMessages] = useState([
     {
       role: "cloe",
-      text: "Bonjour ! Je suis connectée au cerveau hybride Football AI Ultra v3. Pose-moi une question sur les matchs d'aujourd'hui, demain, un duel, ton 11 Fantasy ou mes leçons apprises — ou copie le connecteur ci-dessous dans l'application Cloé sur Firebase !",
+      text: "Bonjour ! Je suis connectée au moteur Omni-Sport & Football AI Ultra v6.1 Certifiée. Pose-moi une question sur les matchs en direct (7 sports), un duel, les vidéos officielles vérifiées, ton 11 Fantasy ou la synchronisation avec Cloé Abidjan !",
       confidence: 96,
     },
   ]);

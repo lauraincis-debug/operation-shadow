@@ -1,13 +1,13 @@
 import { computeFullPrediction } from "./predictor.js";
+import { predictOmniSportMatch } from "./omniSportEngine.js";
 import { extractTeamsFromQuestion } from "../services/cloeBridge.js";
 
 /**
- * 📸 AUDIT IA DE TICKET & DÉTECTEUR DE MAILLON FAIBLE
- * Analyse mathématiquement chaque ligne d'un combiné :
- * - Identifie le MAILLON FAIBLE n°1 qui menace tout le coupon
- * - Attribue une Note de Survie (/100) et un Grade (A+ à D)
- * - Propose en 1 clic le remplacement sécurisé optimal
- * - Permet aussi de coller n'importe quel texte de ticket externe (1xBet, Betclic, Sportcash...)
+ * 📸 AUDIT IA DE TICKET & DÉTECTEUR DE MAILLON FAIBLE v6.1 (OMNI-SPORT CERTIFIÉ)
+ * Corrige intégralement le bug multi-sport P1 :
+ * - Route chaque ligne du combiné vers le VRAI modèle de sa discipline
+ *   (Football Dixon-Coles vs NBA Gaussien vs Tennis Markov vs NFL/NHL/MLB/UFC)
+ * - Calcule la vraie espérance mathématique combinée et signale les cotes sous-payées
  */
 
 export function auditCouponSlip(coupon = [], modelState) {
@@ -17,13 +17,18 @@ export function auditCouponSlip(coupon = [], modelState) {
 
   let combinedSurvival = 1;
   const inspected = coupon.map((item, index) => {
-    const pred = computeFullPrediction(
-      item.home,
-      item.away,
-      item.league || "ucl",
-      modelState,
-      null
-    );
+    const sport = item.sport || "soccer";
+    const pred =
+      sport === "soccer"
+        ? computeFullPrediction(
+            item.home,
+            item.away,
+            item.league || "ucl",
+            modelState,
+            null
+          )
+        : predictOmniSportMatch(item);
+
     const chosenPct = Number(item.selectedMarket?.pct || 60);
     const saferAlt = pred.recommendedMarket;
     const gainSafety = Math.max(0, (saferAlt?.pct || chosenPct) - chosenPct);
@@ -37,13 +42,14 @@ export function auditCouponSlip(coupon = [], modelState) {
     return {
       index,
       itemId: item.id,
+      sport,
       matchLabel: `${pred.home} vs ${pred.away}`,
       chosenLabel: item.selectedMarket?.label || "Sélection",
       chosenPct,
       chosenOdd: Number(item.selectedMarket?.bookOdd || 1.5),
       saferAlternative: {
         ...saferAlt,
-        bookOdd: Number(saferAlt.marketOdd || 1.35),
+        bookOdd: Number(saferAlt.marketOdd || saferAlt.bookOdd || 1.32),
       },
       gainSafetyPct: gainSafety,
       riskTag,
@@ -51,7 +57,6 @@ export function auditCouponSlip(coupon = [], modelState) {
     };
   });
 
-  // Trouver le maillon le plus faible (probabilité IA la plus basse)
   const sortedByWeakness = [...inspected].sort((a, b) => a.chosenPct - b.chosenPct);
   const weakestLink = sortedByWeakness[0];
 
@@ -59,7 +64,6 @@ export function auditCouponSlip(coupon = [], modelState) {
   const avgLegPct =
     inspected.reduce((acc, x) => acc + x.chosenPct, 0) / Math.max(1, inspected.length);
 
-  // Score qualité global /100 pondérant probabilité combinée et solidité individuelle
   const rawScore = Math.round(0.55 * avgLegPct + 0.45 * Math.min(95, survivalPct * 1.45));
   const auditScore = Math.min(98, Math.max(18, rawScore));
 
@@ -89,13 +93,6 @@ export function auditCouponSlip(coupon = [], modelState) {
   };
 }
 
-/**
- * Parse un texte copié-collé depuis 1xBet / Premier Bet / Sportcash / WhatsApp
- * Ex:
- *   PSG - Marseille
- *   Real Madrid vs Barcelone
- * et construit automatiquement un Coupon IA audité !
- */
 export function parseExternalTicketText(rawText = "", modelState) {
   const lines = String(rawText)
     .split(/\r?\n|;|\|/)
@@ -113,12 +110,12 @@ export function parseExternalTicketText(rawText = "", modelState) {
       seenPairs.add(key);
 
       const pred = computeFullPrediction(teams[0], teams[1], "ucl", modelState, null);
-      // Si l'utilisateur n'a pas précisé la cote/marché, simuler un pari 1X2 classique pour que l'audit révèle les pièges
       const maxIdx = pred.probs.indexOf(Math.max(...pred.probs));
       const default1X2Market = pred.markets?.[maxIdx] || pred.recommendedMarket;
 
       builtItems.push({
         id: Date.now() + builtItems.length * 31 + Math.floor(Math.random() * 99),
+        sport: "soccer",
         home: pred.home,
         away: pred.away,
         league: "ucl",
