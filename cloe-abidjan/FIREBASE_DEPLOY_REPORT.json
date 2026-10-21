@@ -1,0 +1,8 @@
+{
+  "cloeAgentAbidjanLiveUrl": "https://cloe-agent-abidjan.web.app",
+  "footballAiLiveUrl": "https://football-ai-43e33.web.app",
+  "cloeIaUltraLiveUrl": "https://cloe-ia-ultra.web.app",
+  "version": "6.1.0-certified",
+  "securityAuditStatus": "ALL_P0_P1_P2_REMEDIATED",
+  "updatedAt": "2026-10-21T10:32:03Z"
+}

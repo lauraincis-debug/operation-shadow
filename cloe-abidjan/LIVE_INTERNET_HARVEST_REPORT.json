@@ -1,0 +1,12 @@
+{
+  "status": "OFFLINE_SANDBOX_BUILD",
+  "version": "6.2.0-live-certified",
+  "harvestedAt": "2026-10-21T13:22:42.144Z",
+  "sha256Integrity": "3f0aa9ed245e5c3323e530c2",
+  "totalMatchesAcross4Days": 0,
+  "currentlyLiveOngoingMatchesCount": 0,
+  "countsBySport": {},
+  "deepDossiersPreloaded": 0,
+  "verifiedLiveOngoingVideosCount": 0,
+  "sampleCurrentlyLiveMatches": []
+}
