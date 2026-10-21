@@ -1,5 +1,5 @@
 // ============================================================================
-// SCANNER DE CAPTURES BOOKMAKER v6.2 (BETCLIC • 1XBET • WINAMAX • SPORTCASH)
+// SCANNER DE CAPTURES BOOKMAKER v6.4 Certifiée Intégrale (BETCLIC • 1XBET • WINAMAX • SPORTCASH)
 // -> ANALYSE TOUTES LES OPTIONS DE PARIS PROPOSÉES SUR L'IMAGE
 // -> SORT UN SEUL « PARI DÉFINITIF » MATHÉMATIQUEMENT OPTIMAL (OU NO-BET STRICT)
 // ============================================================================
@@ -119,10 +119,27 @@ export function detectTeamsFromOcrText(rawText = "", liveMatches = []) {
       home: uniqueClubs[0].club.name,
       away: uniqueClubs[1].club.name,
       sport: "soccer",
-      league: uniqueClubs[0].club.league || "ucl",
+      league: uniqueClubs[0].club.leagues?.[0] || uniqueClubs[0].club.league || "ucl",
       liveMatch: null,
     };
   }
+
+  // Inférence de discipline réelle sur vocabulaire de la capture (zéro assimilation abusive au football)
+  const inferredSport = /\b(atp|wta|jeux|sets?|tie-?break|grand chelem)\b/i.test(cleanText)
+    ? "tennis"
+    : /\b(nba|euroleague|wnba|quart-temps|rebonds?)\b|(?:plus|moins|[+-])\s*(?:de\s*)?1[5-9]\d[.,]5|(?:plus|moins|[+-])\s*(?:de\s*)?2\d\d[.,]5/i.test(
+          cleanText
+        )
+      ? "basketball"
+      : /\b(nfl|touchdowns?|yards?)\b/i.test(cleanText)
+        ? "football_us"
+        : /\b(nhl|tiers-temps|palet)\b/i.test(cleanText)
+          ? "hockey"
+          : /\b(mlb|manches?|home\s*run)\b/i.test(cleanText)
+            ? "baseball"
+            : /\b(ufc|mma|octogone|rounds?)\b/i.test(cleanText)
+              ? "mma"
+              : "soccer";
 
   // 3. Fallback : motif "Équipe A - Équipe B" ou "Équipe A vs Équipe B" en haut d'écran Betclic
   const lines = cleanText
@@ -132,11 +149,13 @@ export function detectTeamsFromOcrText(rawText = "", liveMatches = []) {
   for (const line of lines.slice(0, 12)) {
     const vsMatch = line.match(/^([A-Za-zÀ-ÿ0-9 .'-]{3,28})\s*(?:\bvs\.?\b|[-–—/])\s*([A-Za-zÀ-ÿ0-9 .'-]{3,28})$/i);
     if (vsMatch) {
+      const hName = canonicalTeamName(vsMatch[1].trim());
+      const hClub = resolveClub(hName);
       return {
-        home: canonicalTeamName(vsMatch[1].trim()),
+        home: hName,
         away: canonicalTeamName(vsMatch[2].trim()),
-        sport: "soccer",
-        league: "ucl",
+        sport: hClub ? "soccer" : inferredSport,
+        league: hClub?.leagues?.[0] || hClub?.league || "ucl",
         liveMatch: null,
       };
     }
@@ -196,11 +215,24 @@ export function parseBookmakerMarketsFromText(rawText = "", homeTeam = "", awayT
       continue;
     }
 
-    // 2. Double Chance (1N / 1X, N2 / X2, 12 — y compris format français Betclic "Paris SG ou Nul 1,24" / "Nul ou Marseille 2,25")
+    // 2. Double Chance (1N / 1X, N2 / X2, 12 — y compris format français Betclic "Paris SG ou Nul 1,24" / "Paris SG ou Marseille 1,22" / "Nul ou Marseille 2,25")
     if (/double chance/i.test(cur) && windowOdds.length >= 3) {
       addOpt("1X", `Double Chance ${homeTeam} ou Nul (1N)`, windowOdds[0]);
       addOpt("12", `Double Chance ${homeTeam} ou ${awayTeam} (12)`, windowOdds[1]);
       addOpt("X2", `Double Chance Nul ou ${awayTeam} (N2)`, windowOdds[2]);
+      continue;
+    }
+    const normCur = normalizeKey(cur);
+    const homePrefix = normalizeKey(homeTeam).slice(0, 5);
+    const awayPrefix = normalizeKey(awayTeam).slice(0, 5);
+    const mentionsHome = homePrefix.length >= 2 && normCur.includes(homePrefix);
+    const mentionsAway = awayPrefix.length >= 2 && normCur.includes(awayPrefix);
+    if (
+      curOdds.length >= 1 &&
+      ((mentionsHome && mentionsAway && /\b(ou|or)\b|\//i.test(cur)) ||
+        /\bdouble\s*chance\s*12\b|^\s*12\b/i.test(low))
+    ) {
+      addOpt("12", `${homeTeam} ou ${awayTeam} (12)`, curOdds[curOdds.length - 1]);
       continue;
     }
     if ((/\b(1n|1x)\b/i.test(low) || /\bou\s+nul\b/i.test(low)) && curOdds.length >= 1) {
@@ -370,7 +402,29 @@ export function evaluateScreenshotMarketsAndPickDefinitiveBet({
     });
   }
 
-  const totalXg = isSoccer ? pred.xg.home + pred.xg.away : pred.projectedTotal || 220;
+  const totalXg = isSoccer
+    ? pred.xg.home + pred.xg.away
+    : Number(pred.expectedTotal ?? (pred.xg.home + pred.xg.away) ?? 220);
+
+  // Écart-type Gaussien calibré par sport (NBA, NFL, Tennis Jeux, NHL, MLB, MMA)
+  const SPORT_TOTAL_SD = {
+    basketball: 16.5,
+    football_us: 13.2,
+    tennis: 4.5,
+    baseball: 3.5,
+    hockey: 2.2,
+    mma: 1.1,
+  };
+  const normalCdf = (z) => {
+    const t = 1 / (1 + 0.2316419 * Math.abs(z));
+    const d = 0.3989422804014327 * Math.exp((-z * z) / 2);
+    const prob =
+      d *
+      t *
+      (0.31938153 +
+        t * (-0.356563782 + t * (1.781477937 + t * (-1.821255978 + 1.330274429 * t))));
+    return z >= 0 ? 1 - prob : prob;
+  };
 
   // Probabilité cumulée Poisson P(Goals > line) exacte pour n'importe quel palier Betclic (0.5, 1.5, 2.5, 3.5, 4.5)
   const poissonOverProb = (lambdaTotal, threshold) => {
@@ -385,43 +439,58 @@ export function evaluateScreenshotMarketsAndPickDefinitiveBet({
   };
 
   const getTrueProbForOption = (opt) => {
-    const p1 = pred.probs[0] / 100;
-    const pN = pred.probs[1] / 100;
-    const p2 = pred.probs[2] / 100;
+    const p1 = pred.rawProbs?.[0] ?? pred.probs[0] / 100;
+    const pN = pred.rawProbs?.[1] ?? pred.probs[1] / 100;
+    const p2 = pred.rawProbs?.[2] ?? pred.probs[2] / 100;
+    const bttsTrue =
+      pred.goals?.bttsYes ??
+      (pred.goals?.bttsYesPct !== undefined ? pred.goals.bttsYesPct / 100 : 0.5);
 
-    switch (opt.kind) {
+    switch (String(opt.kind || opt.code || "").toUpperCase()) {
       case "1":
-        return p1;
+      case "ML_1":
+        return clamp(p1, 0.02, 0.98);
       case "N":
-        return Math.max(0.04, pN);
+      case "X":
+        return isSoccer ? clamp(pN, 0.03, 0.65) : 0.01;
       case "2":
-        return p2;
+      case "ML_2":
+        return clamp(p2, 0.02, 0.98);
       case "1X":
-        return clamp(p1 + pN, 0.05, 0.97);
+      case "1N":
+        return clamp(p1 + pN, 0.04, 0.98);
       case "X2":
-        return clamp(pN + p2, 0.05, 0.97);
+      case "N2":
+        return clamp(pN + p2, 0.04, 0.98);
       case "12":
-        return clamp(p1 + p2, 0.05, 0.97);
+        return clamp(p1 + p2, 0.04, 0.98);
       case "BTTS_Y":
-        return clamp((pred.bttsPct ?? 52) / 100, 0.06, 0.94);
+      case "BTTS_YES":
+        return clamp(bttsTrue, 0.05, 0.95);
       case "BTTS_N":
-        return clamp(1 - (pred.bttsPct ?? 52) / 100, 0.06, 0.94);
+      case "BTTS_NO":
+        return clamp(1 - bttsTrue, 0.05, 0.95);
       case "OVER": {
         if (!isSoccer) {
-          const diff = totalXg - (opt.line || totalXg);
-          return clamp(1 / (1 + Math.exp(-diff / 9.5)), 0.08, 0.92);
+          const sd = SPORT_TOTAL_SD[sport] || 12.0;
+          const line = Number(opt.line ?? totalXg);
+          return clamp(normalCdf((totalXg - line) / sd), 0.04, 0.96);
         }
-        if (opt.line === 1.5 && pred.over15Pct) return pred.over15Pct / 100;
-        if (opt.line === 2.5 && pred.over25Pct) return pred.over25Pct / 100;
+        if (opt.line === 1.5 && pred.goals?.over15 !== undefined) return clamp(pred.goals.over15, 0.03, 0.97);
+        if (opt.line === 2.5 && pred.goals?.over25 !== undefined) return clamp(pred.goals.over25, 0.03, 0.97);
+        if (opt.line === 3.5 && pred.goals?.over35 !== undefined) return clamp(pred.goals.over35, 0.03, 0.97);
         return poissonOverProb(totalXg, opt.line ?? 2.5);
       }
       case "UNDER": {
         if (!isSoccer) {
-          const diff = totalXg - (opt.line || totalXg);
-          return clamp(1 - 1 / (1 + Math.exp(-diff / 9.5)), 0.08, 0.92);
+          const sd = SPORT_TOTAL_SD[sport] || 12.0;
+          const line = Number(opt.line ?? totalXg);
+          return clamp(1 - normalCdf((totalXg - line) / sd), 0.04, 0.96);
         }
-        if (opt.line === 2.5 && pred.under25Pct) return pred.under25Pct / 100;
-        return clamp(1 - poissonOverProb(totalXg, opt.line ?? 2.5), 0.04, 0.96);
+        if (opt.line === 1.5 && pred.goals?.over15 !== undefined) return clamp(1 - pred.goals.over15, 0.03, 0.97);
+        if (opt.line === 2.5 && pred.goals?.under25 !== undefined) return clamp(pred.goals.under25, 0.03, 0.97);
+        if (opt.line === 3.5 && pred.goals?.over35 !== undefined) return clamp(1 - pred.goals.over35, 0.03, 0.97);
+        return clamp(1 - poissonOverProb(totalXg, opt.line ?? 2.5), 0.03, 0.97);
       }
       case "CORNERS_OVER": {
         const expCorners = proMkts?.corners?.total || 9.8;
@@ -591,9 +660,10 @@ export async function extractScreenshotDataFromImage(
 
   safeProgress(12, "Préparation de la capture d'écran Bookmaker...");
 
-  // 1. Si une clé Gemini Vision est disponible, extraction JSON multimodale ultra-précise en < 2s
+  // 1. Si une clé Gemini Vision est disponible, extraction JSON multimodale ultra-précise en < 2s (cascade 2.5 -> 2.0)
   const geminiKey =
     explicitKeyArg ||
+    authObj.geminiKey ||
     authObj.geminiApiKey ||
     (typeof localStorage !== "undefined"
       ? (() => {
@@ -620,29 +690,38 @@ export async function extractScreenshotDataFromImage(
         '{"bookmaker":"Betclic","home":"Equipe Domicile ou vide si illisible","away":"Equipe Exterieur ou vide si illisible","sport":"soccer","options":[{"kind":"1|N|2|1X|X2|12|BTTS_Y|BTTS_N|OVER|UNDER|CORNERS_OVER|HT_OVER","line":null,"label":"Intitulé exact","bookOdd":1.75}]} ' +
         "Extrais TOUTES les options de paris et cotes visibles avec exactitude. N'invente AUCUNE équipe ni AUCUNE cote non visible sur l'image (mets \"\" si les noms des équipes ne figurent pas sur l'image).";
 
-      const res = await fetch(
-        "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "x-goog-api-key": geminiKey.trim(),
-          },
-          body: JSON.stringify({
-            contents: [
-              {
-                parts: [
-                  { text: prompt },
-                  { inlineData: { mimeType: imageFile.type || "image/png", data: b64 } },
-                ],
-              },
-            ],
-            generationConfig: { temperature: 0.1, responseMimeType: "application/json" },
-          }),
+      let res = null;
+      let usedGeminiModel = "gemini-2.5-flash";
+      for (const modelName of ["gemini-2.5-flash", "gemini-2.0-flash"]) {
+        usedGeminiModel = modelName;
+        const candidateRes = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "x-goog-api-key": geminiKey.trim(),
+            },
+            body: JSON.stringify({
+              contents: [
+                {
+                  parts: [
+                    { text: prompt },
+                    { inlineData: { mimeType: imageFile.type || "image/png", data: b64 } },
+                  ],
+                },
+              ],
+              generationConfig: { temperature: 0.1, responseMimeType: "application/json" },
+            }),
+          }
+        );
+        if (candidateRes.ok) {
+          res = candidateRes;
+          break;
         }
-      );
+      }
 
-      if (res.ok) {
+      if (res && res.ok) {
         const json = await res.json();
         const txt = json?.candidates?.[0]?.content?.parts?.[0]?.text || "";
         const parsed = JSON.parse(txt.replace(/```json|```/g, "").trim());
@@ -656,9 +735,10 @@ export async function extractScreenshotDataFromImage(
             !/equipe exterieur|illisible|unknown/i.test(rawAway);
           const cleanHome = hasValidTeams ? canonicalTeamName(rawHome) : "";
           const cleanAway = hasValidTeams ? canonicalTeamName(rawAway) : "";
+          const homeClub = hasValidTeams ? resolveClub(cleanHome) : null;
           safeProgress(100, "Capture analysée avec succès via Vision IA !");
           return {
-            engineUsed: "Gemini Vision Multimodale",
+            engineUsed: `Gemini Vision Multimodale (${usedGeminiModel})`,
             bookmakerName: parsed.bookmaker || "Betclic",
             teamsUnconfirmed: !hasValidTeams,
             detectedMatch: hasValidTeams
@@ -666,7 +746,7 @@ export async function extractScreenshotDataFromImage(
                   home: cleanHome,
                   away: cleanAway,
                   sport: parsed.sport || "soccer",
-                  league: "ucl",
+                  league: homeClub?.leagues?.[0] || "ucl",
                   liveMatch:
                     liveMatches.find(
                       (m) =>

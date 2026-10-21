@@ -1,5 +1,5 @@
 // ============================================================================
-// SYNCHRONISATION FIREBASE REALTIME CLOUD SÉCURISÉE v6.2 (E2EE VÉRITABLE)
+// SYNCHRONISATION FIREBASE REALTIME CLOUD SÉCURISÉE v6.4 Certifiée Intégrale (E2EE VÉRITABLE)
 // Correctifs Audit #2 [AUDIT2-SEC-02] :
 // 1. Interdiction de dériver la clé AES-256 à partir de `syncRoom` (qui figure dans l'URL) !
 //    Un mot de passe secret distinct (`encryptionPassphrase`, >= 8 caractères) est exigé.

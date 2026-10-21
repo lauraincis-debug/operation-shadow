@@ -178,7 +178,7 @@ export default function VideoAnalysisTab({
     setProgress(5);
     setErrMsg("");
     try {
-      const res = await analyzeMatchVideoFile(file, setProgress);
+      const res = await analyzeMatchVideoFile(file, setProgress, activeHome, activeAway);
       onVideoInsightReady(res);
     } catch (err) {
       setErrMsg(err.message || "Fichier vidéo rejeté par le contrôle visuel.");

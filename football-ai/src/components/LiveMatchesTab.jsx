@@ -180,7 +180,7 @@ export default function LiveMatchesTab({
           <div>
             <div className="fai-section-title" style={{ marginBottom: 4 }}>
               <span>
-                🌐 Omni-Sport Live Internet v6.0 — 44 Compétitions, Dates &amp; Stades Exacts, H2H &amp; Anti-Biais
+                🌐 Omni-Sport Live Internet v6.4 Certifiée Intégrale — 44 Compétitions, Dates &amp; Stades Exacts, H2H &amp; Anti-Biais
               </span>
             </div>
             <div style={{ fontSize: 12, color: "#9aa3c7" }}>

@@ -93,16 +93,19 @@ async function harvestTopDossierAndLiveVideos(m, liveOngoingVideosOut) {
   const vObj = gi.venue || {};
   const h2hGames = [];
   for (const block of json.headToHeadGames || []) {
+    const teamName = block.team?.displayName || "";
     for (const ev of block.events || []) {
       const dt = ev.gameDate ? new Date(ev.gameDate) : null;
+      const isAt = ev.atVs === "@";
+      const oppName = ev.opponent?.displayName || "";
       h2hGames.push({
         id: ev.id || `${ev.gameDate}-${ev.score}`,
         dateIso: ev.gameDate || "",
         dateExactFr: dt
           ? dt.toLocaleDateString("fr-FR", { day: "2-digit", month: "long", year: "numeric" })
           : "",
-        homeTeam: ev.homeTeamName || block.team?.displayName || "",
-        awayTeam: ev.awayTeamName || ev.opponent?.displayName || "",
+        homeTeam: ev.homeTeamName || (isAt ? oppName : teamName) || "",
+        awayTeam: ev.awayTeamName || (isAt ? teamName : oppName) || "",
         score: ev.score || `${ev.homeTeamScore ?? "?"}-${ev.awayTeamScore ?? "?"}`,
         competition: ev.leagueName || m.leagueLabel || "",
         venue: ev.venue?.fullName || ev.location || "",
@@ -173,7 +176,7 @@ for (const m of allMatches) {
 
 const now = new Date();
 const payload = {
-  version: "6.2.0-live-certified",
+  version: "6.4.0-certified-integral",
   generatedAtIso: now.toISOString(),
   generatedAtFr: now.toLocaleString("fr-FR", { timeZone: "UTC" }) + " UTC",
   totalMatchesHarvested: allMatches.length,
@@ -201,8 +204,8 @@ writeFileSync(
   OUT_REPORT,
   JSON.stringify(
     {
-      status: allMatches.length > 0 ? "LIVE_INTERNET_HARVEST_V6_2_LIVE_CERTIFIED_OK" : "OFFLINE_SANDBOX_BUILD",
-      version: "6.2.0-live-certified",
+      status: allMatches.length > 0 ? "LIVE_INTERNET_HARVEST_V6_4_CERTIFIED_OK" : "OFFLINE_SANDBOX_BUILD",
+      version: "6.4.0-certified-integral",
       harvestedAt: payload.generatedAtIso,
       sha256Integrity: payload.sha256Integrity,
       totalMatchesAcross4Days: allMatches.length,
@@ -225,5 +228,5 @@ writeFileSync(
 );
 
 console.log(
-  `✓ Harvest Internet Omni-Sport v6.2 Live Certifiée terminé : ${allMatches.length} vrais matchs (${currentlyInProgress.length} EN DIRECT MAINTENANT)`
+  `✓ Harvest Internet Omni-Sport v6.4 Certifiée Intégrale terminé : ${allMatches.length} vrais matchs (${currentlyInProgress.length} EN DIRECT MAINTENANT)`
 );

@@ -94,19 +94,23 @@ export default function TournamentTab({ modelState, onAddOutrightToCoupon }) {
               <button
                 type="button"
                 className="fai-btn-secondary"
-                onClick={() =>
+                onClick={() => {
+                  const pct = Math.max(3, Math.round(topWinner.championPct));
                   onAddOutrightToCoupon({
+                    sport: "soccer",
                     home: topWinner.team,
                     away: "Reste du Tournoi",
                     league: TOURNAMENT_PRESETS[presetId]?.league || "international",
-                    probs: [Math.round(topWinner.championPct), 0, 100 - Math.round(topWinner.championPct)],
+                    probs: [pct, 0, Math.max(0, 100 - pct)],
+                    rawProbs: [pct / 100, 0, Math.max(0, 1 - pct / 100)],
                     selectedMarket: {
                       label: `🏆 Vainqueur Final : ${topWinner.team}`,
-                      pct: Math.round(topWinner.championPct),
+                      prob: Math.min(0.95, Math.max(0.03, pct / 100)),
+                      pct,
                       bookOdd: topWinner.fairOutrightOdd,
                     },
-                  })
-                }
+                  });
+                }}
               >
                 🎰 + Ajouter Vainqueur au Coupon (@{topWinner.fairOutrightOdd.toFixed(2)})
               </button>

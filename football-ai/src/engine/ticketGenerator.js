@@ -1,56 +1,83 @@
 import { computeFullPrediction } from "./predictor.js";
+import { predictOmniSportMatch } from "./omniSportEngine.js";
+import { resolveClub } from "../data/clubs.js";
 
 /**
- * 🎰 GÉNÉRATEUR AUTOMATIQUE DES 3 TICKETS IA DU JOUR + SMART MONEY EDGE + EXPORT PNG HD
+ * 🎰 GÉNÉRATEUR AUTOMATIQUE DES 3 TICKETS IA DU JOUR + SMART MONEY EDGE + EXPORT PNG HD (v6.4 Certifiée Intégrale)
  * 1) 🛡️ Ticket Sécurité IA (Cote ~1.80 - 2.40, très haute probabilité)
  * 2) ⚖️ Ticket Value Équilibré (Cote ~3.20 - 5.50, meilleur ratio Probabilité × Value)
  * 3) 🚀 Ticket Cote 10+ / Fun (Cote >= 8.50+, grosses opportunités ciblées)
  */
 
 const FALLBACK_SHOWCASE_FIXTURES = [
-  { home: "PSG", away: "Marseille", league: "ligue1", timeFr: "21:00" },
-  { home: "Real Madrid", away: "Barcelone", league: "liga", timeFr: "21:00" },
-  { home: "Arsenal", away: "Liverpool", league: "premier", timeFr: "17:30" },
-  { home: "Bayern Munich", away: "Bayer Leverkusen", league: "bundesliga", timeFr: "18:30" },
-  { home: "Inter Milan", away: "Naples", league: "seriea", timeFr: "20:45" },
-  { home: "Côte d'Ivoire", away: "Maroc", league: "international", timeFr: "20:00" },
+  { home: "PSG", away: "Marseille", league: "ligue1", sport: "soccer", timeFr: "21:00" },
+  { home: "Real Madrid", away: "Barcelone", league: "liga", sport: "soccer", timeFr: "21:00" },
+  { home: "Arsenal", away: "Liverpool", league: "premier", sport: "soccer", timeFr: "17:30" },
+  { home: "Bayern Munich", away: "Bayer Leverkusen", league: "bundesliga", sport: "soccer", timeFr: "18:30" },
+  { home: "Inter Milan", away: "Naples", league: "seriea", sport: "soccer", timeFr: "20:45" },
+  { home: "Côte d'Ivoire", away: "Maroc", league: "international", sport: "soccer", timeFr: "20:00" },
 ];
 
 export function scanSmartMoneyOpportunities(fixtures = [], modelState) {
   const sourceList =
     Array.isArray(fixtures) && fixtures.length >= 2 ? fixtures : FALLBACK_SHOWCASE_FIXTURES;
+  const schemaCounts = {};
 
   const analyzed = sourceList.map((fx) => {
+    const sport = fx.sport || fx.prediction?.sport || "soccer";
+    const isSoccer = sport === "soccer";
+    const resolvedLeague =
+      fx.league || resolveClub(fx.home)?.leagues?.[0] || "ucl";
     const pred =
       fx.prediction ||
-      computeFullPrediction(fx.home, fx.away, fx.league || "ucl", modelState, fx.liveOdds || null);
+      (isSoccer
+        ? computeFullPrediction(fx.home, fx.away, resolvedLeague, modelState, fx.liveOdds || null, {
+            neutralVenue: fx.neutralSite,
+            liveIntel: fx,
+            schemaCounts,
+          })
+        : predictOmniSportMatch({ ...fx, sport }));
+    if (pred?.recommendedMarket?.code) {
+      schemaCounts[pred.recommendedMarket.code] =
+        (schemaCounts[pred.recommendedMarket.code] || 0) + 1;
+    }
 
     // Extraire les candidats marchés pour chaque profil de ticket
-    const safeCandidates = (pred.markets || []).filter((m) => m.pct >= 72 && m.marketOdd >= 1.16);
+    const safeCandidates = (pred.markets || []).filter(
+      (m) => m.pct >= 72 && (m.marketOdd || m.bookOdd || 1.2) >= 1.16
+    );
     const balancedCandidates = (pred.markets || []).filter(
-      (m) => m.pct >= 56 && m.pct <= 78 && m.marketOdd >= 1.38
+      (m) => m.pct >= 56 && m.pct <= 78 && (m.marketOdd || m.bookOdd || 1.4) >= 1.38
     );
     const highOddCandidates = (pred.markets || []).filter(
-      (m) => m.pct >= 38 && m.marketOdd >= 1.95
+      (m) => m.pct >= 38 && (m.marketOdd || m.bookOdd || 2.0) >= 1.95
     );
 
     const bestSafe =
       safeCandidates.sort((a, b) => b.pct - a.pct)[0] || pred.recommendedMarket;
     const bestBalanced =
-      balancedCandidates.sort((a, b) => b.pct * b.marketOdd - a.pct * a.marketOdd)[0] ||
-      pred.recommendedMarket;
+      balancedCandidates.sort(
+        (a, b) =>
+          b.pct * (b.marketOdd || b.bookOdd || 1.5) -
+          a.pct * (a.marketOdd || a.bookOdd || 1.5)
+      )[0] || pred.recommendedMarket;
     const bestHigh =
-      highOddCandidates.sort((a, b) => b.pct * Math.sqrt(b.marketOdd) - a.pct * Math.sqrt(a.marketOdd))[0] ||
+      highOddCandidates.sort(
+        (a, b) =>
+          b.pct * Math.sqrt(b.marketOdd || b.bookOdd || 2.0) -
+          a.pct * Math.sqrt(a.marketOdd || a.bookOdd || 2.0)
+      )[0] ||
       pred.markets?.[0] ||
       pred.recommendedMarket;
 
     // Calcul du Smart Money Edge (écart entre probabilité IA et cote bookmaker réelle si disponible)
     const valBest = pred.valueAnalysis?.bestValue || null;
-    const impliedPct = Math.round((100 / Math.max(1.05, bestBalanced.marketOdd)) * 10) / 10;
-    const edgePct = valBest?.evPct ?? Math.round((bestBalanced.pct - impliedPct) * 10) / 10;
+    const refOdd = Number(bestBalanced.marketOdd || bestBalanced.bookOdd || 1.5);
+    const impliedPct = Math.round((100 / Math.max(1.05, refOdd)) * 10) / 10;
+    const edgePct = valBest?.evPct ?? valBest?.edgePct ?? Math.round((bestBalanced.pct - impliedPct) * 10) / 10;
 
     return {
-      fixture: fx,
+      fixture: { ...fx, sport, league: resolvedLeague },
       pred,
       bestSafe,
       bestBalanced,
@@ -69,16 +96,21 @@ function buildCouponItemsFromPicks(picks) {
   const items = picks.map((entry, idx) => {
     const mkt = entry.chosenMarket;
     const odd = Number(mkt.bookOdd || mkt.marketOdd || 1.45);
+    const prob = Math.min(0.98, Math.max(0.03, mkt.prob ?? (mkt.pct || 65) / 100));
     combinedOdd *= odd;
-    combinedProb *= (mkt.pct || 65) / 100;
+    combinedProb *= prob;
     return {
       id: Date.now() + idx * 17 + Math.floor(Math.random() * 100),
+      sport: entry.fixture.sport || entry.pred.sport || "soccer",
       home: entry.pred.home,
       away: entry.pred.away,
       league: entry.fixture.league || "ucl",
       probs: entry.pred.probs,
+      rawProbs: entry.pred.rawProbs || entry.pred.probs.map((x) => x / 100),
       selectedMarket: {
         ...mkt,
+        prob,
+        pct: Math.round(prob * 100),
         bookOdd: odd,
       },
     };
@@ -178,8 +210,8 @@ export function exportCouponAsPngImage({ coupon, stake, currency, totalOdd, winP
 
   // En-tête
   ctx.fillStyle = "#00e5ff";
-  ctx.font = "bold 36px system-ui, -apple-system, sans-serif";
-  ctx.fillText("⚡ FOOTBALL AI ULTRA v4 • TICKET OFFICIEL", 48, 78);
+  ctx.font = "bold 34px system-ui, -apple-system, sans-serif";
+  ctx.fillText("⚡ OMNI-SPORT & FOOTBALL AI ULTRA v6.4 • TICKET OFFICIEL", 48, 78);
 
   ctx.fillStyle = "#94a3b8";
   ctx.font = "600 20px system-ui, -apple-system, sans-serif";

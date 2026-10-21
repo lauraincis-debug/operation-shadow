@@ -1,8 +1,5 @@
 import { useState, useEffect, useMemo, useRef } from "react";
 import { createCloeFootballBrain } from "../services/cloeBridge.js";
-import { generateThreeDailyTickets } from "../engine/ticketGenerator.js";
-import { auditCouponSlip } from "../engine/ticketAuditor.js";
-import { rebuildModelState } from "../engine/predictor.js";
 
 const CLOE_MEM_KEY = "cloe_ultra_personal_memory_v4";
 
@@ -56,7 +53,7 @@ export default function CloeApp() {
   const [messages, setMessages] = useState([
     {
       role: "cloe",
-      text: "Bonjour ! Je suis Cloé IA Ultra v6.3 Certifiée Intégrale, reliée en temps réel à ton moteur Omni-Sport & Football AI Ultra v6.3 Certifiée Intégrale (https://football-ai-43e33.web.app).\n\nTu peux m'envoyer une 📸 Capture Betclic / Winamax / 1xBet / Sportcash pour extraire 1 SEUL Pari Définitif optimal, lancer les 🔴 Vidéos & flux Live des matchs EN COURS uniquement pour parier en direct avant la fin du match, démarrer un 📞 Appel Vocal Mains-Libres, ou interroger les 🌐 7 Sports en direct !",
+      text: "Bonjour ! Je suis Cloé IA Ultra v6.4 Certifiée Intégrale, reliée en temps réel à ton moteur Omni-Sport & Football AI Ultra v6.4 Certifiée Intégrale (https://football-ai-43e33.web.app).\n\nTu peux m'envoyer une 📸 Capture Betclic / Winamax / 1xBet / Sportcash pour extraire 1 SEUL Pari Définitif optimal, lancer les 🔴 Vidéos & flux Live des matchs EN COURS uniquement pour parier en direct avant la fin du match, démarrer un 📞 Appel Vocal Mains-Libres, ou interroger les 🌐 7 Sports en direct !",
       rated: null,
     },
   ]);
@@ -96,27 +93,30 @@ export default function CloeApp() {
           const decoded = JSON.parse(decodeURIComponent(escape(atob(b64))));
           const safeStr = (v, n = 80) => String(v || "").replace(/[<>`]/g, "").slice(0, n);
           if (decoded && typeof decoded === "object") {
+            const cleanCurr =
+              decoded.currency === "EUR" || decoded.currency === "€" ? "EUR" : "XOF";
             const cleanWallet = {
-              currency: safeStr(decoded.currency || "FCFA", 8),
-              capital: Math.max(0, Number(decoded.capital) || 50000),
-              stake: Math.max(0, Number(decoded.stake) || 1000),
+              currency: cleanCurr,
+              capital: Math.max(0, Number(decoded.capital) || (cleanCurr === "EUR" ? 100 : 50000)),
+              stake: Math.max(0, Number(decoded.stake) || (cleanCurr === "EUR" ? 10 : 1000)),
               coupon: Array.isArray(decoded.coupon) ? decoded.coupon.slice(0, 12) : [],
             };
             setSyncedWallet(cleanWallet);
             localStorage.setItem("cloe_synced_wallet_v5", JSON.stringify(cleanWallet));
             if (cleanWallet.coupon.length > 0) {
-              const audit = auditCouponSlip(cleanWallet.coupon, rebuildModelState([]));
+              const audit = footBrain.auditTicket(cleanWallet.coupon);
+              const currLbl = cleanWallet.currency === "EUR" ? "€" : "FCFA";
               const warnStake =
                 cleanWallet.stake > cleanWallet.capital * 0.05
-                  ? `\n⚠️ Attention Bankroll : ta mise (${cleanWallet.stake} ${cleanWallet.currency}) dépasse 5% de ton capital (${cleanWallet.capital} ${cleanWallet.currency}) !`
-                  : `\n✅ Ta mise respecte parfaitement la protection Kelly sur ton capital de ${cleanWallet.capital} ${cleanWallet.currency}.`;
+                  ? `\n⚠️ Attention Bankroll : ta mise (${cleanWallet.stake} ${currLbl}) dépasse 5% de ton capital (${cleanWallet.capital} ${currLbl}) !`
+                  : `\n✅ Ta mise respecte parfaitement la protection Kelly sur ton capital de ${cleanWallet.capital} ${currLbl}.`;
               setMessages((prev) => [
                 ...prev,
                 {
                   role: "cloe",
                   text:
-                    `🔗 Synchronisation sécurisée reçue depuis Omni-Sport AI Ultra v6.3 !\n` +
-                    `• Capital suivi : ${cleanWallet.capital} ${cleanWallet.currency} | Ticket reçu : ${cleanWallet.coupon.length} match(s)\n` +
+                    `🔗 Synchronisation sécurisée reçue depuis Omni-Sport AI Ultra v6.4 Certifiée Intégrale !\n` +
+                    `• Capital suivi : ${cleanWallet.capital} ${currLbl} | Ticket reçu : ${cleanWallet.coupon.length} match(s)\n` +
                     (audit
                       ? `• 📸 Audit Survie IA : ${audit.grade} (${audit.auditScore}/100) — Maillon faible : ${audit.weakestLink.matchLabel} (${audit.weakestLink.chosenPct}%)`
                       : "") +
@@ -182,11 +182,11 @@ export default function CloeApp() {
 
     const key = mem.llmApiKey.trim();
     const sysPrompt =
-      `Tu es Cloé v6.3 Certifiée Intégrale, l'assistante IA personnelle brillante, chaleureuse et auto-évolutive de ${mem.userName}. ` +
+      `Tu es Cloé v6.4 Certifiée Intégrale, l'assistante IA personnelle brillante, chaleureuse et auto-évolutive de ${mem.userName}. ` +
       `Tu réponds toujours en français clair, structuré et précis. ` +
       `Règles apprises par Cloé : ${mem.lessons.join(" | ")}. ` +
       `Notes actives de l'utilisateur : ${mem.notes.filter((n) => !n.done).map((n) => n.text).join(" ; ")}. ` +
-      `Données exactes calculées en temps réel par Omni-Sport & Football AI Ultra v6.3 Certifiée Intégrale : ${groundedContext}`;
+      `Données exactes calculées en temps réel par Omni-Sport & Football AI Ultra v6.4 Certifiée Intégrale : ${groundedContext}`;
 
     try {
       if (mem.llmProvider === "gemini") {
@@ -286,15 +286,19 @@ export default function CloeApp() {
 
       // 2.5 Audit Bankroll & Ticket synchronisé
       if (lower.includes("bankroll") || lower.includes("audit") || lower.includes("maillon")) {
-        const audit = auditCouponSlip(syncedWallet.coupon || [], rebuildModelState([]));
-        const maxSafe = Math.round(syncedWallet.capital * 0.04);
+        const audit = footBrain.auditTicket(syncedWallet.coupon || []);
+        const currLbl = syncedWallet.currency === "EUR" || syncedWallet.currency === "€" ? "€" : "FCFA";
+        const maxSafe =
+          currLbl === "€"
+            ? Math.round(syncedWallet.capital * 0.04 * 100) / 100
+            : Math.round(syncedWallet.capital * 0.04);
         const txt = audit
           ? `💼 Audit Bankroll & Ticket Synchronisé :\n` +
-            `• Capital suivi : ${syncedWallet.capital} ${syncedWallet.currency} (Mise max conseillée 4% : ${maxSafe} ${syncedWallet.currency})\n` +
+            `• Capital suivi : ${syncedWallet.capital} ${currLbl} (Mise max conseillée 4% : ${maxSafe} ${currLbl})\n` +
             `• Note de Survie IA : ${audit.grade} (${audit.auditScore}/100)\n` +
             `• ⚠️ Maillon faible détecté : ${audit.weakestLink.matchLabel} (${audit.weakestLink.chosenLabel} • ${audit.weakestLink.chosenPct}%)\n` +
             `• 🛡️ Alternative plus sûre : ${audit.weakestLink.saferAlternative.label} (${audit.weakestLink.saferAlternative.pct}%)`
-          : `💼 Portefeuille suivi : ${syncedWallet.capital} ${syncedWallet.currency}. Mise idéale Kelly recommandée par ticket sécurité : ${maxSafe} ${syncedWallet.currency}. Ouvre Football AI puis clique sur « Ouvrir Cloé IA Ultra » pour m'envoyer ton coupon actif en 1 clic !`;
+          : `💼 Portefeuille suivi : ${syncedWallet.capital} ${currLbl}. Mise idéale Kelly recommandée par ticket sécurité : ${maxSafe} ${currLbl}. Ouvre Football AI puis clique sur « Ouvrir Cloé IA Ultra » pour m'envoyer ton coupon actif en 1 clic !`;
         setMessages((prev) => [...prev, { role: "cloe", text: txt, rated: null }]);
         speak(txt.slice(0, 260));
         setLoading(false);
@@ -305,14 +309,16 @@ export default function CloeApp() {
       if (lower.includes("ticket") || lower.includes("combin")) {
         const briefing = await footBrain.getDailyBriefing();
         setDailyBriefing(briefing);
-        const tickets = generateThreeDailyTickets(
-          [...briefing.todayMatches, ...briefing.tomorrowMatches],
-          rebuildModelState([])
-        );
+        const livePool = [...(briefing.todayMatches || []), ...(briefing.tomorrowMatches || [])];
+        const tickets = footBrain.generateTickets(livePool);
         const safe = tickets[0];
         const value = tickets[1];
+        const sourceNote =
+          livePool.length < 2
+            ? "ℹ️ Moins de 2 rencontres en direct actuellement : sélection calibrée sur les affiches de référence.\n\n"
+            : "";
         const txt =
-          `🎰 Voici mes 2 meilleurs Tickets IA calibrés aujourd'hui :\n\n` +
+          `🎰 Voici mes 2 meilleurs Tickets IA calibrés aujourd'hui :\n${sourceNote}` +
           `1) ${safe.badge} (@${safe.totalOdd.toFixed(2)} • Fiabilité ${safe.winProbPct}%)\n` +
           safe.items.map((i) => `   • ${i.home} vs ${i.away} → ${i.selectedMarket.label} (${i.selectedMarket.pct}%)`).join("\n") +
           `\n\n2) ${value.badge} (@${value.totalOdd.toFixed(2)} • Fiabilité ${value.winProbPct}%)\n` +
@@ -325,7 +331,7 @@ export default function CloeApp() {
         return;
       }
 
-      // 4. Interrogation directe du cerveau Football AI Ultra v4 + enrichissement LLM optionnel
+      // 4. Interrogation directe du cerveau Football AI Ultra v6.4 + enrichissement LLM optionnel
       const footReply = await footBrain.ask(q);
       const llmEnhanced = await callOptionalCloudLlm(q, footReply.answerText);
       const finalText = llmEnhanced || footReply.answerText;
@@ -457,7 +463,7 @@ export default function CloeApp() {
                   </span>
                 </div>
                 <div style={{ fontSize: 11.5, color: "#94a3b8" }}>
-                  Reliée en direct à Omni-Sport &amp; Football AI Ultra v6.3 Certifiée Intégrale • 🔴 Vidéo Direct &amp; 📸 Betclic
+                  Reliée en direct à Omni-Sport &amp; Football AI Ultra v6.4 Certifiée Intégrale • 🔴 Vidéo Direct &amp; 📸 Betclic
                 </div>
               </div>
             </div>
@@ -577,7 +583,7 @@ export default function CloeApp() {
       <main style={{ maxWidth: 960, margin: "18px auto 0", padding: "0 14px" }}>
         {section === "assistant" && (
           <div style={{ display: "grid", gap: 14 }}>
-            {/* Suggestions rapides v5.0 Legend */}
+            {/* Suggestions rapides v6.4 Certifiée Intégrale */}
             <div style={{ display: "flex", gap: 7, flexWrap: "wrap" }}>
               {[
                 "🏆 Qui va gagner la CAN et la Champions League ?",
@@ -735,7 +741,7 @@ export default function CloeApp() {
               ))}
               {loading && (
                 <div style={{ color: "#38bdf8", fontSize: 12.5 }}>
-                  ✨ Cloé réfléchit et interroge Omni-Sport &amp; Football AI Ultra v6.3 Certifiée Intégrale...
+                  ✨ Cloé réfléchit et interroge Omni-Sport &amp; Football AI Ultra v6.4 Certifiée Intégrale...
                 </div>
               )}
             </div>
@@ -808,20 +814,34 @@ export default function CloeApp() {
                       { role: "user", text: `📸 Capture Bookmaker envoyée : ${f.name}` },
                     ]);
                     try {
-                      const res = await footBrain.analyzeBookmakerScreenshot(f);
-                      if (!res || !res.ok || !res.verdict) {
+                      const livePool = [
+                        ...(dailyBriefing?.todayMatches || []),
+                        ...(dailyBriefing?.tomorrowMatches || []),
+                      ];
+                      const res = await footBrain.analyzeBookmakerScreenshot(f, {
+                        geminiKey: mem.llmProvider === "gemini" ? mem.llmApiKey : "",
+                        liveMatches: livePool,
+                        capital: syncedWallet.capital,
+                        currency: syncedWallet.currency,
+                      });
+                      const verdict = res?.verdict || res;
+                      if (!res || !res.ok || !verdict) {
                         const warnTxt =
                           `🛡️ ${res?.error || "Impossible d'identifier avec certitude les équipes ou les cotes sur cette capture."}`;
                         setMessages((prev) => [...prev, { role: "cloe", text: warnTxt, rated: null }]);
                         speak("Je préfère ne pas deviner les équipes au hasard pour protéger ton capital.");
                         return;
                       }
-                      const { verdict } = res;
+                      const currUnit = verdict.currency === "EUR" ? "€" : "FCFA";
+                      const stakeStr =
+                        verdict.currency === "EUR"
+                          ? Number(verdict.definitiveBet?.recommendedStake || 0).toFixed(2)
+                          : Math.round(Number(verdict.definitiveBet?.recommendedStake || 0)).toLocaleString("fr-FR");
                       const replyTxt =
                         `${verdict.verdictHeadline}\n\n` +
                         `${verdict.verdictExplanation}\n\n` +
                         (verdict.definitiveBet
-                          ? `💰 Mise 1/4 Kelly conseillée : ${verdict.definitiveBet.recommendedStake.toLocaleString("fr-FR")} FCFA.`
+                          ? `💰 Mise 1/4 Kelly conseillée : ${stakeStr} ${currUnit}.`
                           : "🛡️ Capital préservé à 100 %.");
                       setMessages((prev) => [...prev, { role: "cloe", text: replyTxt, rated: null }]);
                       speak(verdict.verdictHeadline);
@@ -1025,7 +1045,7 @@ export default function CloeApp() {
 
             {dailyBriefing && (
               <div style={{ fontSize: 12, color: "#6ee7b7" }}>
-                ✓ Synchronisation active avec Omni-Sport &amp; Football AI Ultra v6.3 Certifiée Intégrale ({dailyBriefing.modelEvolution.memorizedCount} matchs calibrés).
+                ✓ Synchronisation active avec Omni-Sport &amp; Football AI Ultra v6.4 Certifiée Intégrale ({dailyBriefing.modelEvolution.memorizedCount} matchs calibrés).
               </div>
             )}
           </div>

@@ -422,7 +422,7 @@ export default function MatchTruthDossierModal({ match, onClose, onAddCoupon, on
                   lineHeight: 1.45,
                 }}
               >
-                🛡️ <strong>Protocole Zéro-Hallucination v6.0 :</strong> {cert.strictPolicyNote}
+                🛡️ <strong>Protocole Zéro-Hallucination v6.4 Certifiée Intégrale :</strong> {cert.strictPolicyNote}
               </div>
             </div>
           </div>

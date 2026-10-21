@@ -67,6 +67,7 @@ export function computeLiveInPlayPrediction(preMatchPred, liveState = {}) {
 
   // Distribution exacte des buts RESTANTS via matrice Dixon-Coles
   const remMatrix = buildDixonColesMatrix(remXgH, remXgA, -0.05);
+  const grid = remMatrix.rawMatrix || [];
 
   let pWinH = 0;
   let pDraw = 0;
@@ -76,9 +77,9 @@ export function computeLiveInPlayPrediction(preMatchPred, liveState = {}) {
   let pBothScoreFromNow = 0;
   const finalScoreCandidates = [];
 
-  for (let addH = 0; addH < remMatrix.length; addH++) {
-    for (let addA = 0; addA < remMatrix[addH].length; addA++) {
-      const p = remMatrix[addH][addA];
+  for (let addH = 0; addH < grid.length; addH++) {
+    for (let addA = 0; addA < grid[addH].length; addA++) {
+      const p = grid[addH][addA];
       const finalH = scoreH + addH;
       const finalA = scoreA + addA;
 
@@ -95,13 +96,25 @@ export function computeLiveInPlayPrediction(preMatchPred, liveState = {}) {
           score: `${finalH} - ${finalA}`,
           finalH,
           finalA,
+          prob: p,
           pct: Math.round(p * 1000) / 10,
         });
       }
     }
   }
 
-  finalScoreCandidates.sort((a, b) => b.pct - a.pct);
+  const totalMass = pWinH + pDraw + pWinA;
+  if (totalMass > 0) {
+    pWinH /= totalMass;
+    pDraw /= totalMass;
+    pWinA /= totalMass;
+  } else {
+    pWinH = scoreH > scoreA ? 1 : 0;
+    pDraw = scoreH === scoreA ? 1 : 0;
+    pWinA = scoreA > scoreH ? 1 : 0;
+  }
+
+  finalScoreCandidates.sort((a, b) => b.prob - a.prob);
   const liveProbs = roundProbabilitiesTo100([pWinH * 100, pDraw * 100, pWinA * 100]);
 
   // Probabilité du PROCHAIN but (Processus de Poisson compétitif)

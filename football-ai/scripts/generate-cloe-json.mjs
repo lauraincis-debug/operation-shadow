@@ -21,7 +21,7 @@ const teamsCount = Object.keys(CLUBS_DB).length;
 const featuredMatches = [
   ["ASEC Mimosas", "Al Ahly", "caf"],
   ["PSG", "Marseille", "ligue1"],
-  ["Real Madrid", "Barcelone", "laliga"],
+  ["Real Madrid", "Barcelone", "liga"],
   ["Liverpool", "Arsenal", "premier"],
   ["Al-Hilal", "Al-Nassr", "saudi"],
   ["Côte d'Ivoire", "Maroc", "international"],
@@ -57,9 +57,11 @@ const tournaments = Object.keys(TOURNAMENT_PRESETS).reduce((acc, key) => {
 const dailyTickets = generateThreeDailyTickets([], modelState);
 
 const payload = {
-  engine: "Football AI Ultra v5.0 Legend",
+  engine: "Omni-Sport & Football AI Ultra v6.4 Certifiée Intégrale",
+  version: "6.4.0",
   updatedAt: new Date().toISOString(),
   sourceAppUrl: "https://football-ai-43e33.web.app",
+  cloeAbidjanUrl: "https://cloe-agent-abidjan.web.app",
   cloeStandaloneUrl: "https://cloe-ia-ultra.web.app",
   bridgeScriptUrl: "https://football-ai-43e33.web.app/cloe-bridge.js",
   teamsCount,
@@ -68,7 +70,7 @@ const payload = {
   dailyTickets,
   tournaments,
   voiceSummaryFr:
-    `Point Football AI Ultra v5 : ${teamsCount} clubs et nations actifs. ` +
+    `Point Omni-Sport & Football AI Ultra v6.4 Certifiée Intégrale : ${teamsCount} clubs et nations actifs. ` +
     `Favori numéro 1 CAN sur 5 000 simulations : ${tournaments.can.topFavorites[0].team} (${tournaments.can.topFavorites[0].championPct}%). ` +
     `Favori Champions League : ${tournaments.ucl.topFavorites[0].team} (${tournaments.ucl.topFavorites[0].championPct}%). ` +
     `Ticket Sécurité IA du jour prêt à cote totale ${dailyTickets[0].totalOdd.toFixed(2)}.`,

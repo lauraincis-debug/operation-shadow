@@ -1,5 +1,5 @@
 // ============================================================================
-// OMNI-SPORT QUANTITATIVE ENGINE v6.0
+// OMNI-SPORT QUANTITATIVE ENGINE v6.4 Certifiée Intégrale
 // Modèles probabilistes dédiés par discipline sportive (Zéro Hallucination) :
 //   ⚽ Football       : Dixon-Coles + Elo + Forme Live + Blessures + Cotes Shin
 //   🏀 Basketball     : Gaussien Pace-Adjusted Margin (NBA, WNBA, NCAA, EuroLeague)
@@ -273,18 +273,17 @@ export function predictOmniSportMatch(match) {
       bookOdd: mkOdd(coverPlus15),
     });
   } else if (sport === "mma") {
-    const finishProb = 0.58;
+    const mmaSafeProb = clamp(favProb * 0.92 + 0.06, 0.58, 0.92);
     markets.push({
       code: "MMA_FINISH",
       group: "Méthode / Durée",
       label: `${favName} vainqueur ou Combat > 1.5 rounds`,
-      prob: clamp(favProb * 0.92 + 0.06, 0.58, 0.92),
-      pct: Math.round(clamp(favProb * 0.92 + 0.06, 0.58, 0.92) * 100),
-      fairOdd: 1.32,
-      marketOdd: mkOdd(clamp(favProb * 0.92 + 0.06, 0.58, 0.92)),
-      bookOdd: mkOdd(clamp(favProb * 0.92 + 0.06, 0.58, 0.92)),
+      prob: mmaSafeProb,
+      pct: Math.round(mmaSafeProb * 100),
+      fairOdd: Math.round((1 / mmaSafeProb) * 100) / 100,
+      marketOdd: mkOdd(mmaSafeProb),
+      bookOdd: mkOdd(mmaSafeProb),
     });
-    void finishProb;
     void dogName;
   }
 
@@ -342,7 +341,11 @@ export function predictOmniSportMatch(match) {
     league: match.league,
     probs,
     rawProbs: [rawWinH, 0, rawWinA],
-    xg: { home: Number(projHome), away: Number(projAway) },
+    xg: {
+      home: Number(projHome),
+      away: Number(projAway),
+      total: Math.round((Number(projHome) + Number(projAway)) * 10) / 10,
+    },
     projectionUnit: cfg.unit,
     expectedTotal,
     expectedMargin: Math.round(expectedMargin * 10) / 10,
@@ -352,14 +355,24 @@ export function predictOmniSportMatch(match) {
     reliabilityGate,
     truthCertificate,
     valueAnalysis: {
-      bestValue:
-        recommendedMarket && recommendedMarket.prob * recommendedMarket.bookOdd > 1.02
-          ? {
-              isValue: true,
-              label: recommendedMarket.label,
-              edgePct: Math.round((recommendedMarket.prob * recommendedMarket.bookOdd - 1) * 1000) / 10,
-            }
-          : null,
+      bestValue: (() => {
+        if (!recommendedMarket || recommendedMarket.prob * recommendedMarket.bookOdd <= 1.02) {
+          return null;
+        }
+        const edge = recommendedMarket.prob * recommendedMarket.bookOdd - 1;
+        const evPct = Math.round(edge * 1000) / 10;
+        const fullKelly = edge / Math.max(0.05, recommendedMarket.bookOdd - 1);
+        return {
+          isValue: true,
+          code: recommendedMarket.code,
+          label: recommendedMarket.label,
+          bookOdd: recommendedMarket.bookOdd,
+          fairOdd: recommendedMarket.fairOdd,
+          evPct,
+          edgePct: evPct,
+          kellyPct: Math.max(0, Math.round(fullKelly * 0.25 * 1000) / 10),
+        };
+      })(),
     },
     factorSummary: {
       homeRecord: match.homeRecord || "N/C",

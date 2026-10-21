@@ -104,7 +104,10 @@ async function deployDirectRest(token, projectId, dirPath) {
       body: {
         config: {
           rewrites: [{ glob: "**", path: "/index.html" }],
-          headers: [{ glob: "/index.html", headers: { "Cache-Control": "no-cache" } }],
+          headers: [
+            { glob: "/index.html", headers: { "Cache-Control": "no-cache" } },
+            { glob: "/sw.js", headers: { "Cache-Control": "no-cache" } },
+          ],
         },
       },
     }
@@ -149,7 +152,7 @@ async function deployDirectRest(token, projectId, dirPath) {
       method: "POST",
       token,
       quotaProject: projectId,
-      body: { message: "Cloé IA Ultra v4.0 — Assistante Personnelle Vocale & Auto-Évolutive" },
+      body: { message: "Cloé IA Ultra v6.4 Certifiée Intégrale — Omni-Sport, Vidéo Live & Scanner Betclic" },
     }
   );
   if (!rel.ok) {

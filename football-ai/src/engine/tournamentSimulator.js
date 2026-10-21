@@ -9,6 +9,7 @@ import { computeFullPrediction } from "./predictor.js";
 export const TOURNAMENT_PRESETS = {
   can: {
     id: "can",
+    name: "🌍 Coupe d'Afrique des Nations (CAN — Phase Finale 16 Nations)",
     title: "🌍 Coupe d'Afrique des Nations (CAN — Phase Finale 16 Nations)",
     league: "international",
     roundOf16: [
@@ -24,6 +25,7 @@ export const TOURNAMENT_PRESETS = {
   },
   ucl: {
     id: "ucl",
+    name: "🇪🇺 UEFA Champions League (Phase Finale 16 Clubs)",
     title: "🇪🇺 UEFA Champions League (Phase Finale 16 Clubs)",
     league: "ucl",
     roundOf16: [
@@ -39,6 +41,7 @@ export const TOURNAMENT_PRESETS = {
   },
   worldcup: {
     id: "worldcup",
+    name: "🌎 Coupe du Monde FIFA (Tableau Final Choc)",
     title: "🌎 Coupe du Monde FIFA (Tableau Final Choc)",
     league: "international",
     roundOf16: [
@@ -78,8 +81,18 @@ function precomputePairWinProb(teamA, teamB, league, modelState, cache) {
 export function simulateKnockoutTournament(roundOf16Pairs, league = "international", modelState, runs = 10000) {
   const pairCache = new Map();
   const stats = {};
+  const seenSlots = new Map();
+  const sanitizedPairs = (roundOf16Pairs || []).map(([rawA, rawB]) => {
+    const cleanSlot = (rawName, fallback) => {
+      const base = String(rawName || fallback).trim() || fallback;
+      const prevCount = seenSlots.get(base) || 0;
+      seenSlots.set(base, prevCount + 1);
+      return prevCount === 0 ? base : `${base} (#${prevCount + 1})`;
+    };
+    return [cleanSlot(rawA, "Équipe A"), cleanSlot(rawB, "Équipe B")];
+  });
 
-  for (const [a, b] of roundOf16Pairs) {
+  for (const [a, b] of sanitizedPairs) {
     for (const t of [a, b]) {
       stats[t] = { team: t, qf: 0, sf: 0, final: 0, champion: 0 };
     }
@@ -95,7 +108,7 @@ export function simulateKnockoutTournament(roundOf16Pairs, league = "internation
   };
 
   const qfTeamsDet = [];
-  for (const [a, b] of roundOf16Pairs) {
+  for (const [a, b] of sanitizedPairs) {
     const info = precomputePairWinProb(a, b, league, modelState, pairCache);
     const winner = info.pAdvanceA >= 0.5 ? a : b;
     deterministicBracket.r16.push({
@@ -160,8 +173,8 @@ export function simulateKnockoutTournament(roundOf16Pairs, league = "internation
   for (let r = 0; r < runs; r++) {
     // Huitièmes -> Quarts
     const qf = [];
-    for (let i = 0; i < roundOf16Pairs.length; i++) {
-      const [a, b] = roundOf16Pairs[i];
+    for (let i = 0; i < sanitizedPairs.length; i++) {
+      const [a, b] = sanitizedPairs[i];
       const { pAdvanceA } = precomputePairWinProb(a, b, league, modelState, pairCache);
       const w = Math.random() < pAdvanceA ? a : b;
       stats[w].qf += 1;

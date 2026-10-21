@@ -4,16 +4,18 @@ import { auditCouponSlip, parseExternalTicketText } from "../engine/ticketAudito
 
 const BANKROLL_KEY = "football_ai_bankroll_v4";
 const EUR_TO_XOF_RATE = 655.957;
+const normCurr = (c) => (c === "EUR" || c === "€" ? "EUR" : "XOF");
 
 function loadBankrollState(currency) {
+  const activeCurr = normCurr(currency);
   try {
     const raw = localStorage.getItem(BANKROLL_KEY);
     if (raw) {
       const parsed = JSON.parse(raw);
       return {
-        unitCurrency: parsed.unitCurrency || "XOF",
-        initialCapital: Number(parsed.initialCapital) || 50000,
-        currentCapital: Number(parsed.currentCapital) || 50000,
+        unitCurrency: normCurr(parsed.unitCurrency || activeCurr),
+        initialCapital: Number(parsed.initialCapital) || (activeCurr === "EUR" ? 100 : 50000),
+        currentCapital: Number(parsed.currentCapital) || (activeCurr === "EUR" ? 100 : 50000),
         lastSettledFingerprint: parsed.lastSettledFingerprint || "",
         ledger: Array.isArray(parsed.ledger) ? parsed.ledger : [],
       };
@@ -21,9 +23,9 @@ function loadBankrollState(currency) {
   } catch {
     // ignore
   }
-  const startCap = currency === "EUR" ? 100 : 50000;
+  const startCap = activeCurr === "EUR" ? 100 : 50000;
   return {
-    unitCurrency: currency || "XOF",
+    unitCurrency: activeCurr,
     initialCapital: startCap,
     currentCapital: startCap,
     lastSettledFingerprint: "",
@@ -65,12 +67,13 @@ export default function BankrollAndTicketsPanel({
   // Correctif Audit #2 [AUDIT2-FIN-02] : Conversion monétaire exacte automatique XOF <-> EUR (1 € = 655,957 FCFA) !
   // Ne transforme plus JAMAIS 50 000 FCFA en 50 000 € !
   useEffect(() => {
-    const activeCurr = currency || "XOF";
-    if (!bankroll.unitCurrency || bankroll.unitCurrency === activeCurr) return;
+    const activeCurr = normCurr(currency);
+    const prevUnit = normCurr(bankroll.unitCurrency);
+    if (prevUnit === activeCurr && bankroll.unitCurrency === activeCurr) return;
     const factor =
-      bankroll.unitCurrency === "XOF" && activeCurr === "EUR"
+      prevUnit === "XOF" && activeCurr === "EUR"
         ? 1 / EUR_TO_XOF_RATE
-        : bankroll.unitCurrency === "EUR" && activeCurr === "XOF"
+        : prevUnit === "EUR" && activeCurr === "XOF"
           ? EUR_TO_XOF_RATE
           : 1;
     const roundVal = (v) =>
@@ -93,7 +96,7 @@ export default function BankrollAndTicketsPanel({
   }, [currency, bankroll]);
 
   const fmtMoney = (val) =>
-    currency === "EUR"
+    normCurr(currency) === "EUR"
       ? `${Number(val).toFixed(2)} €`
       : `${Math.round(Number(val)).toLocaleString("fr-FR")} FCFA`;
 

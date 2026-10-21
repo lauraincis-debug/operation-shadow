@@ -11,13 +11,17 @@ export default function ProMarketsPanel({ pred, matchContext, onAddCustomMarket 
 
   const pushPick = (label, pct, odd) => {
     if (!onAddCustomMarket) return;
+    const prob = Math.min(0.98, Math.max(0.03, Number(pct) / 100));
     onAddCustomMarket({
+      sport: "soccer",
       home: pred.home,
       away: pred.away,
       league: pred.league,
       probs: pred.probs,
+      rawProbs: pred.rawProbs || pred.probs.map((p) => p / 100),
       selectedMarket: {
         label,
+        prob,
         pct,
         bookOdd: odd,
       },

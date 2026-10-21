@@ -1,5 +1,5 @@
 // ============================================================================
-// MOTEUR ANTI-HALLUCINATION, ANTI-BIAIS & GARDE D'ABSTENTION QUANTITATIVE v6.0
+// MOTEUR ANTI-HALLUCINATION, ANTI-BIAIS & GARDE D'ABSTENTION QUANTITATIVE v6.4 Certifiée Intégrale
 // ============================================================================
 // Élimine mathématiquement :
 // 1. Hallucinations factuelles (aucune date, stade, blessure ou H2H inventé)

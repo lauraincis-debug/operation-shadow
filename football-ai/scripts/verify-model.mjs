@@ -632,7 +632,7 @@ assert.throws(
   "Un match terminé est toujours 100 % bloqué !"
 );
 
-// 15d. [AUDIT3-P0-02] Vérification statique de TOUTES les directives CSP (Firebase + Workflow GitHub Actions)
+// 15d. [AUDIT3-P0-02 + AUDIT4-P1-05] Vérification statique de TOUTES les directives CSP (Firebase + Workflow GitHub Actions)
 const fbCfgText = fsNode.readFileSync(pathNode.resolve("firebase.json"), "utf8");
 const wfCfgText = fsNode.readFileSync(pathNode.resolve("../.github/workflows/firebase-auto-deploy.yml"), "utf8");
 for (const [cfgName, rawCfg] of [["firebase.json", fbCfgText], ["firebase-auto-deploy.yml", wfCfgText]]) {
@@ -641,10 +641,16 @@ for (const [cfgName, rawCfg] of [["firebase.json", fbCfgText], ["firebase-auto-d
   assert.ok(cfgContent.includes("worker-src 'self' blob:"), `${cfgName} DOIT inclure worker-src 'self' blob: !`);
   assert.ok(cfgContent.includes("https://cdn.jsdelivr.net"), `${cfgName} DOIT inclure https://cdn.jsdelivr.net !`);
   assert.ok(cfgContent.includes("https://tessdata.projectnaptha.com"), `${cfgName} DOIT inclure https://tessdata.projectnaptha.com !`);
+  assert.equal(
+    (cfgContent.match(/https:\/\/api\.frankfurter\.dev/g) || []).length >= (cfgName === "firebase.json" ? 3 : 2),
+    true,
+    `${cfgName} DOIT autoriser https://api.frankfurter.dev dans connect-src sur tous les sites !`
+  );
 }
 
-// 15e. [AUDIT3-P1-04] Vérification physique de 100 % des fichiers précachés par `cloe-abidjan/sw.js`
+// 15e. [AUDIT3-P1-04 + AUDIT4-P2-05] Vérification physique de 100 % des fichiers précachés par `cloe-abidjan/sw.js` (y compris javis-voice.js & fonts.css)
 const abjSw = fsNode.readFileSync(pathNode.resolve("../cloe-abidjan/sw.js"), "utf8");
+assert.ok(abjSw.includes("./javis-voice.js") && abjSw.includes("./fonts.css"), "cloe-abidjan/sw.js DOIT précacher ./javis-voice.js et ./fonts.css !");
 const swAssetsMatch = abjSw.match(/ASSETS\s*=\s*\[([^\]]+)\]/);
 assert.ok(swAssetsMatch, "ASSETS trouvé dans cloe-abidjan/sw.js");
 const swAssets = swAssetsMatch[1]
@@ -656,24 +662,166 @@ for (const relAsset of swAssets) {
   assert.ok(fsNode.existsSync(fullAssetPath), `Asset Service Worker manquant sur disque : ${fullAssetPath}`);
 }
 
-// 15f. Zéro dérive de version entre les 3 applications (FootballAI + Cloé IA Ultra + Cloé Abidjan = v6.3 Certifiée Intégrale)
+// 15f. Zéro dérive de version entre TOUTES les applications et composants (v6.4 Certifiée Intégrale, zéro v6.0/v6.1/v6.2/v6.3)
 for (const uiPath of [
   pathNode.resolve("src/FootballAI.jsx"),
   pathNode.resolve("src/cloe-standalone/CloeApp.jsx"),
   pathNode.resolve("src/services/cloeBridge.js"),
+  pathNode.resolve("src/components/CloeBridgeTab.jsx"),
+  pathNode.resolve("src/components/LiveMatchesTab.jsx"),
+  pathNode.resolve("src/components/MatchTruthDossierModal.jsx"),
+  pathNode.resolve("index.html"),
+  pathNode.resolve("cloe-index.html"),
+  pathNode.resolve("package.json"),
   pathNode.resolve("../cloe-abidjan/index.html"),
 ]) {
   const uiTxt = fsNode.readFileSync(uiPath, "utf8");
-  assert.ok(uiTxt.includes("v6.3"), `Version v6.3 requise dans ${uiPath}`);
-  assert.equal(/v6\.[012]\b/.test(uiTxt), false, `Zéro résidu v6.0/v6.1/v6.2 autorisé dans ${uiPath}`);
+  assert.ok(/v6\.4|6\.4\.0/.test(uiTxt), `Version v6.4 / 6.4.0 requise dans ${uiPath}`);
+  assert.equal(/v6\.[0123]\b/.test(uiTxt), false, `Zéro résidu v6.0/v6.1/v6.2/v6.3 autorisé dans ${uiPath}`);
 }
 
-console.log(
-  `✓ Audit Complet #3 (v6.3 CERTIFIÉE INTÉGRALE) validé à 100% : Bridge OCR Betclic sans crash ✅ | CSP 'wasm-unsafe-eval' sur les 3 domaines ✅ | Zéro pollution videoInsight inter-matchs ✅ | Pari Live 0-0 Télémétrique ("${liveZeroZeroInsight.liveBetRecommendation.label}") ✅ | 100% Assets SW vérifiés sur disque ✅ !`
+// 16. AUDIT FORENSIQUE #4 — CERTIFICATION INTÉGRALE ZÉRO-DÉFAUT v6.4.0 (P0-01 À P2-05)
+const stateV64 = rebuildModelState([]);
+const predPsgOmV64 = computeFullPrediction("PSG", "Marseille", "ligue1", stateV64);
+
+// 16a. [P0-01] Audit & Coupon Omni-Sport sans rawProbs (NBA, Tennis, UFC + #sync= cross-origin) -> ZÉRO TypeError !
+const mixedOmniCoupon = [
+  {
+    id: 1,
+    sport: "basketball",
+    home: "Raptors",
+    away: "Bulls",
+    league: "nba",
+    selectedMarket: { code: "SPREAD_HOME", label: "Raptors +7.5 pts", pct: 74, bookOdd: 1.52 },
+  },
+  {
+    id: 2,
+    sport: "mma",
+    home: "Jon Jones",
+    away: "Ciryl Gane",
+    league: "ufc",
+    selectedMarket: { code: "ML_HOME", label: "Jon Jones vainqueur", pct: 68, bookOdd: 1.62 },
+  },
+  {
+    id: 3,
+    sport: "soccer",
+    home: "PSG",
+    away: "Marseille",
+    league: "ligue1",
+    selectedMarket: { code: "DC_1X", label: "1X", pct: 78, bookOdd: 1.32 },
+  },
+];
+const omniAudit = auditCouponSlip(mixedOmniCoupon, stateV64);
+assert.ok(omniAudit && Number.isFinite(omniAudit.auditScore) && omniAudit.auditScore > 0, "Audit Coupon Omni-Sport sans rawProbs fonctionne à 100 % sans crash !");
+assert.ok(omniAudit.weakestLink?.saferAlternative?.label, "Alternative plus sûre calculée même sur les jambes NBA/MMA !");
+
+// 16b. [P0-02] Moteur In-Play computeLiveInPlayPrediction() sur remMatrix.rawMatrix 9×9 complet (somme exacte = 100 %)
+for (const [minTest, sh, sa] of [[12, 0, 0], [54, 1, 0], [81, 2, 2]]) {
+  const lp = computeLiveInPlayPrediction(predPsgOmV64, {
+    minute: minTest,
+    scoreHome: sh,
+    scoreAway: sa,
+    redCardsHome: 0,
+    redCardsAway: 0,
+    momentumHome: 60,
+  });
+  assert.equal(lp.liveProbs.length, 3);
+  assert.equal(lp.liveProbs[0] + lp.liveProbs[1] + lp.liveProbs[2], 100, `Somme liveProbs = 100% à la ${minTest}e !`);
+  assert.equal(
+    lp.nextGoalProbs[0] + lp.nextGoalProbs[1] + lp.nextGoalProbs[2],
+    100,
+    `Somme prochain but = 100% à la ${minTest}e !`
+  );
+  assert.ok(Number.isFinite(lp.overCurrentPlus05Pct) && lp.overCurrentPlus05Pct >= 1 && lp.overCurrentPlus05Pct <= 99);
+}
+
+// 16c. [P0-03] Tournoi Knockout : preset.name défini partout + anti-collision sur doublon de club en R16
+for (const [tk, tv] of Object.entries(TOURNAMENT_PRESETS)) {
+  assert.ok(typeof tv.name === "string" && tv.name.length > 5, `TOURNAMENT_PRESETS.${tk}.name doit être défini !`);
+}
+const dupBracket = [
+  ["PSG", "Barcelone"],
+  ["PSG", "Arsenal"],
+  ["Real Madrid", "Liverpool"],
+  ["Bayern Munich", "Inter Milan"],
+  ["Manchester City", "Atletico Madrid"],
+  ["Leverkusen", "Dortmund"],
+  ["Juventus", "AC Milan"],
+  ["Benfica", "Porto"],
+];
+const dupSim = simulateKnockoutTournament(dupBracket, "ucl", stateV64, 800);
+const totalChampPct = dupSim.leaderboard.reduce((s, r) => s + r.championPct, 0);
+assert.equal(dupSim.leaderboard.length, 16, "Les 16 slots du tableau restent 100 % distincts même en cas de doublon !");
+assert.ok(totalChampPct >= 99 && totalChampPct <= 101, `Somme des champions = ${totalChampPct.toFixed(1)}% (zéro écrasement de clé !)`);
+
+// 16d. [P0-06] Exactitude mathématique OmniSport (MMA fairOdd distinct, xg.total, valueAnalysis.bestValue) + Betclic OCR Totals NBA vs Soccer + "X ou Y" -> DC_12
+const omniModV64 = await import("../src/engine/omniSportEngine.js");
+const mmaPred = omniModV64.predictOmniSportMatch({
+  sport: "mma",
+  home: "Islam Makhachev",
+  away: "Arman Tsarukyan",
+  league: "ufc",
+  odds: { home: 1.55, away: 2.65 },
+});
+assert.ok(Number.isFinite(mmaPred.xg?.total), "predictOmniSportMatch exporte xg.total !");
+assert.ok("bestValue" in (mmaPred.valueAnalysis || {}), "predictOmniSportMatch exporte valueAnalysis.bestValue !");
+const scrModV64 = await import("../src/engine/bookmakerScreenshotAnalyzer.js");
+const dcParsed = scrModV64.parseBookmakerMarketsFromText("PSG ou Barcelone 1,31\nPlus de 224,5 points 1,88", "PSG", "Barcelone");
+assert.ok(dcParsed.some((o) => o.kind === "12"), '"PSG ou Barcelone" est bien détecté comme Double Chance 12 !');
+const dcShortParsed = scrModV64.parseBookmakerMarketsFromText("OM ou OL 1,33", "OM", "OL");
+assert.ok(dcShortParsed.some((o) => o.kind === "12"), '"OM ou OL" (clubs à 2 lettres) est aussi détecté comme Double Chance 12 !');
+const nbaEval = evaluateScreenshotMarketsAndPickDefinitiveBet({
+  home: "Boston Celtics",
+  away: "Chicago Bulls",
+  sport: "basketball",
+  league: "nba",
+  extractedOptions: [
+    { kind: "OVER", line: 224.5, label: "Plus de 224,5 points", bookOdd: 1.9 },
+    { kind: "UNDER", line: 224.5, label: "Moins de 224,5 points", bookOdd: 1.9 },
+  ],
+});
+assert.equal(nbaEval.sport, "basketball", "Le scanner Betclic route le NBA vers le moteur Gaussien basketball !");
+assert.ok(
+  nbaEval.analyzedOptions[0].trueProbPct > 15 && nbaEval.analyzedOptions[0].trueProbPct < 85,
+  `Total NBA 224.5 pts évalué via loi Normale (${nbaEval.analyzedOptions[0].trueProbPct}%) et NON à 0 % Poisson football !`
 );
 
+// 16e. [P1-01 + P1-03 + P2-04] Pont Cloé v6.4 (accuracyPct réel, errorJournal complet, tickets <2 matchs, Fantasy unicité 100%)
+const v64Evolution = testBrain.getModelEvolution();
+assert.ok(Number.isFinite(v64Evolution.accuracyPct), "getModelEvolution().accuracyPct est un nombre fini (zéro undefined%) !");
+assert.ok(Number.isFinite(v64Evolution.marketAccuracyPct), "getModelEvolution().marketAccuracyPct est un nombre fini !");
+const singleMatchTickets = testBrain.generateTickets([
+  {
+    sport: "basketball",
+    home: "Boston Celtics",
+    away: "Los Angeles Lakers",
+    league: "nba",
+    odds: { home: 1.62, away: 2.35 },
+  },
+]);
+assert.equal(singleMatchTickets.length, 3, "generateTickets fonctionne même avec 1 seul match live (NBA inclus) !");
+assert.ok(singleMatchTickets[0].items.length >= 2, "Le Ticket Sécurité contient toujours au moins 2 jambes !");
+
+const playersModV64 = await import("../src/data/players.js");
+const playerIds = playersModV64.FANTASY_PLAYERS.map((p) => p.id);
+const playerNames = playersModV64.FANTASY_PLAYERS.map((p) => p.name);
+assert.equal(new Set(playerIds).size, playerIds.length, "100 % des IDs joueurs Fantasy sont uniques (zéro collision mid-11..mid-14) !");
+assert.equal(new Set(playerNames).size, playerNames.length, "100 % des noms joueurs Fantasy sont uniques (zéro doublon Simon Adingra) !");
+assert.equal(playersModV64.FANTASY_PLAYERS.some((p) => p.league === "laliga"), false, "Zéro clé de ligue invalide 'laliga' dans FANTASY_PLAYERS !");
+const fantasyWithNonSoccerNoise = scoreFantasyPlayers(stateV64, [
+  { sport: "basketball", home: "Arsenal", away: "Chelsea", league: "nba" },
+]);
+assert.ok(fantasyWithNonSoccerNoise.length === playersModV64.FANTASY_PLAYERS.length, "scoreFantasyPlayers filtre les matchs non-soccer sans planter !");
+
+// 16f. [P0-04 + P0-05 + P1-02 + P1-04] Contrôles d'intégrité statiques finaux sur tout le code source
+const abjHtmlSrc = fsNode.readFileSync(pathNode.resolve("../cloe-abidjan/index.html"), "utf8");
+assert.equal(abjHtmlSrc.includes("localStorage.getItem('javis_gemKey')"), false, "Zéro lecture JSON brute javis_gemKey dans cloe-abidjan/index.html !");
+assert.ok(abjHtmlSrc.includes("javis_v64_purged"), "Migration javis_v64_purged présente dans cloe-abidjan/index.html !");
+const harvestSrc = fsNode.readFileSync(pathNode.resolve("scripts/harvest-live-internet.mjs"), "utf8");
+assert.ok(harvestSrc.includes('ev.atVs === "@"'), "Inversion H2H domicile/extérieur (atVs === '@') corrigée dans harvest-live-internet.mjs !");
+
 console.log(
-  `✓ Audit Complet v6.2 LIVE CERTIFIÉE validé à 100% : Vidéo EN COURS uniquement (Match en cours ✅ + Pari Live immédiat "${certifiedClipInsight.liveBetRecommendation.label}" | Match Terminé ⛔ | PoC Audit #2 Devils/ASEC ⛔ | Féminines/U19 ⛔), Scanner Betclic ➔ Pari Définitif Unique ("${evalBetclic.definitiveBet.rawLabel || evalBetclic.definitiveBet.canonicalLabel}" @${evalBetclic.definitiveBet.bookmakerOdd}, EV +${evalBetclic.definitiveBet.evPct}% | Crushed Odds ➔ NO-BET ✅) & E2EE AES-256-GCM strict ✅ !`
+  `✓ Audit Complet #4 (v6.4.0 CERTIFIÉE INTÉGRALE ZÉRO-DÉFAUT) validé à 100% : Coupon Omni-Sport sans rawProbs (${omniAudit.grade} ${omniAudit.auditScore}/100) ✅ | In-Play 9×9 exact 100% ✅ | Tournoi 16/16 sans collision (${totalChampPct.toFixed(1)}%) ✅ | Scanner Betclic NBA 224.5 pts (${nbaEval.analyzedOptions[0].trueProbPct}%) + DC_12 ✅ | Fantasy ${playersModV64.FANTASY_PLAYERS.length}/${playersModV64.FANTASY_PLAYERS.length} IDs & noms uniques ✅ | CSP Frankfurter + SW 7/7 assets ✅ !`
 );
 
 

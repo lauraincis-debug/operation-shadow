@@ -1,7 +1,9 @@
 {
-  "engine": "Football AI Ultra v5.0 Legend",
-  "updatedAt": "2026-10-21T13:50:38.279Z",
+  "engine": "Omni-Sport & Football AI Ultra v6.4 Certifiée Intégrale",
+  "version": "6.4.0",
+  "updatedAt": "2026-10-21T14:54:14.127Z",
   "sourceAppUrl": "https://football-ai-43e33.web.app",
+  "cloeAbidjanUrl": "https://cloe-agent-abidjan.web.app",
   "cloeStandaloneUrl": "https://cloe-ia-ultra.web.app",
   "bridgeScriptUrl": "https://football-ai-43e33.web.app/cloe-bridge.js",
   "teamsCount": 167,
@@ -540,25 +542,25 @@
     {
       "home": "Real Madrid",
       "away": "Barcelone",
-      "leagueId": "laliga",
+      "leagueId": "liga",
       "probabilities1X2": [
         46,
-        27,
-        27
+        28,
+        26
       ],
       "expectedGoals": {
-        "home": 1.74,
-        "away": 1.35,
-        "total": 3.09
+        "home": 1.66,
+        "away": 1.24,
+        "total": 2.9
       },
       "recommendedMarket": {
-        "code": "12",
-        "group": "Double Chance",
-        "label": "Real Madrid ou FC Barcelone (12)",
-        "prob": 0.7282050050468403,
-        "pct": 73,
-        "fairOdd": 1.37,
-        "marketOdd": 1.24
+        "code": "O15",
+        "group": "Buts",
+        "label": "+1.5 Buts dans le match",
+        "prob": 0.7990006173197048,
+        "pct": 80,
+        "fairOdd": 1.25,
+        "marketOdd": 1.13
       },
       "confidence": {
         "label": "Prudente",
@@ -572,63 +574,63 @@
           "name": "Kylian Mbappé",
           "team": "Real Madrid",
           "pos": "FWD",
-          "expectedGoals": 0.75,
-          "pct": 53,
-          "marketOdd": 1.74
+          "expectedGoals": 0.72,
+          "pct": 51,
+          "marketOdd": 1.8
         },
         {
           "id": "fwd-4",
           "name": "Robert Lewandowski",
           "team": "FC Barcelone",
           "pos": "FWD",
-          "expectedGoals": 0.53,
-          "pct": 41,
-          "marketOdd": 2.25
+          "expectedGoals": 0.48,
+          "pct": 38,
+          "marketOdd": 2.4
         },
         {
           "id": "fwd-5",
           "name": "Vinícius Júnior",
           "team": "Real Madrid",
           "pos": "FWD",
-          "expectedGoals": 0.49,
-          "pct": 39,
-          "marketOdd": 2.38
+          "expectedGoals": 0.47,
+          "pct": 37,
+          "marketOdd": 2.47
         },
         {
           "id": "mid-5",
           "name": "Jude Bellingham",
           "team": "Real Madrid",
           "pos": "MID",
-          "expectedGoals": 0.39,
-          "pct": 33,
-          "marketOdd": 2.83
+          "expectedGoals": 0.38,
+          "pct": 31,
+          "marketOdd": 2.94
         }
       ],
       "corners": {
-        "home": 6,
-        "away": 4.7,
-        "total": 10.7,
-        "over85Pct": 74,
-        "over85Odd": 1.27,
-        "over95Pct": 63,
-        "over95Odd": 1.49,
-        "over105Pct": 50,
-        "over105Odd": 1.88
+        "home": 5.9,
+        "away": 4.6,
+        "total": 10.5,
+        "over85Pct": 72,
+        "over85Odd": 1.31,
+        "over95Pct": 60,
+        "over95Odd": 1.57,
+        "over105Pct": 48,
+        "over105Odd": 1.96
       },
       "cards": {
-        "expectedTotal": 4.3,
-        "over35Pct": 62,
-        "over35Odd": 1.52,
-        "over45Pct": 43,
-        "over45Odd": 2.19,
-        "redCardRiskPct": 19
+        "expectedTotal": 5,
+        "over35Pct": 73,
+        "over35Odd": 1.29,
+        "over45Pct": 56,
+        "over45Odd": 1.68,
+        "redCardRiskPct": 22
       },
       "halfTime": {
-        "over05Pct": 74,
-        "over05Odd": 1.27,
-        "over15Pct": 39,
-        "drawHtPct": 39,
-        "drawHtOdd": 2.41
+        "over05Pct": 72,
+        "over05Odd": 1.31,
+        "over15Pct": 36,
+        "drawHtPct": 40,
+        "drawHtOdd": 2.35
       }
     },
     {
@@ -783,7 +785,7 @@
           "marketOdd": 2.38
         },
         {
-          "id": "mid-13",
+          "id": "mid-18",
           "name": "Sadio Mané",
           "team": "Al-Nassr",
           "pos": "MID",
@@ -924,7 +926,8 @@
       "accent": "#00e676",
       "items": [
         {
-          "id": 1792590638297,
+          "id": 1792594454176,
+          "sport": "soccer",
           "home": "PSG",
           "away": "Marseille",
           "league": "ligue1",
@@ -932,6 +935,11 @@
             62,
             23,
             15
+          ],
+          "rawProbs": [
+            0.6254865040191507,
+            0.2279900047402768,
+            0.14652349124057243
           ],
           "selectedMarket": {
             "code": "12",
@@ -945,7 +953,8 @@
           }
         },
         {
-          "id": 1792590638322,
+          "id": 1792594454170,
+          "sport": "soccer",
           "home": "Bayern Munich",
           "away": "Bayer Leverkusen",
           "league": "bundesliga",
@@ -953,6 +962,11 @@
             52,
             24,
             24
+          ],
+          "rawProbs": [
+            0.5223019967929585,
+            0.2414473559802105,
+            0.23625064722683098
           ],
           "selectedMarket": {
             "code": "1X",
@@ -966,7 +980,8 @@
           }
         },
         {
-          "id": 1792590638366,
+          "id": 1792594454222,
+          "sport": "soccer",
           "home": "Inter Milan",
           "away": "Naples",
           "league": "seriea",
@@ -974,6 +989,11 @@
             50,
             28,
             22
+          ],
+          "rawProbs": [
+            0.4963032700060238,
+            0.2855403693665382,
+            0.21815636062743804
           ],
           "selectedMarket": {
             "code": "O15",
@@ -988,7 +1008,7 @@
         }
       ],
       "totalOdd": 1.64,
-      "winProbPct": 44.5
+      "winProbPct": 44.6
     },
     {
       "id": "value",
@@ -999,7 +1019,8 @@
       "accent": "#00e5ff",
       "items": [
         {
-          "id": 1792590638289,
+          "id": 1792594454154,
+          "sport": "soccer",
           "home": "PSG",
           "away": "Marseille",
           "league": "ligue1",
@@ -1008,19 +1029,25 @@
             23,
             15
           ],
+          "rawProbs": [
+            0.6254865040191507,
+            0.2279900047402768,
+            0.14652349124057243
+          ],
           "selectedMarket": {
             "code": "1",
             "group": "1X2",
             "label": "Victoire PSG",
             "prob": 0.6254865040191507,
-            "pct": 62,
+            "pct": 63,
             "fairOdd": 1.6,
             "marketOdd": 1.52,
             "bookOdd": 1.52
           }
         },
         {
-          "id": 1792590638335,
+          "id": 1792594454213,
+          "sport": "soccer",
           "home": "Arsenal",
           "away": "Liverpool",
           "league": "premier",
@@ -1028,6 +1055,11 @@
             44,
             27,
             29
+          ],
+          "rawProbs": [
+            0.43559450866137467,
+            0.2689727122215422,
+            0.29543277911708316
           ],
           "selectedMarket": {
             "code": "O25",
@@ -1041,7 +1073,8 @@
           }
         },
         {
-          "id": 1792590638336,
+          "id": 1792594454220,
+          "sport": "soccer",
           "home": "Real Madrid",
           "away": "FC Barcelone",
           "league": "liga",
@@ -1049,6 +1082,11 @@
             46,
             28,
             26
+          ],
+          "rawProbs": [
+            0.45586461248514176,
+            0.28299674753607745,
+            0.2611386399787808
           ],
           "selectedMarket": {
             "code": "BTTS_Y",
@@ -1062,7 +1100,8 @@
           }
         },
         {
-          "id": 1792590638340,
+          "id": 1792594454217,
+          "sport": "soccer",
           "home": "Côte d'Ivoire",
           "away": "Maroc",
           "league": "international",
@@ -1070,6 +1109,11 @@
             38,
             32,
             30
+          ],
+          "rawProbs": [
+            0.38486305629837536,
+            0.3152443058988651,
+            0.29989263780275954
           ],
           "selectedMarket": {
             "code": "X2",
@@ -1095,7 +1139,8 @@
       "accent": "#d500f9",
       "items": [
         {
-          "id": 1792590638353,
+          "id": 1792594454156,
+          "sport": "soccer",
           "home": "Arsenal",
           "away": "Liverpool",
           "league": "premier",
@@ -1103,6 +1148,11 @@
             44,
             27,
             29
+          ],
+          "rawProbs": [
+            0.43559450866137467,
+            0.2689727122215422,
+            0.29543277911708316
           ],
           "selectedMarket": {
             "code": "1",
@@ -1116,7 +1166,8 @@
           }
         },
         {
-          "id": 1792590638327,
+          "id": 1792594454158,
+          "sport": "soccer",
           "home": "Inter Milan",
           "away": "Naples",
           "league": "seriea",
@@ -1124,6 +1175,11 @@
             50,
             28,
             22
+          ],
+          "rawProbs": [
+            0.4963032700060238,
+            0.2855403693665382,
+            0.21815636062743804
           ],
           "selectedMarket": {
             "code": "BTTS_N",
@@ -1137,7 +1193,8 @@
           }
         },
         {
-          "id": 1792590638325,
+          "id": 1792594454233,
+          "sport": "soccer",
           "home": "Real Madrid",
           "away": "FC Barcelone",
           "league": "liga",
@@ -1145,6 +1202,11 @@
             46,
             28,
             26
+          ],
+          "rawProbs": [
+            0.45586461248514176,
+            0.28299674753607745,
+            0.2611386399787808
           ],
           "selectedMarket": {
             "code": "1",
@@ -1158,7 +1220,8 @@
           }
         },
         {
-          "id": 1792590638333,
+          "id": 1792594454239,
+          "sport": "soccer",
           "home": "PSG",
           "away": "Marseille",
           "league": "ligue1",
@@ -1166,6 +1229,11 @@
             62,
             23,
             15
+          ],
+          "rawProbs": [
+            0.6254865040191507,
+            0.2279900047402768,
+            0.14652349124057243
           ],
           "selectedMarket": {
             "code": "BTTS_N",
@@ -1179,7 +1247,8 @@
           }
         },
         {
-          "id": 1792590638423,
+          "id": 1792594454253,
+          "sport": "soccer",
           "home": "Bayern Munich",
           "away": "Bayer Leverkusen",
           "league": "bundesliga",
@@ -1187,6 +1256,11 @@
             52,
             24,
             24
+          ],
+          "rawProbs": [
+            0.5223019967929585,
+            0.2414473559802105,
+            0.23625064722683098
           ],
           "selectedMarket": {
             "code": "1",
@@ -1206,215 +1280,215 @@
   ],
   "tournaments": {
     "can": {
-      "name": "CAN",
+      "name": "🌍 Coupe d'Afrique des Nations (CAN — Phase Finale 16 Nations)",
       "simulations": 5000,
       "topFavorites": [
         {
           "team": "Maroc",
-          "qfPct": 61.5,
+          "qfPct": 61.2,
           "sfPct": 36.1,
-          "finalPct": 21.1,
-          "championPct": 12.8,
-          "fairOutrightOdd": 7.81
+          "finalPct": 20.2,
+          "championPct": 12.4,
+          "fairOutrightOdd": 8.08
         },
         {
           "team": "Sénégal",
-          "qfPct": 61.7,
-          "sfPct": 34.1,
-          "finalPct": 18.1,
-          "championPct": 10.9,
-          "fairOutrightOdd": 9.17
+          "qfPct": 62.8,
+          "sfPct": 34.5,
+          "finalPct": 18.9,
+          "championPct": 11.4,
+          "fairOutrightOdd": 8.76
         },
         {
           "team": "Côte d'Ivoire",
-          "qfPct": 57.1,
-          "sfPct": 30.1,
-          "finalPct": 15.1,
-          "championPct": 8.1,
-          "fairOutrightOdd": 12.29
-        },
-        {
-          "team": "Nigeria",
-          "qfPct": 55.1,
-          "sfPct": 26.4,
-          "finalPct": 13.6,
-          "championPct": 7.8,
-          "fairOutrightOdd": 12.79
+          "qfPct": 56.5,
+          "sfPct": 29.8,
+          "finalPct": 15.6,
+          "championPct": 8.6,
+          "fairOutrightOdd": 11.63
         },
         {
           "team": "Algérie",
-          "qfPct": 55.7,
-          "sfPct": 27.8,
-          "finalPct": 15.6,
-          "championPct": 7.5,
-          "fairOutrightOdd": 13.3
+          "qfPct": 56.2,
+          "sfPct": 28.4,
+          "finalPct": 15.9,
+          "championPct": 8,
+          "fairOutrightOdd": 12.53
         },
         {
           "team": "Égypte",
-          "qfPct": 53.7,
-          "sfPct": 28.3,
-          "finalPct": 15.6,
-          "championPct": 7.1,
-          "fairOutrightOdd": 14.08
+          "qfPct": 53.8,
+          "sfPct": 28.7,
+          "finalPct": 16.8,
+          "championPct": 7.8,
+          "fairOutrightOdd": 12.76
+        },
+        {
+          "team": "Nigeria",
+          "qfPct": 55.2,
+          "sfPct": 26.2,
+          "finalPct": 13.1,
+          "championPct": 7.7,
+          "fairOutrightOdd": 12.95
         },
         {
           "team": "Tunisie",
-          "qfPct": 52.7,
-          "sfPct": 28.3,
-          "finalPct": 14.1,
-          "championPct": 6.2,
-          "fairOutrightOdd": 16.03
+          "qfPct": 51.9,
+          "sfPct": 27.5,
+          "finalPct": 12.2,
+          "championPct": 5.2,
+          "fairOutrightOdd": 19.38
         },
         {
           "team": "RD Congo",
-          "qfPct": 46.3,
-          "sfPct": 23.3,
-          "finalPct": 11.6,
-          "championPct": 5.6,
-          "fairOutrightOdd": 17.99
+          "qfPct": 46.2,
+          "sfPct": 22.5,
+          "finalPct": 11.5,
+          "championPct": 5.1,
+          "fairOutrightOdd": 19.53
         }
       ]
     },
     "ucl": {
-      "name": "UCL",
+      "name": "🇪🇺 UEFA Champions League (Phase Finale 16 Clubs)",
       "simulations": 5000,
       "topFavorites": [
         {
           "team": "Arsenal",
-          "qfPct": 65.6,
-          "sfPct": 35.7,
-          "finalPct": 23.2,
-          "championPct": 12,
-          "fairOutrightOdd": 8.31
-        },
-        {
-          "team": "Liverpool",
-          "qfPct": 54.1,
-          "sfPct": 30.1,
-          "finalPct": 16.1,
-          "championPct": 9.7,
-          "fairOutrightOdd": 10.35
+          "qfPct": 66,
+          "sfPct": 36.2,
+          "finalPct": 23.7,
+          "championPct": 12.1,
+          "fairOutrightOdd": 8.24
         },
         {
           "team": "Real Madrid",
-          "qfPct": 58.4,
-          "sfPct": 30.6,
-          "finalPct": 16,
-          "championPct": 9.1,
-          "fairOutrightOdd": 10.99
+          "qfPct": 59,
+          "sfPct": 31.5,
+          "finalPct": 16.7,
+          "championPct": 9.9,
+          "fairOutrightOdd": 10.12
+        },
+        {
+          "team": "Liverpool",
+          "qfPct": 52.5,
+          "sfPct": 29.5,
+          "finalPct": 15.8,
+          "championPct": 9.3,
+          "fairOutrightOdd": 10.71
         },
         {
           "team": "Manchester City",
           "qfPct": 54.4,
-          "sfPct": 28.7,
-          "finalPct": 18.2,
-          "championPct": 9,
-          "fairOutrightOdd": 11.16
+          "sfPct": 28.8,
+          "finalPct": 17.8,
+          "championPct": 9.3,
+          "fairOutrightOdd": 10.71
         },
         {
           "team": "FC Barcelone",
-          "qfPct": 62.2,
-          "sfPct": 31.3,
-          "finalPct": 16.1,
-          "championPct": 8.6,
-          "fairOutrightOdd": 11.57
+          "qfPct": 62.5,
+          "sfPct": 31.5,
+          "finalPct": 16.6,
+          "championPct": 9.1,
+          "fairOutrightOdd": 10.99
         },
         {
           "team": "Bayern Munich",
-          "qfPct": 51.3,
-          "sfPct": 26.9,
-          "finalPct": 13.6,
-          "championPct": 7.9,
-          "fairOutrightOdd": 12.66
+          "qfPct": 51.5,
+          "sfPct": 27.4,
+          "finalPct": 14.1,
+          "championPct": 8.1,
+          "fairOutrightOdd": 12.41
         },
         {
           "team": "Inter Milan",
-          "qfPct": 45.9,
-          "sfPct": 24.2,
-          "finalPct": 12.3,
+          "qfPct": 47.5,
+          "sfPct": 25.1,
+          "finalPct": 12.4,
           "championPct": 7.2,
-          "fairOutrightOdd": 13.81
+          "fairOutrightOdd": 13.85
         },
         {
           "team": "PSG",
-          "qfPct": 48.7,
-          "sfPct": 24.9,
-          "finalPct": 12.1,
-          "championPct": 6.7,
-          "fairOutrightOdd": 14.93
+          "qfPct": 48.5,
+          "sfPct": 23.7,
+          "finalPct": 11.6,
+          "championPct": 6.2,
+          "fairOutrightOdd": 16.03
         }
       ]
     },
     "worldcup": {
-      "name": "WORLDCUP",
+      "name": "🌎 Coupe du Monde FIFA (Tableau Final Choc)",
       "simulations": 5000,
       "topFavorites": [
         {
           "team": "Espagne",
-          "qfPct": 62.6,
-          "sfPct": 35.7,
-          "finalPct": 20.2,
-          "championPct": 12.3,
-          "fairOutrightOdd": 8.16
+          "qfPct": 61.9,
+          "sfPct": 35.8,
+          "finalPct": 21,
+          "championPct": 12.6,
+          "fairOutrightOdd": 7.92
         },
         {
           "team": "Argentine",
-          "qfPct": 61.4,
-          "sfPct": 36,
-          "finalPct": 19.7,
-          "championPct": 12,
-          "fairOutrightOdd": 8.33
+          "qfPct": 60.8,
+          "sfPct": 36.2,
+          "finalPct": 18.7,
+          "championPct": 11.6,
+          "fairOutrightOdd": 8.62
         },
         {
           "team": "France",
-          "qfPct": 60.8,
-          "sfPct": 31.1,
-          "finalPct": 16.3,
+          "qfPct": 60.3,
+          "sfPct": 31,
+          "finalPct": 16.7,
           "championPct": 9.7,
           "fairOutrightOdd": 10.35
         },
         {
           "team": "Angleterre",
-          "qfPct": 53.4,
-          "sfPct": 29.3,
-          "finalPct": 17.1,
-          "championPct": 8.2,
-          "fairOutrightOdd": 12.17
+          "qfPct": 52.7,
+          "sfPct": 29.1,
+          "finalPct": 16.7,
+          "championPct": 8.5,
+          "fairOutrightOdd": 11.79
         },
         {
           "team": "Portugal",
-          "qfPct": 57.2,
-          "sfPct": 27.8,
-          "finalPct": 16.5,
+          "qfPct": 57.5,
+          "sfPct": 28.7,
+          "finalPct": 15.7,
+          "championPct": 7.7,
+          "fairOutrightOdd": 12.92
+        },
+        {
+          "team": "Allemagne",
+          "qfPct": 57.1,
+          "sfPct": 32.3,
+          "finalPct": 16.4,
           "championPct": 7.5,
           "fairOutrightOdd": 13.26
         },
         {
-          "team": "Allemagne",
-          "qfPct": 56.2,
-          "sfPct": 32.8,
-          "finalPct": 16.3,
-          "championPct": 6.9,
-          "fairOutrightOdd": 14.41
-        },
-        {
           "team": "Pays-Bas",
-          "qfPct": 46.6,
-          "sfPct": 25,
-          "finalPct": 13.4,
-          "championPct": 6.6,
-          "fairOutrightOdd": 15.24
+          "qfPct": 47.3,
+          "sfPct": 23.9,
+          "finalPct": 13.2,
+          "championPct": 6.1,
+          "fairOutrightOdd": 16.34
         },
         {
           "team": "Brésil",
-          "qfPct": 51.3,
-          "sfPct": 24.1,
-          "finalPct": 11.3,
-          "championPct": 6.1,
-          "fairOutrightOdd": 16.45
+          "qfPct": 51.6,
+          "sfPct": 24.3,
+          "finalPct": 11.1,
+          "championPct": 5.8,
+          "fairOutrightOdd": 17.36
         }
       ]
     }
   },
-  "voiceSummaryFr": "Point Football AI Ultra v5 : 167 clubs et nations actifs. Favori numéro 1 CAN sur 5 000 simulations : Maroc (12.8%). Favori Champions League : Arsenal (12%). Ticket Sécurité IA du jour prêt à cote totale 1.64."
+  "voiceSummaryFr": "Point Omni-Sport & Football AI Ultra v6.4 Certifiée Intégrale : 167 clubs et nations actifs. Favori numéro 1 CAN sur 5 000 simulations : Maroc (12.4%). Favori Champions League : Arsenal (12.1%). Ticket Sécurité IA du jour prêt à cote totale 1.64."
 }

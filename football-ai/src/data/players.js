@@ -69,10 +69,9 @@ export const FANTASY_PLAYERS = [
   { id: "fwd-16", name: "Victor Osimhen", club: "Galatasaray", league: "ucl", pos: "FWD", price: 10.2, xg90: 0.78, xa90: 0.18, saveBonus: 0.42, form: 9.1 },
   { id: "fwd-17", name: "Raphinha", club: "FC Barcelone", league: "liga", pos: "FWD", price: 10.9, xg90: 0.58, xa90: 0.46, saveBonus: 0.5, form: 9.4 },
   { id: "fwd-18", name: "Khvicha Kvaratskhelia", club: "PSG", league: "ligue1", pos: "FWD", price: 9.6, xg90: 0.46, xa90: 0.38, saveBonus: 0.48, form: 8.9 },
-  { id: "mid-11", name: "Franck Kessié", club: "Al-Ahli Saudi", league: "saudi", pos: "MID", price: 7.4, xg90: 0.28, xa90: 0.19, saveBonus: 0.75, form: 8.5 },
-  { id: "mid-12", name: "Simon Adingra", club: "Brighton", league: "premier", pos: "MID", price: 6.9, xg90: 0.35, xa90: 0.28, saveBonus: 0.55, form: 8.4 },
-  { id: "mid-13", name: "Sadio Mané", club: "Al-Nassr", league: "saudi", pos: "MID", price: 8.8, xg90: 0.44, xa90: 0.36, saveBonus: 0.55, form: 8.7 },
-  { id: "mid-14", name: "Rodri", club: "Manchester City", league: "premier", pos: "MID", price: 8.5, xg90: 0.21, xa90: 0.26, saveBonus: 0.95, form: 9.3 },
+  { id: "mid-17", name: "Franck Kessié", club: "Al-Ahli Saudi", league: "saudi", pos: "MID", price: 7.4, xg90: 0.28, xa90: 0.19, saveBonus: 0.75, form: 8.5 },
+  { id: "mid-18", name: "Sadio Mané", club: "Al-Nassr", league: "saudi", pos: "MID", price: 8.8, xg90: 0.44, xa90: 0.36, saveBonus: 0.55, form: 8.7 },
+  { id: "mid-19", name: "Rodri", club: "Manchester City", league: "premier", pos: "MID", price: 8.5, xg90: 0.21, xa90: 0.26, saveBonus: 0.95, form: 9.3 },
 ];
 
 /**
@@ -81,12 +80,15 @@ export const FANTASY_PLAYERS = [
  * - Buts attendus : xG * (GKP/DEF: 6 pts, MID: 5 pts, FWD: 4 pts)
  * - Passes décisives attendues : xA * 3 pts
  * - Probabilité Clean Sheet club : P(CS) * (GKP/DEF: 4 pts, MID: 1 pt)
- * - Bonus BPS & forme + ajustement dynamique selon l'affiche réelle du jour !
+ * - Bonus BPS & forme + ajustement dynamique selon l'affiche réelle du jour (STRICTEMENT FOOTBALL) !
  */
 export function scoreFantasyPlayers(modelState, liveMatches = []) {
-  // Indexer les prochains matchs par club s'il y en a aujourd'hui/demain
+  // Indexer UNIQUEMENT les prochains matchs de FOOTBALL (jamais EuroLeague/NBA Real Madrid ou FC Barcelone !)
+  const soccerMatches = (liveMatches || []).filter(
+    (m) => !m.sport || m.sport === "soccer"
+  );
   const fixtureByClub = new Map();
-  for (const m of liveMatches) {
+  for (const m of soccerMatches) {
     if (m.prediction) {
       fixtureByClub.set(normalizeKey(m.prediction.home), {
         opponent: m.prediction.away,

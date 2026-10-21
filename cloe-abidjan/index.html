@@ -162,8 +162,8 @@ nav button{font-size:10.5px;padding:6px 1px}
         <button type="button" class="quick" data-go="s-investir"><strong>Investir</strong><span>BRVM · simulation</span><span class="go" aria-hidden="true">→</span></button>
         <button type="button" class="quick" data-go="s-commercial"><strong>Clients</strong><span>Prospection et devis</span><span class="go" aria-hidden="true">→</span></button>
       </div>
-      <button type="button" class="rapport" id="heroFootBtn" style="margin-top:12px;background:linear-gradient(120deg,rgba(245,184,0,.16),rgba(15,185,122,.16));border-color:rgba(245,184,0,.45)"><span><strong>⚽ Omni-Sport &amp; Football IA Ultra v6.3 Certifiée Intégrale</strong><span>🔴 Vidéos Live en cours · 📸 Scanner Betclic ➔ Pari Définitif · 167 clubs &amp; 7 Sports.</span></span><span class="play" aria-hidden="true">⚡</span></button>
-      <button type="button" class="rapport" id="heroRapport"><span><strong>Rapport du jour</strong><span>Marchés, crypto, Omni-Sport IA v6.3 Certifiée Intégrale, idées : lu à voix haute.</span></span><span class="play" aria-hidden="true">▶</span></button>
+      <button type="button" class="rapport" id="heroFootBtn" style="margin-top:12px;background:linear-gradient(120deg,rgba(245,184,0,.16),rgba(15,185,122,.16));border-color:rgba(245,184,0,.45)"><span><strong>⚽ Omni-Sport &amp; Football IA Ultra v6.4 Certifiée Intégrale</strong><span>🔴 Vidéos Live en cours · 📸 Scanner Betclic ➔ Pari Définitif · 167 clubs &amp; 7 Sports.</span></span><span class="play" aria-hidden="true">⚡</span></button>
+      <button type="button" class="rapport" id="heroRapport"><span><strong>Rapport du jour</strong><span>Marchés, crypto, Omni-Sport IA v6.4 Certifiée Intégrale, idées : lu à voix haute.</span></span><span class="play" aria-hidden="true">▶</span></button>
     </div>
 
     <div class="card">
@@ -259,7 +259,7 @@ nav button{font-size:10.5px;padding:6px 1px}
     <div class="card" id="footV5Card" style="border:1.5px solid rgba(245,184,0,.45)">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;flex-wrap:wrap">
         <div>
-          <h3 style="margin:0">⚽ Omni-Sport &amp; Football AI Ultra v6.3 Certifiée Intégrale — <span style="color:var(--or)">Live Vidéo + Scanner Betclic</span></h3>
+          <h3 style="margin:0">⚽ Omni-Sport &amp; Football AI Ultra v6.4 Certifiée Intégrale — <span style="color:var(--or)">Live Vidéo + Scanner Betclic</span></h3>
           <p class="muted" style="margin:6px 0 0">Relié en direct à Internet (<b>44 compétitions &amp; 7 Sports : Football, NBA, Tennis ATP/WTA, NFL, NHL, MLB, UFC</b>) • <b>🔴 Vidéos &amp; télémétrie en ligne strictement pour les matchs EN COURS (pari Live immédiat)</b> • <b>📸 Scanner de captures Bookmakers (Betclic, Winamax, 1xBet, Sportcash) ➔ 1 Pari Définitif</b>. Plafond strict : <b>5 000 FCFA / jour</b>.</p>
         </div>
         <a id="openFullFootApp" href="https://football-ai-43e33.web.app" target="_blank" rel="noopener" class="badge" style="text-decoration:none;padding:8px 12px">⚡ Ouvrir App Complète (Sync FCFA) ↗</a>
@@ -304,7 +304,7 @@ nav button{font-size:10.5px;padding:6px 1px}
         <button type="button" class="alt" id="footSpeakBtn">🔊 Lire à voix haute</button>
       </div>
 
-      <!-- Résultat complet Dixon-Coles + Elo + Marchés Pros v5 -->
+      <!-- Résultat complet Dixon-Coles + Elo + Marchés Pros v6.4 -->
       <div id="footPredOut" style="margin-top:10px"></div>
 
       <!-- Coupon Fictif + Audit IA du Maillon Faible + 3 Tickets Auto -->
@@ -335,7 +335,7 @@ nav button{font-size:10.5px;padding:6px 1px}
         <div id="footTourOut" style="margin-top:8px"></div>
       </div>
 
-      <!-- DIRECT INTERNET MULTI-SPORTS v6.3 : DATES & STADES EXACTS + H2H + BLESSÉS -->
+      <!-- DIRECT INTERNET MULTI-SPORTS v6.4 : DATES & STADES EXACTS + H2H + BLESSÉS -->
       <div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--stroke)">
         <h4 style="margin:0 0 6px;font-family:'Unbounded',sans-serif;font-size:13px;color:#38bdf8">🌐 Direct Internet Multi-Sports (Dates, Stades, H2H &amp; Blessés Vérifiés)</h4>
         <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px" id="omniSportBtns">
@@ -953,10 +953,11 @@ function rendrePropositions(data){
   if(data.news&&data.news.length){h+='<h4>📰 Actualités économiques suivies automatiquement</h4>'+data.news.map(n=>'<div class="item">• '+esc(n.titre)+'<br><span class="muted">Source : '+esc(n.source)+'</span></div>').join('')+(data.vigilance?'<p class="bad">🔎 Cloé signale des mots d’alerte dans l’actualité ('+esc(data.vigilance)+') : il renforce sa prudence, sans paniquer.</p>':'')}
   if(data.footV5){
     const fv=data.footV5;
+    const sportMetaMap={soccer:{ico:'⚽',mdl:'Modèle Dixon-Coles + Elo (167 clubs)'},basketball:{ico:'🏀',mdl:'Modèle NBA/EuroLeague Gaussien Pace'},tennis:{ico:'🎾',mdl:'Modèle Tennis Chaîne de Markov ATP/WTA'},football_us:{ico:'🏈',mdl:'Modèle NFL EPA & Nombres Clés 3/7'},hockey:{ico:'🏒',mdl:'Modèle NHL Bivarié Poisson + Prolong.'},baseball:{ico:'⚾',mdl:'Modèle MLB Pythagoricien Run Line'},mma:{ico:'🥊',mdl:'Modèle UFC/MMA Octogone Elo'}};
     window.__lastGemsCache = (fv.gems||[]).slice(0,4);
-    h+='<h4>⚽ Omni-Sport &amp; Football AI Ultra v6.3 Certifiée Intégrale — propositions encadrées du jour (simulation L0)</h4>';
+    h+='<h4>⚽ Omni-Sport &amp; Football AI Ultra v6.4 Certifiée Intégrale — propositions encadrées du jour (simulation L0)</h4>';
     if(window.__lastGemsCache.length){
-      h+=window.__lastGemsCache.map((g,gi)=>'<div class="item"><b>⚽ '+esc(g.home)+' vs '+esc(g.away)+'</b> <span class="pill">'+esc(g.timeFr||g.leagueLabel||'Calibré IA')+'</span><br>Recommandation sûre : <b>'+esc(g.safestMarket.label)+' ('+Number(g.safestMarket.pct)+' %)</b> • Score type : <b>'+esc(g.likelyScore)+'</b><br><span class="pill">Modèle Dixon-Coles + Elo (167 clubs)</span> <button class="alt" style="padding:5px 10px;min-height:32px;font-size:11.5px;margin-top:4px" onclick="window.__playGemByIndex&&window.__playGemByIndex('+gi+')">🎯 Engager 1 000 FCFA (Score Réel)</button></div>').join('');
+      h+=window.__lastGemsCache.map((g,gi)=>{const sm=sportMetaMap[g.sport||'soccer']||sportMetaMap.soccer;return '<div class="item"><b>'+sm.ico+' '+esc(g.home)+' vs '+esc(g.away)+'</b> <span class="pill">'+esc(g.timeFr||g.leagueLabel||'Calibré IA')+'</span><br>Recommandation sûre : <b>'+esc(g.safestMarket.label)+' ('+Number(g.safestMarket.pct)+' %)</b> • Projection : <b>'+esc(g.likelyScore)+'</b><br><span class="pill">'+esc(sm.mdl)+'</span> <button class="alt" style="padding:5px 10px;min-height:32px;font-size:11.5px;margin-top:4px" onclick="window.__playGemByIndex&&window.__playGemByIndex('+gi+')">🎯 Engager 1 000 FCFA (Score Réel)</button></div>'}).join('');
     }
     if(fv.safeTicket){
       const sLegs = fv.safeTicket.items || [];
@@ -966,9 +967,9 @@ function rendrePropositions(data){
       h+='<div class="item"><b>🏆 Simulations 10 000× en cours</b><br>🌍 Favori CAN #1 : <b>'+esc(fv.canFav.team)+' ('+Number(fv.canFav.championPct)+' %)</b> • 🇪🇺 Champions League #1 : <b>'+esc(fv.uclFav.team)+' ('+Number(fv.uclFav.championPct)+' %)</b></div>';
     }
   }
-  h+='<p class="muted">Sources BRVM : cours publics du jour (brvm.org via le miroir gratuit harzat/brvm-data-public, différé ~15 min, séance : '+esc(data.seance||'?')+'). Omni-Sport &amp; Football AI Ultra v6.3 Certifiée Intégrale + flux ESPN public. Ces propositions sont des idées de simulation classées par des règles simples et expliquées — jamais des promesses de gain.</p>';
+  h+='<p class="muted">Sources BRVM : cours publics du jour (brvm.org via le miroir gratuit harzat/brvm-data-public, différé ~15 min, séance : '+esc(data.seance||'?')+'). Omni-Sport &amp; Football AI Ultra v6.4 Certifiée Intégrale + flux ESPN public. Ces propositions sont des idées de simulation classées par des règles simples et expliquées — jamais des promesses de gain.</p>';
   el.innerHTML=h;
-  const st=$('autoStatus');if(st)st.innerHTML='Cloé analyse tout seul, dès l\u2019ouverture : les <b>48 entreprises de la BRVM</b>, les principales <b>crypto-monnaies</b> et <b>Omni-Sport AI Ultra v6.3 Certifiée Intégrale</b>. Dernière analyse : <b>'+dateTxt+'</b>. Tout reste <b>simulé</b>, plafond '+fmt(CAP)+' par décision.';
+  const st=$('autoStatus');if(st)st.innerHTML='Cloé analyse tout seul, dès l\u2019ouverture : les <b>48 entreprises de la BRVM</b>, les principales <b>crypto-monnaies</b> et <b>Omni-Sport AI Ultra v6.4 Certifiée Intégrale</b>. Dernière analyse : <b>'+dateTxt+'</b>. Tout reste <b>simulé</b>, plafond '+fmt(CAP)+' par décision.';
 }
 async function autoAnalyse(manuel){
   if(stopped)return;
@@ -1556,13 +1557,13 @@ function traiterParole(brut){
     window.CloeFootballAI.ask(original,{coupon:window.__footSlip||[]}).then(rep=>{
       const out=$('footPredOut');
       if(out)out.innerHTML='<div class="item" style="white-space:pre-wrap">'+esc(rep.answerText||'')+'</div>';
-      log('Omni-Sport IA v6.3',original+' → '+(rep.voiceText||'').slice(0,180));
+      log('Omni-Sport IA v6.4',original+' → '+(rep.voiceText||'').slice(0,180));
       javisDit(rep.voiceText||rep.answerText);
       if(!convOn&&!wakeOn&&!(moteurVocal&&moteurVocal.active))speak(rep.voiceText||rep.answerText);
-    }).catch(()=>javisDit('Le moteur Omni-Sport IA Ultra v6.3 réfléchit, réessayez dans une seconde.'));
+    }).catch(()=>javisDit('Le moteur Omni-Sport IA Ultra v6.4 réfléchit, réessayez dans une seconde.'));
     return;
   }
-  if(/Paris|pari |parier|sportif|betclic/i.test(txt)){go('s-assistant');const pertes=bets.filter(b=>b.day===new Date().toDateString()&&!b.win).reduce((a,b)=>a+b.amt,0);javisDit('Je vous ouvre Omni-Sport et Football AI Ultra v6.3 Certifiée Intégrale : vidéos en direct uniquement sur les matchs en cours pour parier en direct, scanner de captures Betclic pour extraire un seul pari définitif, et 167 clubs. Perte engagée du jour : '+pertes.toLocaleString('fr-FR')+' francs CFA sur une limite de 5000.');return}
+  if(/Paris|pari |parier|sportif|betclic/i.test(txt)){go('s-assistant');const pertes=bets.filter(b=>b.day===new Date().toDateString()&&!b.win).reduce((a,b)=>a+b.amt,0);javisDit('Je vous ouvre Omni-Sport et Football AI Ultra v6.4 Certifiée Intégrale : vidéos en direct uniquement sur les matchs en cours pour parier en direct, scanner de captures Betclic pour extraire un seul pari définitif, et 167 clubs. Perte engagée du jour : '+pertes.toLocaleString('fr-FR')+' francs CFA sur une limite de 5000.');return}
   if(/budget|argent|finances|solde|il me reste/.test(txt)){go('s-assistant');let total=0;fins.forEach(f=>total+=f.amt);javisDit('Côté argent fictif d\u2019investissement : '+Math.round(cash).toLocaleString('fr-FR')+' francs CFA disponibles. Côté budget personnel noté : solde de '+total.toLocaleString('fr-FR')+' francs CFA. Rien de réel n\u2019est connecté. Autre chose ?');return}
   if(/journal|décision|historique|qu'as.tu fait|qu.est.ce que tu as fait/.test(txt)){go('s-journal');javisDit(journal.length?'Voici votre journal protégé. Dernières actions : '+journal.slice(0,3).map(j=>j.type).join(' ; ')+'. Ce journal ne peut être ni modifié ni effacé dans l\u2019application.':'Votre journal est encore vide. Mes prochaines actions automatiques y seront inscrites.');return}
   if(/bilan|semaine/.test(txt)){go('s-accueil');javisDit(texteBilanSemaine());return}
@@ -1816,17 +1817,18 @@ geminiBrancherReglages();updateCash();renderTasks();renderBets();renderMarket();
 })();
 </script>
 <script>
-// ============ PONT NATIF INTÉGRAL : FOOTBALL AI ULTRA v5 LEGEND <-> CLOÉ ABIDJAN ============
+// ============ PONT NATIF INTÉGRAL : FOOTBALL AI ULTRA v6.4 CERTIFIÉE INTÉGRALE <-> CLOÉ ABIDJAN ============
 (function(){
   const brain = window.CloeFootballAI;
   if (!brain) return;
 
   try {
-    if (!localStorage.getItem('javis_v63_purged')) {
+    if (!localStorage.getItem('javis_v64_purged')) {
       localStorage.removeItem('cloe_football_ai_brain_v3');
+      localStorage.removeItem('cloe_football_ai_brain_v6_3_clean');
       localStorage.removeItem('javis_footSnap');
       localStorage.removeItem('javis_autoResults');
-      localStorage.setItem('javis_v63_purged', '1');
+      localStorage.setItem('javis_v64_purged', '1');
     }
   } catch (_) {}
   window.__footSlip = store.get('footSlip', []);
@@ -1838,7 +1840,7 @@ geminiBrancherReglages();updateCash();renderTasks();renderBets();renderMarket();
     if (!a) return;
     try {
       const payload = btoa(unescape(encodeURIComponent(JSON.stringify({
-        currency: 'FCFA',
+        currency: 'XOF',
         capital: Math.round(cash),
         stake: Number(document.getElementById('footSlipStake')?.value || 1000),
         coupon: window.__footSlip || [],
@@ -1850,7 +1852,7 @@ geminiBrancherReglages();updateCash();renderTasks();renderBets();renderMarket();
     }
   }
 
-  // Réception instantanée SÉCURISÉE (SEC-01 Corrigée : validation stricte + échappement total HTML) depuis Football AI Ultra v6.3 (#sync=...)
+  // Réception instantanée SÉCURISÉE (SEC-01 Corrigée : validation stricte + échappement total HTML) depuis Football AI Ultra v6.4 (#sync=...)
   function cleanText(v, maxLen) {
     return esc(String(v || '').slice(0, maxLen || 90));
   }
@@ -1887,25 +1889,29 @@ geminiBrancherReglages();updateCash();renderTasks();renderBets();renderMarket();
           if (ban) {
             const audit = brain.auditTicket(window.__footSlip);
             ban.style.display = 'block';
-            ban.innerHTML = '🔗 <b>Données sécurisées reçues depuis Omni-Sport AI Ultra v6.3 Certifiée Intégrale !</b><br>' +
+            ban.innerHTML = '🔗 <b>Données sécurisées reçues depuis Omni-Sport AI Ultra v6.4 Certifiée Intégrale !</b><br>' +
               '• Ticket vérifié : <b>' + Number(window.__footSlip.length) + ' sélection(s)</b>' +
               (audit ? ' • Survie IA : <b>' + esc(audit.grade) + ' (' + Number(audit.auditScore) + '/100)</b>' : '') +
               '<br>• Plafond prudent Cloé actif : <b>max ' + fmt(BET_DAY_CAP) + ' / jour</b>.';
           }
           go('s-assistant');
-          log('Pont Omni-Sport v6.3', 'Synchronisation vérifiée reçue : ' + Number(window.__footSlip.length) + ' match(s) importés.');
+          log('Pont Omni-Sport v6.4', 'Synchronisation vérifiée reçue : ' + Number(window.__footSlip.length) + ' match(s) importés.');
         }
       }
     }
   } catch (_) {}
 
-  // Remplir les 167 clubs & nations (CLUBS_DB est un tableau d'objets { name, fullName, league, elo })
+  // Remplir les 167 clubs & nations (CLUBS_DB expose `leagues: [...]`)
   const dbInfo = brain.getClubsByLeague();
   const clubList = Array.isArray(dbInfo.clubs)
     ? dbInfo.clubs
     : Object.entries(dbInfo.clubs || {}).map(([k, v]) => Object.assign({ name: k }, v));
   const clubsMap = {};
   clubList.forEach(info => { if (info && info.name) clubsMap[info.name] = info; });
+  const getClubLeague = name => {
+    const info = clubsMap[name];
+    return (info && ((Array.isArray(info.leagues) && info.leagues[0]) || info.league)) || 'ucl';
+  };
   const leaguesMap = dbInfo.leagues || {};
   const homeSel = document.getElementById('footHome');
   const awaySel = document.getElementById('footAway');
@@ -1913,7 +1919,7 @@ geminiBrancherReglages();updateCash();renderTasks();renderBets();renderMarket();
     const grouped = {};
     clubList.forEach(info => {
       if (!info || !info.name) return;
-      const lg = info.league || 'ucl';
+      const lg = getClubLeague(info.name);
       if (!grouped[lg]) grouped[lg] = [];
       grouped[lg].push(info.name);
     });
@@ -1954,21 +1960,26 @@ geminiBrancherReglages();updateCash();renderTasks();renderBets();renderMarket();
     });
   }
 
-  window.__addFootMarketToSlip = function(home, away, label, pct, fairOdd, marketId) {
+  window.__addFootMarketToSlip = function(home, away, label, pct, fairOdd, marketId, explicitSport) {
     window.__footSlip = window.__footSlip || [];
-    const lg = (clubsMap[home] && clubsMap[home].league) || 'ucl';
-    const predObj = brain.predictMatch(home, away, lg).prediction;
+    const sport = explicitSport || 'soccer';
+    const lg = getClubLeague(home);
+    const predObj = sport === 'soccer' ? brain.predictMatch(home, away, lg).prediction : null;
+    const prob = Math.min(0.98, Math.max(0.03, Math.round(pct) / 100));
     const oddNum = Number(fairOdd || Math.max(1.08, +(95 / Math.max(5, pct)).toFixed(2)));
     window.__footSlip = window.__footSlip.filter(x => !(x.home === home && x.away === away));
     window.__footSlip.push({
       id: Date.now() + Math.floor(Math.random() * 1000),
+      sport,
       home,
       away,
       league: lg,
-      probs: predObj.probs,
+      probs: predObj ? predObj.probs : [Math.round(pct), 0, Math.max(0, 100 - Math.round(pct))],
+      rawProbs: predObj ? predObj.rawProbs : [prob, 0, Math.max(0.02, 1 - prob)],
       selectedMarket: {
         code: marketId || 'rec',
         label,
+        prob,
         pct: Math.round(pct),
         bookOdd: oddNum
       }
@@ -1983,7 +1994,7 @@ geminiBrancherReglages();updateCash();renderTasks();renderBets();renderMarket();
     const h = homeSel ? homeSel.value : 'PSG';
     const a = awaySel ? awaySel.value : 'Marseille';
     if (h === a) { toast('Choisissez deux équipes différentes.'); return; }
-    const lg = (clubsMap[h] && clubsMap[h].league) || 'ucl';
+    const lg = getClubLeague(h);
     const res = brain.predictMatch(h, a, lg);
     const p = res.prediction;
     const pro = brain.computeProMarkets(p);
@@ -2040,6 +2051,19 @@ geminiBrancherReglages();updateCash();renderTasks();renderBets();renderMarket();
   };
   window.__playGemByIndex = function(gi) {
     const g = (window.__lastGemsCache || [])[gi]; if (!g) return;
+    if (g.sport && g.sport !== 'soccer' && g.safestMarket) {
+      execSimulatedBet(
+        g.home + ' vs ' + g.away + ' (' + g.safestMarket.label + ')',
+        g.safestMarket.pct || 65,
+        g.safestMarket.fairOdd || 1.45,
+        1000,
+        g.home,
+        g.away,
+        g.safestMarket.label,
+        [{ home: g.home, away: g.away, sport: g.sport, code: g.safestMarket.code || '', label: g.safestMarket.label }]
+      );
+      return;
+    }
     window.__simulerPepiteFoot(g.home, g.away);
   };
 
@@ -2257,7 +2281,7 @@ geminiBrancherReglages();updateCash();renderTasks();renderBets();renderMarket();
   }
 
   window.__simulerPepiteFoot = function(h, a) {
-    const lg = (clubsMap[h] && clubsMap[h].league) || 'ucl';
+    const lg = getClubLeague(h);
     const p = brain.predictMatch(h, a, lg).prediction;
     const rec = p.recommendedMarket || { label: '1X', pct: 70, fairOdd: 1.35 };
     execSimulatedBet(h + ' vs ' + a + ' (' + rec.label + ')', rec.pct, rec.fairOdd || 1.35, 1000, h, a, rec.label);
@@ -2332,13 +2356,13 @@ geminiBrancherReglages();updateCash();renderTasks();renderBets();renderMarket();
     const b = await brain.getDailyBriefing();
     cachedBriefing = b;
     if (b.newlyLearnedMatches > 0) {
-      addLesson('Omni-Sport AI Ultra v6.3 : +' + b.newlyLearnedMatches + ' match(s) réel(s) terminé(s) appris automatiquement pour recalibrer mes probabilités.');
+      addLesson('Omni-Sport AI Ultra v6.4 : +' + b.newlyLearnedMatches + ' match(s) réel(s) terminé(s) appris automatiquement pour recalibrer mes probabilités.');
     }
     let gems = (b.topGems || []).slice(0, 4);
     if (!gems.length) {
-      gems = [['ASEC Mimosas', 'Al Ahly', 'caf'], ['PSG', 'Marseille', 'ligue1'], ['Real Madrid', 'Barcelone', 'laliga'], ['Côte d\'Ivoire', 'Maroc', 'international']].map(([h, a, lg]) => {
+      gems = [['ASEC Mimosas', 'Al Ahly', 'caf'], ['PSG', 'Marseille', 'ligue1'], ['Real Madrid', 'Barcelone', 'liga'], ['Côte d\'Ivoire', 'Maroc', 'international']].map(([h, a, lg]) => {
         const p = brain.predictMatch(h, a, lg).prediction;
-        return { home: h, away: a, leagueLabel: lg.toUpperCase(), safestMarket: p.recommendedMarket, likelyScore: (p.topScores && p.topScores[0] && p.topScores[0].score) || '1-0' };
+        return { sport: 'soccer', home: h, away: a, leagueLabel: lg.toUpperCase(), safestMarket: p.recommendedMarket, likelyScore: (p.topScores && p.topScores[0] && p.topScores[0].score) || '1-0' };
       });
     }
     const tks = brain.generateTickets(b.rawMatches || []);
@@ -2351,17 +2375,17 @@ geminiBrancherReglages();updateCash();renderTasks();renderBets();renderMarket();
 
   window.__footBriefingSentence = function() {
     const s = store.get('footSnap', null);
-    if (!s || !s.gems || !s.gems.length) return 'Côté Omni-Sport IA Ultra v6.3 : cent soixante-sept clubs et nations sont prêts en simulation.';
+    if (!s || !s.gems || !s.gems.length) return 'Côté Omni-Sport IA Ultra v6.4 : cent soixante-sept clubs et nations sont prêts en simulation.';
     const g = s.gems[0];
-    return 'Côté Omni-Sport IA Ultra v6.3 : pépite du jour ' + g.home + ' contre ' + g.away + ', pari sûr ' + g.safestMarket.label + ' à ' + g.safestMarket.pct + ' pour cent' +
+    return 'Côté Omni-Sport IA Ultra v6.4 : pépite du jour ' + g.home + ' contre ' + g.away + ', pari sûr ' + g.safestMarket.label + ' à ' + g.safestMarket.pct + ' pour cent' +
       (s.safeTicket ? ', Ticket Sécurité à cote ' + s.safeTicket.totalOdd.toFixed(2) : '') +
       (s.canFav ? ', et favori CAN ' + s.canFav.team + ' à ' + s.canFav.championPct + ' pour cent.' : '.');
   };
 
   window.__footGemSummary = function() {
     const s = store.get('footSnap', null);
-    if (!s || !s.gems) return 'Omni-Sport AI Ultra v6.3 Certifiée Intégrale (167 clubs, Vidéo Live en cours, Scanner Betclic) actif.';
-    return 'Omni-Sport AI Ultra v6.3 Certifiée Intégrale en direct : pépites du jour = ' +
+    if (!s || !s.gems) return 'Omni-Sport AI Ultra v6.4 Certifiée Intégrale (167 clubs, Vidéo Live en cours, Scanner Betclic) actif.';
+    return 'Omni-Sport AI Ultra v6.4 Certifiée Intégrale en direct : pépites du jour = ' +
       s.gems.slice(0, 3).map(g => g.home + ' vs ' + g.away + ' (' + g.safestMarket.label + ' ' + g.safestMarket.pct + '%)').join(', ') +
       (s.canFav ? ' ; Favori CAN 10000x = ' + s.canFav.team + ' (' + s.canFav.championPct + '%)' : '') +
       (s.uclFav ? ' ; Favori LDC = ' + s.uclFav.team + ' (' + s.uclFav.championPct + '%)' : '') + '.';
@@ -2373,7 +2397,7 @@ geminiBrancherReglages();updateCash();renderTasks();renderBets();renderMarket();
   else renderFootSlip();
   syncOpenLink();
 
-  // Module Direct Internet Multi-Sports v6.3 Certifiée Intégrale (Football, NBA, Tennis, NFL, NHL, MLB, UFC + Vidéo Direct en Cours + Scanner Betclic)
+  // Module Direct Internet Multi-Sports v6.4 Certifiée Intégrale (Football, NBA, Tennis, NFL, NHL, MLB, UFC + Vidéo Direct en Cours + Scanner Betclic)
   window.__omniMatchesCache = [];
   window.__inspectOmniDossier = async function(idx) {
     const m = window.__omniMatchesCache[idx];
@@ -2444,7 +2468,7 @@ geminiBrancherReglages();updateCash();renderTasks();renderBets();renderMarket();
   window.__addLiveVideoBetToSlip = function() {
     const lb = window.__lastLiveVideoBet;
     if (!lb) return;
-    window.__addFootMarketToSlip(lb.home, lb.away, lb.label, lb.pct, lb.fairOdd, lb.code || 'LIVE');
+    window.__addFootMarketToSlip(lb.home, lb.away, lb.label, lb.pct, lb.fairOdd, lb.code || 'LIVE', lb.sport || 'soccer');
   };
   window.__verifyMatchVideo = async function(idx) {
     const m = window.__omniMatchesCache[idx];
@@ -2455,7 +2479,7 @@ geminiBrancherReglages();updateCash();renderTasks();renderBets();renderMarket();
     if (res && res.autoInsight) {
       const ins = res.autoInsight;
       const lb = ins.liveBetRecommendation;
-      window.__lastLiveVideoBet = lb ? { home: m.home, away: m.away, label: lb.label, pct: lb.pct, fairOdd: lb.fairOdd, code: lb.code } : null;
+      window.__lastLiveVideoBet = lb ? { home: m.home, away: m.away, sport: m.sport || 'soccer', label: lb.label, pct: lb.pct, fairOdd: lb.fairOdd, code: lb.code } : null;
       out.innerHTML = '<div style="padding:11px;border-radius:12px;background:rgba(15,185,122,.12);border:1px solid rgba(52,211,153,.45);font-size:12px;line-height:1.5">' +
         '<b>🔴 Vidéo &amp; Flux EN DIRECT Certifié : ' + esc(m.home) + ' vs ' + esc(m.away) + ' (' + esc(ins.liveClock || 'EN COURS') + ')</b><br>' +
         '📅 <b>Statut Live :</b> ' + esc(ins.verifiedDateFr) + ' · 📡 ' + esc(ins.provider) + ' · Clips Live : <b>' + Number((res.verifiedClips || []).length) + '</b><br>' +
@@ -2476,7 +2500,7 @@ geminiBrancherReglages();updateCash();renderTasks();renderBets();renderMarket();
   window.__addBetclicDefinitiveToSlip = function() {
     const d = window.__lastBetclicDefinitive;
     if (!d) return;
-    window.__addFootMarketToSlip(d.home, d.away, '📸 ' + d.label, d.truePct, d.odd, d.code || 'BETCLIC');
+    window.__addFootMarketToSlip(d.home, d.away, '📸 ' + d.label, d.truePct, d.odd, d.code || 'BETCLIC', d.sport || 'soccer');
   };
   const betclicInput = document.getElementById('cloeBetclicFile');
   if (betclicInput && brain.analyzeBookmakerScreenshot) {
@@ -2486,15 +2510,20 @@ geminiBrancherReglages();updateCash();renderTasks();renderBets();renderMarket();
       const out = document.getElementById('cloeBetclicOut');
       if (out) out.innerHTML = '<div style="padding:10px;border-radius:10px;background:rgba(245,158,11,.14);font-size:12px">📸 Lecture IA Vision / OCR local FRA+ENG de votre capture <b>' + esc(file.name) + '</b> et calcul EV de toutes les options Betclic...</div>';
       try {
-        const gemKey = localStorage.getItem('javis_gemKey') || '';
-        const res = await brain.analyzeBookmakerScreenshot(file, window.__omniMatchesCache || [], gemKey);
+        const gemKey = store.get('gemKey', '');
+        const res = await brain.analyzeBookmakerScreenshot(file, {
+          geminiKey: gemKey,
+          liveMatches: window.__omniMatchesCache || [],
+          capital: Math.round(cash),
+          currency: 'XOF'
+        });
         if (!res || !res.ok) {
           if (out) out.innerHTML = '<div style="padding:10px;border-radius:10px;background:rgba(239,68,68,.15);border:1px solid rgba(239,68,68,.4);font-size:12px">⚠️ ' + esc((res && res.error) || 'Impossible de lire les cotes sur cette capture.') + '</div>';
           return;
         }
         const pick = res.definitiveBet;
         if (pick) {
-          window.__lastBetclicDefinitive = { home: res.homeTeam, away: res.awayTeam, label: pick.rawLabel || pick.canonicalLabel, truePct: pick.trueProbPct, odd: pick.bookmakerOdd, code: pick.code };
+          window.__lastBetclicDefinitive = { home: res.homeTeam, away: res.awayTeam, sport: res.sport || 'soccer', label: pick.rawLabel || pick.canonicalLabel, truePct: pick.trueProbPct, odd: pick.bookmakerOdd, code: pick.code };
           if (out) out.innerHTML = '<div style="padding:11px;border-radius:12px;background:rgba(15,185,122,.16);border:1.5px solid rgba(52,211,153,.55);font-size:12px;line-height:1.5">' +
             '🏆 <b>LE PARI DÉFINITIF EXTRAIT (' + esc(res.bookmakerName || 'Betclic') + ') :</b><br>' +
             '⚽ <b>' + esc(res.homeTeam) + ' vs ' + esc(res.awayTeam) + '</b> (' + Number((res.evaluatedOptions || []).length) + ' options analysées)<br>' +

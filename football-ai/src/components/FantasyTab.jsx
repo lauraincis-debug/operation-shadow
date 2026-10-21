@@ -51,11 +51,14 @@ export default function FantasyTab({ modelState, liveMatches }) {
     if (customLineup.some((p) => p.id === candidate.id)) return;
     const samePos = customLineup.filter((p) => p.pos === candidate.pos);
     if (samePos.length === 0) return;
-    // Remplacer le joueur de même poste ayant le moins de points attendus si le budget le permet
+    // Remplacer le joueur de même poste ayant le moins de points attendus en respectant le budget ET max 3 joueurs/club !
     const sorted = [...samePos].sort((a, b) => a.expectedPoints - b.expectedPoints);
     for (const target of sorted) {
       const nextCost = totalSpent - target.price + candidate.price;
-      if (nextCost <= budget + 0.01) {
+      const otherSameClub = customLineup.filter(
+        (x) => x.id !== target.id && x.club === candidate.club
+      ).length;
+      if (nextCost <= budget + 0.01 && otherSameClub < 3) {
         setCustomLineup((prev) => prev.map((x) => (x.id === target.id ? candidate : x)));
         return;
       }

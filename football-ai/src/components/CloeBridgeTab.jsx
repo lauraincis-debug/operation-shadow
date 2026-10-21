@@ -19,21 +19,22 @@ export default function CloeBridgeTab({
   liveFixturesSnapshot,
   showToast,
 }) {
+  const normCurr = currency === "EUR" || currency === "€" ? "EUR" : "XOF";
   const encodedPacket = useMemo(() => {
     try {
       const rawBankroll = localStorage.getItem("football_ai_bankroll_v4");
       const bk = rawBankroll ? JSON.parse(rawBankroll) : null;
       const packet = {
-        currency,
+        currency: normCurr,
         stake,
-        capital: bk?.currentCapital ?? (currency === "EUR" ? 100 : 100000),
+        capital: bk?.currentCapital ?? (normCurr === "EUR" ? 100 : 100000),
         coupon: coupon.slice(0, 8),
       };
       return btoa(unescape(encodeURIComponent(JSON.stringify(packet))));
     } catch {
       return "";
     }
-  }, [coupon, stake, currency]);
+  }, [coupon, stake, normCurr]);
 
   const abidjanSyncUrl = encodedPacket
     ? `https://cloe-agent-abidjan.web.app/#sync=${encodedPacket}`
@@ -44,7 +45,7 @@ export default function CloeBridgeTab({
   const [messages, setMessages] = useState([
     {
       role: "cloe",
-      text: "Bonjour ! Je suis connectée au moteur Omni-Sport & Football AI Ultra v6.1 Certifiée. Pose-moi une question sur les matchs en direct (7 sports), un duel, les vidéos officielles vérifiées, ton 11 Fantasy ou la synchronisation avec Cloé Abidjan !",
+      text: "Bonjour ! Je suis connectée au moteur Omni-Sport & Football AI Ultra v6.4 Certifiée Intégrale. Pose-moi une question sur les matchs en direct (7 sports), un duel, les vidéos Live en cours, le scanner Betclic, ton 11 Fantasy ou la synchronisation avec Cloé Abidjan !",
       confidence: 96,
     },
   ]);
@@ -170,7 +171,7 @@ const briefing = await window.CloeFootballAI.getDailyBriefing();
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8 }}>
           <div>
             <div style={{ fontSize: 16, fontWeight: 900, color: "#f8fafc" }}>
-              🤖 Pont IA Temps Réel : Football AI Ultra v5 ↔ Cloé · Abidjan
+              🤖 Pont IA Temps Réel : Football AI Ultra v6.4 Certifiée Intégrale ↔ Cloé · Abidjan
             </div>
             <div style={{ fontSize: 12, color: "#cbd5e1", marginTop: 3 }}>
               SDK public CORS actif sur{" "}

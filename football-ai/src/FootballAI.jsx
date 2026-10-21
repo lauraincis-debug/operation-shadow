@@ -49,11 +49,78 @@ import {
 } from "./engine/contextModifiers.js";
 
 // ============================================================
-// FOOTBALL AI ULTRA v3 — Application Complète Auto-Évolutive
+// FOOTBALL AI ULTRA v6.4 Certifiée Intégrale — Application Complète Auto-Évolutive
 // ============================================================
 
 const STORAGE_KEY = "football_ai_ultra_v2";
 const LEGACY_KEY = "football_ai_memory";
+
+function normalizeCurrency(curr) {
+  return curr === "EUR" || curr === "€" ? "EUR" : "XOF";
+}
+
+function getCouponLegProb(item) {
+  if (!item || typeof item !== "object") return 0.65;
+  if (typeof item.selectedMarket?.prob === "number" && Number.isFinite(item.selectedMarket.prob)) {
+    return Math.min(0.98, Math.max(0.03, item.selectedMarket.prob));
+  }
+  if (typeof item.selectedMarket?.pct === "number" && Number.isFinite(item.selectedMarket.pct)) {
+    return Math.min(0.98, Math.max(0.03, item.selectedMarket.pct / 100));
+  }
+  if (Array.isArray(item.rawProbs) && item.rawProbs.length > 0) {
+    return Math.min(0.98, Math.max(0.03, Math.max(...item.rawProbs)));
+  }
+  if (Array.isArray(item.probs) && item.probs.length > 0) {
+    return Math.min(0.98, Math.max(0.03, Math.max(...item.probs) / 100));
+  }
+  return 0.65;
+}
+
+function sanitizeCouponList(list = []) {
+  if (!Array.isArray(list)) return [];
+  return list
+    .filter((item) => item && typeof item === "object" && item.home && item.away)
+    .map((item, idx) => {
+      const prob = getCouponLegProb(item);
+      const probs =
+        Array.isArray(item.probs) && item.probs.length >= 3
+          ? item.probs
+          : [Math.round(prob * 100), 20, Math.max(5, 80 - Math.round(prob * 100))];
+      const rawProbs =
+        Array.isArray(item.rawProbs) && item.rawProbs.length >= 3
+          ? item.rawProbs
+          : probs.map((p) => Number(p) / 100);
+      return {
+        ...item,
+        id: item.id ?? Date.now() + idx,
+        sport: item.sport || "soccer",
+        probs,
+        rawProbs,
+        selectedMarket: {
+          ...(item.selectedMarket || { label: "Choix IA" }),
+          prob,
+          pct: item.selectedMarket?.pct ?? Math.round(prob * 100),
+          bookOdd: Number(item.selectedMarket?.bookOdd || item.selectedMarket?.marketOdd || 1.5),
+        },
+      };
+    });
+}
+
+function sanitizePredictionsMemory(list = []) {
+  if (!Array.isArray(list)) return [];
+  return list.filter((item) => {
+    if (!item || typeof item !== "object" || !item.home || !item.away) return false;
+    if (item.sport && item.sport !== "soccer") return false;
+    if (
+      typeof item.scoreHome === "number" &&
+      typeof item.scoreAway === "number" &&
+      (item.scoreHome > 15 || item.scoreAway > 15)
+    ) {
+      return false;
+    }
+    return true;
+  });
+}
 
 function loadPersistedData() {
   try {
@@ -61,10 +128,10 @@ function loadPersistedData() {
     if (raw) {
       const parsed = JSON.parse(raw);
       return {
-        predictions: Array.isArray(parsed.predictions) ? parsed.predictions : [],
-        coupon: Array.isArray(parsed.coupon) ? parsed.coupon : [],
+        predictions: sanitizePredictionsMemory(parsed.predictions),
+        coupon: sanitizeCouponList(parsed.coupon),
         stake: typeof parsed.stake === "number" ? parsed.stake : 2000,
-        currency: parsed.currency || "FCFA",
+        currency: normalizeCurrency(parsed.currency),
         optaOverrides: parsed.optaOverrides || {},
         evolvedHyper: parsed.evolvedHyper || null,
         learnedExternalIds: Array.isArray(parsed.learnedExternalIds)
@@ -76,10 +143,10 @@ function loadPersistedData() {
     if (legacyRaw) {
       const legacy = JSON.parse(legacyRaw);
       return {
-        predictions: Array.isArray(legacy.predictions) ? legacy.predictions : [],
+        predictions: sanitizePredictionsMemory(legacy.predictions),
         coupon: [],
         stake: 2000,
-        currency: "FCFA",
+        currency: "XOF",
         optaOverrides: {},
         evolvedHyper: null,
         learnedExternalIds: [],
@@ -92,7 +159,7 @@ function loadPersistedData() {
     predictions: [],
     coupon: [],
     stake: 2000,
-    currency: "FCFA",
+    currency: "XOF",
     optaOverrides: {},
     evolvedHyper: null,
     learnedExternalIds: [],
@@ -108,7 +175,7 @@ function savePersistedData(data) {
 }
 
 function formatMoney(amount, currency) {
-  if (currency === "FCFA") {
+  if (normalizeCurrency(currency) !== "EUR") {
     return `${Math.round(amount).toLocaleString("fr-FR")} FCFA`;
   }
   return `${amount.toLocaleString("fr-FR", {
@@ -625,7 +692,7 @@ function PredictionCard({ pred, onValidate, onDelete }) {
 }
 
 // ============================================================
-// COMPOSANT PRINCIPAL : FOOTBALL AI ULTRA v3
+// COMPOSANT PRINCIPAL : FOOTBALL AI ULTRA v6.4 Certifiée Intégrale
 // ============================================================
 
 export default function FootballAI() {
@@ -732,7 +799,7 @@ export default function FootballAI() {
               );
               setTab("coupon");
             }
-            triggerToast("🔗 Synchronisé en toute sécurité avec Cloé · Abidjan v6.3 Certifiée Intégrale !");
+            triggerToast("🔗 Synchronisé en toute sécurité avec Cloé · Abidjan v6.4 Certifiée Intégrale !");
           }
         }
       }
@@ -763,7 +830,7 @@ export default function FootballAI() {
     return () => clearTimeout(t);
   }, [toast]);
 
-  // Persistance intégrale de la mémoire enrichie v3
+  // Persistance intégrale de la mémoire enrichie v6.4
   useEffect(() => {
     savePersistedData({
       predictions,
@@ -831,15 +898,22 @@ export default function FootballAI() {
     [apiCfg]
   );
 
-  // Ingérer automatiquement les vrais matchs terminés (Hier + Aujourd'hui) pour apprentissage continu !
+  // Ingérer automatiquement les vrais matchs de FOOTBALL terminés (Hier + Aujourd'hui) pour apprentissage continu !
   const ingestFinishedMatches = useCallback(
     async (silent = false) => {
       const [yest, today] = await Promise.all([
         fetchScheduleForOffset(-1, apiCfg),
         fetchScheduleForOffset(0, apiCfg),
       ]);
+      // SÉCURITÉ MODÈLE POISSON [AUDIT4-P0-05] : n'ingérer JAMAIS de scores NBA/NFL/NHL/MLB/Tennis dans Dixon-Coles Football !
       const completedReal = [...yest.matches, ...today.matches].filter(
-        (m) => m.completed && typeof m.scoreHome === "number" && typeof m.scoreAway === "number"
+        (m) =>
+          (!m.sport || m.sport === "soccer") &&
+          m.completed &&
+          typeof m.scoreHome === "number" &&
+          typeof m.scoreAway === "number" &&
+          m.scoreHome <= 15 &&
+          m.scoreAway <= 15
       );
 
       if (completedReal.length === 0) {
@@ -851,7 +925,7 @@ export default function FootballAI() {
 
       setPredictions((prev) => {
         const knownExt = new Set(learnedExternalIds);
-        let updatedList = [...prev];
+        let updatedList = sanitizePredictionsMemory(prev);
         let addedCount = 0;
         let autoValidatedCount = 0;
 
@@ -971,8 +1045,15 @@ export default function FootballAI() {
 
   const expertNarrative = useMemo(() => {
     if (!livePrediction) return "";
-    return generateExpertAnalysis(livePrediction, modelState, videoInsight);
-  }, [livePrediction, modelState, videoInsight]);
+    const matchedVideo = doesVideoInsightMatchTeams(
+      videoInsight,
+      activeMatch.home,
+      activeMatch.away
+    )
+      ? videoInsight
+      : null;
+    return generateExpertAnalysis(livePrediction, modelState, matchedVideo);
+  }, [livePrediction, modelState, videoInsight, activeMatch.home, activeMatch.away]);
 
   const handleAnalyzeSubmit = (e) => {
     if (e) e.preventDefault();
@@ -1052,24 +1133,35 @@ export default function FootballAI() {
 
   const handleQuickAddLiveMatchCoupon = (liveMatch) => {
     const pred = liveMatch.prediction;
+    const sport = liveMatch.sport || pred.sport || "soccer";
+    const prob = pred.recommendedMarket?.prob ?? (pred.recommendedMarket?.pct || 68) / 100;
     const rec = {
       id: Date.now() + Math.floor(Math.random() * 1000),
       externalId: liveMatch.externalId,
+      sport,
       home: pred.home,
       away: pred.away,
-      league: liveMatch.league,
+      league: liveMatch.league || "ucl",
       probs: pred.probs,
-      rawProbs: pred.rawProbs,
+      rawProbs: pred.rawProbs || pred.probs.map((p) => p / 100),
       fairOdds: pred.fairOdds,
       xg: pred.xg,
       selectedMarket: {
         ...pred.recommendedMarket,
-        bookOdd: pred.recommendedMarket.marketOdd,
+        prob,
+        bookOdd: Number(
+          pred.recommendedMarket.marketOdd ||
+            pred.recommendedMarket.bookOdd ||
+            pred.recommendedMarket.fairOdd ||
+            1.5
+        ),
       },
       date: liveMatch.dateFr || new Date().toLocaleDateString("fr-FR"),
       result: undefined,
     };
-    setPredictions((prev) => [rec, ...prev]);
+    if (sport === "soccer") {
+      setPredictions((prev) => [rec, ...prev]);
+    }
     setCoupon((prev) => [...prev, rec]);
     triggerToast(`🎰 "${pred.home} vs ${pred.away}" ajouté au Coupon !`);
   };
@@ -1189,7 +1281,7 @@ export default function FootballAI() {
       [
         JSON.stringify(
           {
-            version: 3,
+            version: "6.4.0",
             exportedAt: new Date().toISOString(),
             predictions,
             coupon,
@@ -1205,10 +1297,10 @@ export default function FootballAI() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `football-ai-ultra-v3-${new Date().toISOString().slice(0, 10)}.json`;
+    a.download = `football-ai-ultra-v6.4-${new Date().toISOString().slice(0, 10)}.json`;
     a.click();
     URL.revokeObjectURL(url);
-    triggerToast("📤 Sauvegarde complète v3 téléchargée !");
+    triggerToast("📤 Sauvegarde complète v6.4 téléchargée !");
   };
 
   const handleImportJSON = (e) => {
@@ -1219,8 +1311,8 @@ export default function FootballAI() {
       try {
         const parsed = JSON.parse(String(reader.result));
         if (Array.isArray(parsed.predictions)) {
-          setPredictions(parsed.predictions);
-          if (Array.isArray(parsed.coupon)) setCoupon(parsed.coupon);
+          setPredictions(sanitizePredictionsMemory(parsed.predictions));
+          if (Array.isArray(parsed.coupon)) setCoupon(sanitizeCouponList(parsed.coupon));
           if (parsed.optaOverrides) setOptaOverrides(parsed.optaOverrides);
           if (parsed.evolvedHyper) setEvolvedHyper(parsed.evolvedHyper);
           triggerToast(`📥 ${parsed.predictions.length} prédictions restaurées avec succès !`);
@@ -1304,10 +1396,10 @@ export default function FootballAI() {
         authToken: cloudCfg.authToken,
         encryptionPassphrase: cloudCfg.encryptionPassphrase,
       });
-      setPredictions(data.predictions);
-      if (Array.isArray(data.coupon)) setCoupon(data.coupon);
+      setPredictions(sanitizePredictionsMemory(data.predictions));
+      if (Array.isArray(data.coupon)) setCoupon(sanitizeCouponList(data.coupon));
       if (typeof data.stake === "number") setStake(data.stake);
-      if (data.currency) setCurrency(data.currency);
+      if (data.currency) setCurrency(normalizeCurrency(data.currency));
       if (data.optaOverrides) setOptaOverrides(data.optaOverrides);
       if (data.evolvedHyper) setEvolvedHyper(data.evolvedHyper);
       triggerToast(`🔐 ${data.predictions.length} prédictions déchiffrées et restaurées depuis Firebase !`);
@@ -1324,11 +1416,11 @@ export default function FootballAI() {
     let weakestLeg = coupon[0];
 
     for (const item of coupon) {
-      const legProb = item.selectedMarket?.prob ?? Math.max(...item.rawProbs);
-      const legOdd = item.selectedMarket?.bookOdd ?? 1.5;
+      const legProb = getCouponLegProb(item);
+      const legOdd = Number(item.selectedMarket?.bookOdd ?? 1.5);
       combinedProb *= legProb;
       combinedBookOdd *= legOdd;
-      const weakestProb = weakestLeg.selectedMarket?.prob ?? Math.max(...weakestLeg.rawProbs);
+      const weakestProb = getCouponLegProb(weakestLeg);
       if (legProb < weakestProb) {
         weakestLeg = item;
       }
@@ -1443,7 +1535,7 @@ export default function FootballAI() {
               <div className="fai-brand-title">
                 <span className="fai-gradient-text">⚡ OMNI-SPORT &amp; FOOTBALL AI</span>
                 <span className="fai-badge-version">
-                  ULTRA v6.3 CERTIFIÉE INTÉGRALE • LIVE VIDÉO &amp; BETCLIC • GEN #{genNumber}
+                  ULTRA v6.4 CERTIFIÉE INTÉGRALE • LIVE VIDÉO &amp; BETCLIC • GEN #{genNumber}
                 </span>
               </div>
               <div className="fai-brand-sub">
@@ -1583,7 +1675,7 @@ export default function FootballAI() {
               <div className="fai-section-title">
                 <span>⚙️ Configuration de la rencontre</span>
                 <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
-                  {videoInsight && (
+                  {doesVideoInsightMatchTeams(videoInsight, form.home, form.away) && (
                     <span style={{ color: "#00e676", fontSize: 11 }}>
                       🎥 Signal Vidéo IA actif (×{videoInsight.homeXgMult} / ×{videoInsight.awayXgMult})
                     </span>
@@ -2478,7 +2570,7 @@ export default function FootballAI() {
               currency={currency}
               couponSummary={couponSummary}
               onLoadGeneratedTicket={(items, suggestedStake, badge) => {
-                setCoupon(items);
+                setCoupon(sanitizeCouponList(items));
                 setStake(suggestedStake);
                 triggerToast(`${badge} chargé avec mise optimale !`);
               }}
@@ -2663,29 +2755,37 @@ export default function FootballAI() {
                     <div className="fai-section-title">
                       <span>💰 Simulateur Bankroll &amp; Gains</span>
                       <div style={{ display: "flex", gap: 4 }}>
-                        {["FCFA", "€"].map((cur) => (
-                          <button
-                            key={cur}
-                            type="button"
-                            className="fai-btn-ghost"
-                            style={{
-                              padding: "3px 8px",
-                              fontSize: 11,
-                              borderColor: currency === cur ? "#00e5ff" : undefined,
-                              color: currency === cur ? "#00e5ff" : undefined,
-                            }}
-                            onClick={() => {
-                              setCurrency(cur);
-                              setStake(cur === "FCFA" ? 2000 : 10);
-                            }}
-                          >
-                            {cur}
-                          </button>
-                        ))}
+                        {[
+                          { code: "XOF", label: "FCFA" },
+                          { code: "EUR", label: "€" },
+                        ].map(({ code, label }) => {
+                          const isSelected = normalizeCurrency(currency) === code;
+                          return (
+                            <button
+                              key={code}
+                              type="button"
+                              className="fai-btn-ghost"
+                              style={{
+                                padding: "3px 8px",
+                                fontSize: 11,
+                                borderColor: isSelected ? "#00e5ff" : undefined,
+                                color: isSelected ? "#00e5ff" : undefined,
+                              }}
+                              onClick={() => {
+                                setCurrency(code);
+                                setStake(code === "XOF" ? 2000 : 10);
+                              }}
+                            >
+                              {label}
+                            </button>
+                          );
+                        })}
                       </div>
                     </div>
 
-                    <label className="fai-label">Mise engagée ({currency})</label>
+                    <label className="fai-label">
+                      Mise engagée ({normalizeCurrency(currency) === "EUR" ? "EUR €" : "FCFA"})
+                    </label>
                     <input
                       type="number"
                       min="1"
@@ -2696,7 +2796,7 @@ export default function FootballAI() {
                     />
 
                     <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 8 }}>
-                      {(currency === "FCFA" ? [1000, 2000, 5000, 10000] : [5, 10, 25, 50]).map(
+                      {(normalizeCurrency(currency) === "XOF" ? [1000, 2000, 5000, 10000] : [5, 10, 25, 50]).map(
                         (preset) => (
                           <button
                             key={preset}
@@ -2704,7 +2804,8 @@ export default function FootballAI() {
                             className="fai-quick-chip"
                             onClick={() => setStake(preset)}
                           >
-                            {preset.toLocaleString("fr-FR")} {currency}
+                            {preset.toLocaleString("fr-FR")}{" "}
+                            {normalizeCurrency(currency) === "EUR" ? "€" : "FCFA"}
                           </button>
                         )
                       )}

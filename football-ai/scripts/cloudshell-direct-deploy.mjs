@@ -329,7 +329,7 @@ async function main() {
       method: "POST",
       token: freshToken,
       quotaProject: projectId,
-      body: { message: "Football AI Ultra v3 — Production Release" },
+      body: { message: "Omni-Sport & Football AI Ultra v6.4 Certifiée Intégrale — Production Release" },
     }
   );
   if (!relRes.ok) {

@@ -459,12 +459,15 @@ export default function InPlayTab({
                   style={{ width: "100%", marginTop: 8, fontSize: 11 }}
                   onClick={() =>
                     onAddLivePickToCoupon({
+                      sport: "soccer",
                       home: preMatch.home,
                       away: preMatch.away,
                       league,
                       probs: livePred.liveProbs,
+                      rawProbs: livePred.liveProbs.map((p) => p / 100),
                       selectedMarket: {
                         label: `[LIVE ${minute}'] ${item.label}`,
+                        prob: Math.min(0.98, Math.max(0.03, item.pct / 100)),
                         pct: item.pct,
                         bookOdd: item.odd,
                       },

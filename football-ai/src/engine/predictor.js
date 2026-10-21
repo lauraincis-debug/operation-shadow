@@ -10,7 +10,7 @@ import {
 } from "./antiBiasEngine.js";
 
 // ============================================================
-// MOTEUR PRÉDICTIF HYBRIDE AUTO-ÉVOLUTIF (ULTRA v3)
+// MOTEUR PRÉDICTIF HYBRIDE AUTO-ÉVOLUTIF (ULTRA v6.4 Certifiée Intégrale)
 // 1. Elo Dynamique (MoV) + Poisson Bivarié Dixon-Coles (8x8)
 // 2. Mémoire Neuronale Multi-Couches & Diagnostic Post-Mortem des Erreurs
 // 3. Auto-Amélioration Continue Multi-Époques (Optimisation Brier & Log-Loss)
@@ -1253,13 +1253,18 @@ export function computeFullPrediction(
       dcWeightPct: Math.round(wDC * 100),
     },
     goals: {
+      over15: dc.over15,
+      over25: dc.over25,
+      under25: dc.under25,
+      over35: dc.over35,
+      bttsYes: dc.bttsYes,
       over15Pct: Math.round(dc.over15 * 100),
       over25Pct: Math.round(dc.over25 * 100),
       under25Pct: Math.round(dc.under25 * 100),
       over35Pct: Math.round(dc.over35 * 100),
       bttsYesPct: Math.round(dc.bttsYes * 100),
-      cleanSheetHomePct: Math.round(Math.exp(-lambdaA) * 100),
-      cleanSheetAwayPct: Math.round(Math.exp(-lambdaH) * 100),
+      cleanSheetHomePct: Math.round(dc.rawMatrix.reduce((sum, row) => sum + row[0], 0) * 100),
+      cleanSheetAwayPct: Math.round(dc.rawMatrix[0].reduce((sum, p) => sum + p, 0) * 100),
     },
     topScores: dc.topScores,
     heatmap5x5: dc.heatmap5x5,

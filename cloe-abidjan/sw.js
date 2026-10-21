@@ -1,5 +1,5 @@
-const CACHE = 'Cloé-v39-certified-v6-3';
-const ASSETS = ['./', './index.html', './cloe-bridge.js', './manifest.webmanifest', './icon.svg'];
+const CACHE = 'Cloé-v40-certified-v6-4';
+const ASSETS = ['./', './index.html', './cloe-bridge.js', './javis-voice.js', './fonts.css', './manifest.webmanifest', './icon.svg'];
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)).then(() => self.skipWaiting()));

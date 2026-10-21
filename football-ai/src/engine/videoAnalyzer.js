@@ -1,5 +1,5 @@
 // ============================================================================
-// MOTEUR VIDÉO LIVE IN-PLAY CERTIFIÉ v6.2 (STRICTEMENT EN DIRECT — ZÉRO POST-MATCH)
+// MOTEUR VIDÉO LIVE IN-PLAY CERTIFIÉ v6.4 Certifiée Intégrale (STRICTEMENT EN DIRECT — ZÉRO POST-MATCH)
 // ============================================================================
 // Correctifs intégraux Audit #2 ([AUDIT2-VID-01], [AUDIT2-VID-03]) + Exigence Live :
 // 1. SUPPRESSION TOTALE du court-circuit `Boolean(candidate.sameOfficialEventId)` :
@@ -95,7 +95,7 @@ export function teamsMatchStrictly(
 }
 
 /**
- * QUINTUPLE VERROU STRICT v6.2 (AUCUN COURT-CIRCUIT POSSIBLE) :
+ * QUINTUPLE VERROU STRICT v6.4 (AUCUN COURT-CIRCUIT POSSIBLE) :
  * 1) Catégorie identique (Hommes A ≠ Féminines ≠ U19/U21)
  * 2) ID officiel cohérent si présent (`officialEventId === rawEventId`)
  * 3) Les 2 équipes exactes DOIVENT correspondre (`teamsMatchStrictly` TOUJOURS évalué !)
@@ -598,7 +598,14 @@ function analyzeSingleRgbBuffer(data, width, height) {
   };
 }
 
-export async function scanVideoElementFrames(videoSrc, label, onProgress = () => {}, shouldRevokeUrl = false) {
+export async function scanVideoElementFrames(
+  videoSrc,
+  label,
+  onProgress = () => {},
+  shouldRevokeUrl = false,
+  homeTeam = "",
+  awayTeam = ""
+) {
   if (typeof document === "undefined") {
     throw new Error("Analyse visuelle HTML5 requise dans le navigateur.");
   }
@@ -683,6 +690,8 @@ export async function scanVideoElementFrames(videoSrc, label, onProgress = () =>
 
     return {
       sourceType: "pixel_vision_canvas",
+      targetHome: homeTeam ? canonicalTeamName(homeTeam) : "",
+      targetAway: awayTeam ? canonicalTeamName(awayTeam) : "",
       fileName: label,
       durationAnalysedSec: Math.round(duration),
       samplesCount: sampleCount,
@@ -722,10 +731,19 @@ export async function analyzeOfficialInternetMatchClip(
   // 1. Tentative d'analyse pixel directe sur le flux MP4 officiel (avec crossOrigin = "anonymous")
   if (verifiedClip.mp4Url && typeof document !== "undefined") {
     try {
-      const frameResult = await scanVideoElementFrames(verifiedClip.mp4Url, verifiedClip.title, onProgress, false);
+      const frameResult = await scanVideoElementFrames(
+        verifiedClip.mp4Url,
+        verifiedClip.title,
+        onProgress,
+        false,
+        resolvedMatch?.home || "",
+        resolvedMatch?.away || ""
+      );
       const liveBetRecommendation = buildLiveInPlayBetRecommendation(resolvedMatch, frameResult);
       return {
         ...frameResult,
+        targetHome: canonicalTeamName(resolvedMatch?.home || ""),
+        targetAway: canonicalTeamName(resolvedMatch?.away || ""),
         isVerifiedInternetVideo: true,
         isLiveOngoing: Boolean(verifiedClip.verification.isLiveOngoing),
         provider: verifiedClip.provider,
@@ -948,9 +966,12 @@ export async function analyzeLiveScreenStreamBurst(targetMatch, onProgress = () 
         currGray[p] = lum;
         if (prevGray) diff += Math.abs(lum - prevGray[p]);
       }
+      const frameMotion = prevGray
+        ? clamp(Math.round((diff / currGray.length) * 3.2), 20, 96)
+        : 52;
       prevGray = currGray;
       totalSurface += st.surfacePct;
-      totalMotion += prevGray ? clamp(Math.round((diff / currGray.length) * 3.2), 20, 96) : 52;
+      totalMotion += frameMotion;
       totalCenterX += st.centerOfGravityX;
       onProgress(Math.round(((i + 1) / framesCount) * 100));
     }
@@ -969,6 +990,9 @@ export async function analyzeLiveScreenStreamBurst(targetMatch, onProgress = () 
       sourceType: "live_screen_stream",
       isVerifiedInternetVideo: true,
       isLiveOngoing: true,
+      targetHome: canonicalTeamName(targetMatch?.home || ""),
+      targetAway: canonicalTeamName(targetMatch?.away || ""),
+      liveClock: targetMatch?.statusText || "EN DIRECT",
       provider: "Flux Vidéo Direct Temps Réel (4s Live Burst)",
       verifiedDateFr: new Date().toLocaleTimeString("fr-FR") + " (Direct Temps Réel)",
       fileName: `Direct TV/Stream : ${targetMatch.home} vs ${targetMatch.away}`,
@@ -990,15 +1014,39 @@ export async function analyzeLiveScreenStreamBurst(targetMatch, onProgress = () 
   }
 }
 
-export async function analyzeMatchVideoFile(file, onProgress = () => {}) {
+export async function analyzeMatchVideoFile(
+  file,
+  onProgress = () => {},
+  homeTeam = "",
+  awayTeam = ""
+) {
   const blobUrl = URL.createObjectURL(file);
-  return scanVideoElementFrames(blobUrl, file.name, onProgress, true);
+  const scanned = await scanVideoElementFrames(
+    blobUrl,
+    file.name,
+    onProgress,
+    true,
+    homeTeam,
+    awayTeam
+  );
+  if (homeTeam && awayTeam) {
+    return {
+      ...scanned,
+      liveBetRecommendation: buildLiveInPlayBetRecommendation(
+        { home: homeTeam, away: awayTeam, sport: "soccer", scoreHome: 0, scoreAway: 0, statusText: "EN DIRECT" },
+        scanned
+      ),
+    };
+  }
+  return scanned;
 }
 
 export function buildSyntheticVideoDemo(homeTeam = "Domicile", awayTeam = "Extérieur") {
   const metrics = {
     sourceType: "synthetic_calibration_demo",
     isVerifiedInternetVideo: false,
+    targetHome: canonicalTeamName(homeTeam),
+    targetAway: canonicalTeamName(awayTeam),
     fileName: `Calibration Vision IA (${homeTeam} vs ${awayTeam})`,
     durationAnalysedSec: 30,
     samplesCount: 12,

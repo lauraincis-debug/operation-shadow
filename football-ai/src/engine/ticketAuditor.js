@@ -1,10 +1,10 @@
 import { computeFullPrediction } from "./predictor.js";
 import { predictOmniSportMatch } from "./omniSportEngine.js";
 import { extractTeamsFromQuestion } from "../services/cloeBridge.js";
+import { resolveClub } from "../data/clubs.js";
 
 /**
- * 📸 AUDIT IA DE TICKET & DÉTECTEUR DE MAILLON FAIBLE v6.1 (OMNI-SPORT CERTIFIÉ)
- * Corrige intégralement le bug multi-sport P1 :
+ * 📸 AUDIT IA DE TICKET & DÉTECTEUR DE MAILLON FAIBLE v6.4 Certifiée Intégrale (OMNI-SPORT CERTIFIÉ)
  * - Route chaque ligne du combiné vers le VRAI modèle de sa discipline
  *   (Football Dixon-Coles vs NBA Gaussien vs Tennis Markov vs NFL/NHL/MLB/UFC)
  * - Calcule la vraie espérance mathématique combinée et signale les cotes sous-payées
@@ -49,6 +49,7 @@ export function auditCouponSlip(coupon = [], modelState) {
       chosenOdd: Number(item.selectedMarket?.bookOdd || 1.5),
       saferAlternative: {
         ...saferAlt,
+        prob: saferAlt.prob ?? Math.min(0.98, Math.max(0.03, (saferAlt.pct || 70) / 100)),
         bookOdd: Number(saferAlt.marketOdd || saferAlt.bookOdd || 1.32),
       },
       gainSafetyPct: gainSafety,
@@ -109,7 +110,8 @@ export function parseExternalTicketText(rawText = "", modelState) {
       if (seenPairs.has(key)) continue;
       seenPairs.add(key);
 
-      const pred = computeFullPrediction(teams[0], teams[1], "ucl", modelState, null);
+      const realLeague = resolveClub(teams[0])?.leagues?.[0] || "ucl";
+      const pred = computeFullPrediction(teams[0], teams[1], realLeague, modelState, null);
       const maxIdx = pred.probs.indexOf(Math.max(...pred.probs));
       const default1X2Market = pred.markets?.[maxIdx] || pred.recommendedMarket;
 
@@ -118,10 +120,12 @@ export function parseExternalTicketText(rawText = "", modelState) {
         sport: "soccer",
         home: pred.home,
         away: pred.away,
-        league: "ucl",
+        league: realLeague,
         probs: pred.probs,
+        rawProbs: pred.rawProbs,
         selectedMarket: {
           ...default1X2Market,
+          prob: default1X2Market.prob ?? (default1X2Market.pct || 65) / 100,
           bookOdd: Number(default1X2Market.marketOdd || 1.65),
         },
       });

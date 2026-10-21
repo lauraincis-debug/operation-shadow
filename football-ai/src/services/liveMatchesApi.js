@@ -1,7 +1,7 @@
 import { canonicalTeamName, normalizeKey } from "../data/clubs.js";
 
 // ============================================================================
-// OMNI-SPORT LIVE INTERNET HARVESTER & ZERO-HALLUCINATION CONNECTOR v6.0
+// OMNI-SPORT LIVE INTERNET HARVESTER & ZERO-HALLUCINATION CONNECTOR v6.4 Certifiée Intégrale
 // 1. 44 Compétitions Live Temps Réel sur 7 Sports (Football, NBA/Basket,
 //    Tennis ATP/WTA, NFL, Hockey NHL, Baseball MLB, MMA/UFC)
 // 2. Cache Stale-While-Revalidate Ultra-Vif (< 25 ms) + Snapshot Cloud Vérifié
@@ -631,14 +631,21 @@ export async function fetchDeepMatchDossier(match) {
     for (const block of json.headToHeadGames || []) {
       for (const ev of block.events || []) {
         const dt = ev.gameDate ? new Date(ev.gameDate) : null;
+        const isBlockHome = ev.atVs !== "@";
         h2hGames.push({
           id: ev.id || `${ev.gameDate}-${ev.score}`,
           dateIso: ev.gameDate || "",
           dateExactFr: dt
             ? dt.toLocaleDateString("fr-FR", { day: "2-digit", month: "long", year: "numeric" })
             : "Date officielle non fournie",
-          homeTeam: ev.homeTeamName || ev.atVs === "vs" ? block.team?.displayName : ev.opponent?.displayName || "",
-          awayTeam: ev.awayTeamName || ev.opponent?.displayName || "",
+          homeTeam:
+            ev.homeTeamName ||
+            (isBlockHome ? block.team?.displayName : ev.opponent?.displayName) ||
+            "",
+          awayTeam:
+            ev.awayTeamName ||
+            (isBlockHome ? ev.opponent?.displayName : block.team?.displayName) ||
+            "",
           score: ev.score || `${ev.homeTeamScore ?? "?"} - ${ev.awayTeamScore ?? "?"}`,
           competition: ev.leagueName || ev.leagueAbbreviation || match.leagueLabel || "",
           venue: ev.venue?.fullName || ev.location || (ev.atVs === "@" ? "Extérieur" : "Domicile"),
@@ -677,8 +684,8 @@ export async function fetchDeepMatchDossier(match) {
               id: ev.id,
               dateIso: item.dateIso,
               dateExactFr: item.dateExactFr,
-              homeTeam: ev.homeTeamName || tName,
-              awayTeam: ev.awayTeamName || item.opponent,
+              homeTeam: ev.homeTeamName || (ev.atVs === "@" ? item.opponent : tName),
+              awayTeam: ev.awayTeamName || (ev.atVs === "@" ? tName : item.opponent),
               score: item.score,
               competition: item.competition,
               venue: item.locationType,
