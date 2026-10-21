@@ -115,7 +115,7 @@ export default function CloeApp() {
                 {
                   role: "cloe",
                   text:
-                    `🔗 Synchronisation sécurisée reçue depuis Omni-Sport AI Ultra v6.2 !\n` +
+                    `🔗 Synchronisation sécurisée reçue depuis Omni-Sport AI Ultra v6.3 !\n` +
                     `• Capital suivi : ${cleanWallet.capital} ${cleanWallet.currency} | Ticket reçu : ${cleanWallet.coupon.length} match(s)\n` +
                     (audit
                       ? `• 📸 Audit Survie IA : ${audit.grade} (${audit.auditScore}/100) — Maillon faible : ${audit.weakestLink.matchLabel} (${audit.weakestLink.chosenPct}%)`
@@ -182,11 +182,11 @@ export default function CloeApp() {
 
     const key = mem.llmApiKey.trim();
     const sysPrompt =
-      `Tu es Cloé v6.2 Live Certifiée, l'assistante IA personnelle brillante, chaleureuse et auto-évolutive de ${mem.userName}. ` +
+      `Tu es Cloé v6.3 Certifiée Intégrale, l'assistante IA personnelle brillante, chaleureuse et auto-évolutive de ${mem.userName}. ` +
       `Tu réponds toujours en français clair, structuré et précis. ` +
       `Règles apprises par Cloé : ${mem.lessons.join(" | ")}. ` +
       `Notes actives de l'utilisateur : ${mem.notes.filter((n) => !n.done).map((n) => n.text).join(" ; ")}. ` +
-      `Données exactes calculées en temps réel par Omni-Sport & Football AI Ultra v6.2 Live Certifiée : ${groundedContext}`;
+      `Données exactes calculées en temps réel par Omni-Sport & Football AI Ultra v6.3 Certifiée Intégrale : ${groundedContext}`;
 
     try {
       if (mem.llmProvider === "gemini") {
@@ -457,7 +457,7 @@ export default function CloeApp() {
                   </span>
                 </div>
                 <div style={{ fontSize: 11.5, color: "#94a3b8" }}>
-                  Reliée en direct à Omni-Sport &amp; Football AI Ultra v6.2 Live Certifiée • 🔴 Vidéo Direct &amp; 📸 Betclic
+                  Reliée en direct à Omni-Sport &amp; Football AI Ultra v6.3 Certifiée Intégrale • 🔴 Vidéo Direct &amp; 📸 Betclic
                 </div>
               </div>
             </div>
@@ -735,7 +735,7 @@ export default function CloeApp() {
               ))}
               {loading && (
                 <div style={{ color: "#38bdf8", fontSize: 12.5 }}>
-                  ✨ Cloé réfléchit et interroge Omni-Sport &amp; Football AI Ultra v6.2 Live Certifiée...
+                  ✨ Cloé réfléchit et interroge Omni-Sport &amp; Football AI Ultra v6.3 Certifiée Intégrale...
                 </div>
               )}
             </div>
@@ -1025,7 +1025,7 @@ export default function CloeApp() {
 
             {dailyBriefing && (
               <div style={{ fontSize: 12, color: "#6ee7b7" }}>
-                ✓ Synchronisation active avec Omni-Sport &amp; Football AI Ultra v6.2 Live Certifiée ({dailyBriefing.modelEvolution.memorizedCount} matchs calibrés).
+                ✓ Synchronisation active avec Omni-Sport &amp; Football AI Ultra v6.3 Certifiée Intégrale ({dailyBriefing.modelEvolution.memorizedCount} matchs calibrés).
               </div>
             )}
           </div>

@@ -1,8 +1,8 @@
 {
   "name": "football-ai-ultra",
   "private": true,
-  "version": "6.2.0",
-  "description": "Système prédictif Omni-Sport & Football AI Ultra v6.2 Live Certifiée (7 Sports, Vidéos Live en cours, Scanner Captures Betclic ➔ Pari Définitif, Cloé IA Ultra)",
+  "version": "6.3.0",
+  "description": "Système prédictif Omni-Sport & Football AI Ultra v6.3 Certifiée Intégrale (7 Sports, Vidéos Live en cours, Scanner Captures Betclic ➔ Pari Définitif, Cloé IA Ultra)",
   "type": "module",
   "scripts": {
     "dev": "vite --host 0.0.0.0 --port 5173",

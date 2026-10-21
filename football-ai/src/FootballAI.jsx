@@ -732,7 +732,7 @@ export default function FootballAI() {
               );
               setTab("coupon");
             }
-            triggerToast("🔗 Synchronisé en toute sécurité avec Cloé · Abidjan v6.2 !");
+            triggerToast("🔗 Synchronisé en toute sécurité avec Cloé · Abidjan v6.3 Certifiée Intégrale !");
           }
         }
       }
@@ -1443,7 +1443,7 @@ export default function FootballAI() {
               <div className="fai-brand-title">
                 <span className="fai-gradient-text">⚡ OMNI-SPORT &amp; FOOTBALL AI</span>
                 <span className="fai-badge-version">
-                  ULTRA v6.2 LIVE CERTIFIÉE • ZÉRO-HALLUCINATION • GEN #{genNumber}
+                  ULTRA v6.3 CERTIFIÉE INTÉGRALE • LIVE VIDÉO &amp; BETCLIC • GEN #{genNumber}
                 </span>
               </div>
               <div className="fai-brand-sub">
@@ -1534,10 +1534,10 @@ export default function FootballAI() {
               • <strong>2. Une probabilité de 75 % signifie 3 victoires sur 4, jamais 100 % :</strong> ne misez jamais plus de <strong>2 % à 5 %</strong> de votre capital sur un ticket.
             </div>
             <div>
-              • <strong>3. Vérifiez toujours la vraie cote de votre bookmaker (1xBet / Sportcash)</strong> dans le Gestionnaire de Bankroll : si l&apos;espérance passe en négatif, le calculateur Kelly bloque la mise à <strong>0 FCFA</strong>.
+              • <strong>3. Scanner Captures Bookmakers (Betclic / Winamax / 1xBet / Sportcash) :</strong> envoyez votre capture dans l&apos;onglet <strong>📸 Capture Betclic</strong> — l&apos;IA recalcule toutes les cotes proposées et extrait <strong>1 SEUL Pari Définitif optimal</strong> (ou bloque la mise à <strong>0 FCFA / 0 €</strong> si toutes les cotes sont à espérance négative).
             </div>
             <div>
-              • <strong>4. Vidéos &amp; Buteurs :</strong> l&apos;onglet <strong>🎥 Vidéo IA</strong> récupère lui-même les séquences officielles sur Internet en vérifiant <strong>le bon match ET la date exacte (±36h)</strong>, et les paris Buteurs ne doivent être validés qu&apos;à <strong>H-60 min</strong> (compositions officielles).
+              • <strong>4. Vidéos EN COURS uniquement &amp; Buteurs :</strong> l&apos;onglet <strong>🔴 Vidéo Live</strong> récupère les flux et vidéos en ligne <strong>strictement pour les matchs EN COURS</strong> (jamais après le coup de sifflet final) afin de parier en direct, et les paris Buteurs ne doivent être validés qu&apos;à <strong>H-60 min</strong> (compositions officielles).
             </div>
           </div>
         </details>

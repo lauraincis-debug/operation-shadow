@@ -656,6 +656,18 @@ for (const relAsset of swAssets) {
   assert.ok(fsNode.existsSync(fullAssetPath), `Asset Service Worker manquant sur disque : ${fullAssetPath}`);
 }
 
+// 15f. Zéro dérive de version entre les 3 applications (FootballAI + Cloé IA Ultra + Cloé Abidjan = v6.3 Certifiée Intégrale)
+for (const uiPath of [
+  pathNode.resolve("src/FootballAI.jsx"),
+  pathNode.resolve("src/cloe-standalone/CloeApp.jsx"),
+  pathNode.resolve("src/services/cloeBridge.js"),
+  pathNode.resolve("../cloe-abidjan/index.html"),
+]) {
+  const uiTxt = fsNode.readFileSync(uiPath, "utf8");
+  assert.ok(uiTxt.includes("v6.3"), `Version v6.3 requise dans ${uiPath}`);
+  assert.equal(/v6\.[012]\b/.test(uiTxt), false, `Zéro résidu v6.0/v6.1/v6.2 autorisé dans ${uiPath}`);
+}
+
 console.log(
   `✓ Audit Complet #3 (v6.3 CERTIFIÉE INTÉGRALE) validé à 100% : Bridge OCR Betclic sans crash ✅ | CSP 'wasm-unsafe-eval' sur les 3 domaines ✅ | Zéro pollution videoInsight inter-matchs ✅ | Pari Live 0-0 Télémétrique ("${liveZeroZeroInsight.liveBetRecommendation.label}") ✅ | 100% Assets SW vérifiés sur disque ✅ !`
 );
