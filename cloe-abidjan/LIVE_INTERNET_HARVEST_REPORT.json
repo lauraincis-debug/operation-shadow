@@ -1,0 +1,137 @@
+{
+  "status": "LIVE_INTERNET_HARVEST_OK",
+  "harvestedAt": "2026-10-21T09:25:08.700Z",
+  "sha256Integrity": "e0405938f3e01a9143df629f",
+  "totalMatchesAcross4Days": 867,
+  "countsBySport": {
+    "soccer": 105,
+    "basketball": 29,
+    "tennis": 692,
+    "football": 13,
+    "hockey": 27,
+    "baseball": 1
+  },
+  "deepDossiersPreloaded": 18,
+  "sampleVerifiedRealMatches": [
+    {
+      "sport": "soccer",
+      "competition": "Ligue des Champions 🇪🇺",
+      "match": "Côme vs Manchester United",
+      "dateExact": "mer. 21 oct. 2026",
+      "time": "16:45",
+      "venueExact": "Giuseppe Sinigaglia, Como, Italy",
+      "status": "🕒 16:45",
+      "score": null
+    },
+    {
+      "sport": "soccer",
+      "competition": "Ligue des Champions 🇪🇺",
+      "match": "Lille vs Galatasaray",
+      "dateExact": "mer. 21 oct. 2026",
+      "time": "16:45",
+      "venueExact": "Decathlon Arena - Stade Pierre-Mauroy, Lille, France",
+      "status": "🕒 16:45",
+      "score": null
+    },
+    {
+      "sport": "soccer",
+      "competition": "Ligue des Champions 🇪🇺",
+      "match": "Aston Villa vs Viking FK",
+      "dateExact": "mer. 21 oct. 2026",
+      "time": "19:00",
+      "venueExact": "Villa Park, Birmingham, England",
+      "status": "🕒 19:00",
+      "score": null
+    },
+    {
+      "sport": "soccer",
+      "competition": "Ligue des Champions 🇪🇺",
+      "match": "Bayern Munich vs Arsenal",
+      "dateExact": "mer. 21 oct. 2026",
+      "time": "19:00",
+      "venueExact": "Allianz Arena, München, Germany",
+      "status": "🕒 19:00",
+      "score": null
+    },
+    {
+      "sport": "soccer",
+      "competition": "Ligue des Champions 🇪🇺",
+      "match": "Club Bruges vs Lens",
+      "dateExact": "mer. 21 oct. 2026",
+      "time": "19:00",
+      "venueExact": "Jan Breydel Stadium, Brugge, Belgium",
+      "status": "🕒 19:00",
+      "score": null
+    },
+    {
+      "sport": "soccer",
+      "competition": "Ligue des Champions 🇪🇺",
+      "match": "Inter Milan vs Shakhtar Donetsk",
+      "dateExact": "mer. 21 oct. 2026",
+      "time": "19:00",
+      "venueExact": "San Siro, Milano, Italy",
+      "status": "🕒 19:00",
+      "score": null
+    },
+    {
+      "sport": "soccer",
+      "competition": "Ligue des Champions 🇪🇺",
+      "match": "Real Betis vs Feyenoord",
+      "dateExact": "mer. 21 oct. 2026",
+      "time": "19:00",
+      "venueExact": "Estadio La Cartuja, Sevilla, Spain",
+      "status": "🕒 19:00",
+      "score": null
+    },
+    {
+      "sport": "soccer",
+      "competition": "Ligue des Champions 🇪🇺",
+      "match": "Real Madrid vs RB Leipzig",
+      "dateExact": "mer. 21 oct. 2026",
+      "time": "19:00",
+      "venueExact": "Santiago Bernabéu, Madrid, Spain",
+      "status": "🕒 19:00",
+      "score": null
+    },
+    {
+      "sport": "soccer",
+      "competition": "Ligue des Champions 🇪🇺",
+      "match": "Sporting CP vs LASK Linz",
+      "dateExact": "mer. 21 oct. 2026",
+      "time": "19:00",
+      "venueExact": "Estádio José Alvalade, Lisbon, Portugal",
+      "status": "🕒 19:00",
+      "score": null
+    },
+    {
+      "sport": "soccer",
+      "competition": "La Liga 🇪🇸",
+      "match": "Levante vs Athletic Bilbao",
+      "dateExact": "mer. 21 oct. 2026",
+      "time": "18:00",
+      "venueExact": "Estadi Ciutat de València, Manises, Spain",
+      "status": "🕒 18:00",
+      "score": null
+    },
+    {
+      "sport": "soccer",
+      "competition": "LDC CAF Afrique 🌍",
+      "match": "Agosto vs Simba SC",
+      "dateExact": "mer. 21 oct. 2026",
+      "time": "12:00",
+      "venueExact": "Uhuru Stadium, Benjamin Mkapa National Stadium, Tanzania",
+      "status": "🕒 12:00",
+      "score": null
+    },
+    {
+      "sport": "soccer",
+      "competition": "LDC CAF Afrique 🌍",
+      "match": "Young Africans vs CFFA",
+      "dateExact": "mer. 21 oct. 2026",
+      "time": "16:00",
+      "venueExact": "Azam Complex Stadium, Benjamin Mkapa National Stadium, Tanzania",
+      "status": "🕒 16:00",
+      "score": null
+    }
+  ]
+}
