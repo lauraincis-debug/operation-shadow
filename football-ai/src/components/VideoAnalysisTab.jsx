@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import {
   fetchVerifiedMatchVideosFromInternet,
   analyzeOfficialInternetMatchClip,
+  analyzeLiveMatchTelemetryWithoutClip,
   analyzeLiveScreenStreamBurst,
   analyzeMatchVideoFile,
   buildSyntheticVideoDemo,
@@ -77,6 +78,13 @@ export default function VideoAnalysisTab({
               setProgress
             );
             onVideoInsightReady(insight);
+          } else if (redirected.isTargetLiveNow && redirected.resolvedMatch) {
+            const liveTelemetryInsight = analyzeLiveMatchTelemetryWithoutClip(
+              redirected.resolvedMatch,
+              redirected.espnSummaryJson,
+              setProgress
+            );
+            onVideoInsightReady(liveTelemetryInsight);
           }
           return;
         }
@@ -95,6 +103,13 @@ export default function VideoAnalysisTab({
           );
           onVideoInsightReady(autoInsight);
           setBusy(false);
+        } else if (res.isTargetLiveNow && res.resolvedMatch) {
+          const liveTelemetryInsight = analyzeLiveMatchTelemetryWithoutClip(
+            res.resolvedMatch,
+            res.espnSummaryJson,
+            setProgress
+          );
+          onVideoInsightReady(liveTelemetryInsight);
         }
       } catch (e) {
         setBusy(false);

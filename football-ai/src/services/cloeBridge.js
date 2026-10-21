@@ -17,6 +17,7 @@ import { auditModelBiases } from "../engine/antiBiasEngine.js";
 import {
   fetchVerifiedMatchVideosFromInternet,
   analyzeOfficialInternetMatchClip,
+  analyzeLiveMatchTelemetryWithoutClip,
 } from "../engine/videoAnalyzer.js";
 import {
   extractScreenshotDataFromImage,
@@ -31,7 +32,15 @@ import {
  * Fantasy 100M€ et à la mémoire auto-évolutive.
  */
 
-const CLOE_STORAGE_KEY = "cloe_football_ai_brain_v3";
+const CLOE_STORAGE_KEY = "cloe_football_ai_brain_v6_3_clean";
+// Purge automatique de l'ancien cache v3/v6.1 susceptible de contenir des scores non-football ([AUDIT3-P1-03])
+try {
+  if (typeof localStorage !== "undefined") {
+    localStorage.removeItem("cloe_football_ai_brain_v3");
+  }
+} catch {
+  // ignore
+}
 
 const EXTRA_ALIASES = [
   ["paris", "PSG"],
@@ -511,7 +520,7 @@ export function createCloeFootballBrain(initialConfig = {}) {
   }
 
   return {
-    version: "5.0.0-legend-bridge",
+    version: "6.3.0-certified-bridge",
     ask,
     getDailyBriefing,
     predictMatch,
@@ -551,8 +560,8 @@ export function createCloeFootballBrain(initialConfig = {}) {
     async getMatchDossier(match) {
       return fetchDeepMatchDossier(match);
     },
-    async getVerifiedMatchVideos(home, away, allLive = []) {
-      const res = await fetchVerifiedMatchVideosFromInternet({ home, away }, allLive, { liveOnly: true });
+    async getVerifiedMatchVideos(home, away, allLive = [], opts = { liveOnly: true }) {
+      const res = await fetchVerifiedMatchVideosFromInternet({ home, away }, allLive, opts);
       let autoInsight = null;
       if (res.verifiedClips.length > 0) {
         autoInsight = await analyzeOfficialInternetMatchClip(
@@ -560,26 +569,58 @@ export function createCloeFootballBrain(initialConfig = {}) {
           res.resolvedMatch,
           res.espnSummaryJson
         );
+      } else if (res.isTargetLiveNow && res.resolvedMatch) {
+        autoInsight = analyzeLiveMatchTelemetryWithoutClip(
+          res.resolvedMatch,
+          res.espnSummaryJson
+        );
       }
       return { ...res, autoInsight };
     },
-    async analyzeBookmakerScreenshot(file, allLive = [], onProgress = () => {}) {
-      const extracted = await extractScreenshotDataFromImage(file, allLive, onProgress);
-      const home = extracted.detectedMatch?.home || "PSG";
-      const away = extracted.detectedMatch?.away || "Barcelone";
+    async analyzeBookmakerScreenshot(file, allLive = [], onProgress = () => {}, visionAuth = {}) {
+      const extracted = await extractScreenshotDataFromImage(file, allLive, onProgress, visionAuth);
+      // SÉCURITÉ FINANCIÈRE STRICTE [AUDIT3-P1-01] : ne JAMAIS inventer "PSG vs Barcelone" si les 2 équipes ne sont pas reconnues !
+      if (extracted.teamsUnconfirmed || !extracted.detectedMatch?.home || !extracted.detectedMatch?.away) {
+        return {
+          ok: false,
+          teamsUnconfirmed: true,
+          bookmakerName: extracted.bookmakerName || "Betclic",
+          extracted,
+          verdict: null,
+          error:
+            "Sécurité Anti-Perte : les noms des 2 équipes ne sont pas lisibles avec certitude sur cette capture. Envoyez une capture incluant l'affiche du match en haut de l'écran Betclic, ou sélectionnez manuellement les 2 équipes dans l'onglet 📸 Capture Betclic.",
+        };
+      }
+      const home = extracted.detectedMatch.home;
+      const away = extracted.detectedMatch.away;
+      if (!extracted.options || extracted.options.length === 0) {
+        return {
+          ok: false,
+          teamsUnconfirmed: false,
+          bookmakerName: extracted.bookmakerName || "Betclic",
+          extracted,
+          verdict: null,
+          error: `Match détecté (${home} vs ${away}), mais aucune cote numérique n'est lisible sur cette capture.`,
+        };
+      }
       const verdict = evaluateScreenshotMarketsAndPickDefinitiveBet({
         home,
         away,
-        sport: extracted.detectedMatch?.sport || "soccer",
-        league: extracted.detectedMatch?.league || "ucl",
+        sport: extracted.detectedMatch.sport || "soccer",
+        league: extracted.detectedMatch.league || "ucl",
         bookmakerName: extracted.bookmakerName || "Betclic",
-        extractedOptions: extracted.options || [],
-        modelState,
-        liveMatch: extracted.detectedMatch?.liveMatch || null,
+        extractedOptions: extracted.options,
+        modelState: getModelState(),
+        liveMatch: extracted.detectedMatch.liveMatch || null,
         bankrollCapital: 50000,
         currency: "XOF",
       });
-      return { extracted, verdict };
+      return {
+        ...verdict,
+        ok: true,
+        extracted,
+        verdict,
+      };
     },
     evaluateBetclicText(rawText, home = "PSG", away = "Barcelone", bookmakerName = "Betclic") {
       const opts = parseBookmakerMarketsFromText(rawText, home, away);
@@ -590,7 +631,7 @@ export function createCloeFootballBrain(initialConfig = {}) {
         league: "ucl",
         bookmakerName,
         extractedOptions: opts,
-        modelState,
+        modelState: getModelState(),
         bankrollCapital: 50000,
         currency: "XOF",
       });

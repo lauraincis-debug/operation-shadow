@@ -56,7 +56,7 @@ export default function CloeApp() {
   const [messages, setMessages] = useState([
     {
       role: "cloe",
-      text: "Bonjour ! Je suis Cloé IA Ultra v6.2 Live Certifiée, reliée en temps réel à ton moteur Omni-Sport & Football AI Ultra v6.2 Live Certifiée (https://football-ai-43e33.web.app).\n\nTu peux m'envoyer une 📸 Capture Betclic / Winamax / 1xBet / Sportcash pour extraire 1 SEUL Pari Définitif optimal, lancer les 🔴 Vidéos en ligne des matchs EN COURS uniquement pour parier en direct avant la fin du match, démarrer un 📞 Appel Vocal Mains-Libres, ou interroger les 🌐 7 Sports en direct !",
+      text: "Bonjour ! Je suis Cloé IA Ultra v6.3 Certifiée Intégrale, reliée en temps réel à ton moteur Omni-Sport & Football AI Ultra v6.3 Certifiée Intégrale (https://football-ai-43e33.web.app).\n\nTu peux m'envoyer une 📸 Capture Betclic / Winamax / 1xBet / Sportcash pour extraire 1 SEUL Pari Définitif optimal, lancer les 🔴 Vidéos & flux Live des matchs EN COURS uniquement pour parier en direct avant la fin du match, démarrer un 📞 Appel Vocal Mains-Libres, ou interroger les 🌐 7 Sports en direct !",
       rated: null,
     },
   ]);
@@ -190,22 +190,28 @@ export default function CloeApp() {
 
     try {
       if (mem.llmProvider === "gemini") {
-        // SEC-04 : Clé transmise uniquement dans l'en-tête HTTP x-goog-api-key, jamais exposée dans l'URL !
-        const res = await fetch(
-          "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent",
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "x-goog-api-key": key,
-            },
-            body: JSON.stringify({
-              contents: [{ parts: [{ text: `${sysPrompt}\n\nQuestion : ${userPrompt}` }] }],
-            }),
+        // SEC-04 + AUDIT3-P2-02 : Cascade résiliente Gemini 2.5 Flash -> 2.0 Flash (clé uniquement dans x-goog-api-key)
+        for (const gemModel of ["gemini-2.5-flash", "gemini-2.0-flash"]) {
+          const res = await fetch(
+            `https://generativelanguage.googleapis.com/v1beta/models/${gemModel}:generateContent`,
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                "x-goog-api-key": key,
+              },
+              body: JSON.stringify({
+                contents: [{ parts: [{ text: `${sysPrompt}\n\nQuestion : ${userPrompt}` }] }],
+              }),
+            }
+          );
+          if (res.ok) {
+            const data = await res.json();
+            const txt = data?.candidates?.[0]?.content?.parts?.[0]?.text || null;
+            if (txt) return txt;
           }
-        );
-        const data = await res.json();
-        return data?.candidates?.[0]?.content?.parts?.[0]?.text || null;
+        }
+        return null;
       }
 
       const endpoint =
@@ -802,7 +808,15 @@ export default function CloeApp() {
                       { role: "user", text: `📸 Capture Bookmaker envoyée : ${f.name}` },
                     ]);
                     try {
-                      const { verdict } = await footBrain.analyzeBookmakerScreenshot(f);
+                      const res = await footBrain.analyzeBookmakerScreenshot(f);
+                      if (!res || !res.ok || !res.verdict) {
+                        const warnTxt =
+                          `🛡️ ${res?.error || "Impossible d'identifier avec certitude les équipes ou les cotes sur cette capture."}`;
+                        setMessages((prev) => [...prev, { role: "cloe", text: warnTxt, rated: null }]);
+                        speak("Je préfère ne pas deviner les équipes au hasard pour protéger ton capital.");
+                        return;
+                      }
+                      const { verdict } = res;
                       const replyTxt =
                         `${verdict.verdictHeadline}\n\n` +
                         `${verdict.verdictExplanation}\n\n` +

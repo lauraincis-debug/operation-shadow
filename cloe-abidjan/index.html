@@ -1635,7 +1635,7 @@ moteurVocal=new JavisVoice({
     else orbeMajEtat(map[st]||'ecoute');
     etatConv({idle:'Conversation : terminée. Touche le gros bouton pour reparler.',listening:'Conversation : je t’écoute, Lauraincis.',thinking:'Conversation : je réfléchis…',speaking:'Conversation : Cloé te parle (touche la boule pour l\u2019interrompre).',paused:'Conversation : en pause. Dis « Cloé » ou « reprends ».',error:'Conversation : petit souci — regarde le message.'}[st]||'');
   },
-  onTranscript: (t,final)=>{orbeTranscription(t);const tr=$('transcript');if(tr)tr.innerHTML='<div class="item">🗣️ <b>Toi :</b> '+t.replace(/</g,'&lt;')+'</div>'},
+  onTranscript: (t,final)=>{orbeTranscription(t);const tr=$('transcript');if(tr)tr.innerHTML='<div class="item">🗣️ <b>Toi :</b> '+esc(t)+'</div>'},
   onError: m=>{orbeMajEtat('erreur',m);toast(m)}
 });
 moteurVocal.attachOrb($('orbeCanvas'));
@@ -1677,7 +1677,7 @@ document.addEventListener('change',async e=>{
       const clair=await crypto.subtle.decrypt({name:'AES-GCM',iv:depuisB64(pack.iv)},cle,depuisB64(pack.donnees));
       const donnees=JSON.parse(new TextDecoder().decode(clair));
       if(!confirm('Restaurer cette sauvegarde ? Les données actuelles de cet appareil seront remplacées (le journal de la sauvegarde redeviendra le journal actif).'))return;
-      Object.keys(donnees).forEach(k=>localStorage.setItem(k,donnees[k]));
+      Object.keys(donnees).filter(k=>typeof k==='string'&&k.startsWith('javis_')&&typeof donnees[k]==='string').forEach(k=>localStorage.setItem(k,donnees[k]));
       log('Sauvegarde restaurée','Restauration effectuée par vous.');location.reload();
     }catch(_){toast('Restauration impossible : mot de passe incorrect ou fichier abîmé.')}
   }
@@ -1737,7 +1737,7 @@ async function remplirListeBacktest(){
     const r=await fetch('https://raw.githubusercontent.com/harzat/brvm-data-public/main/actions.json');
     if(!r.ok)return;const d=await r.json();const liste=d.actions||[];
     if(liste.length<40)return;
-    $('btSym').innerHTML=liste.map(a=>'<option value="'+a.csv+'">'+a.ticker+' — '+(a.nom||a.nom_officiel||'')+' ('+(a.secteur||'BRVM')+')</option>').join('');
+    $('btSym').innerHTML=liste.map(a=>'<option value="'+esc(a.csv)+'">'+esc(a.ticker)+' — '+esc(a.nom||a.nom_officiel||'')+' ('+esc(a.secteur||'BRVM')+')</option>').join('');
     log('Backtest élargi','Liste des '+liste.length+' entreprises BRVM chargée pour les tests sur le passé réel.');
   }catch(e){}
 }
@@ -1821,6 +1821,14 @@ geminiBrancherReglages();updateCash();renderTasks();renderBets();renderMarket();
   const brain = window.CloeFootballAI;
   if (!brain) return;
 
+  try {
+    if (!localStorage.getItem('javis_v63_purged')) {
+      localStorage.removeItem('cloe_football_ai_brain_v3');
+      localStorage.removeItem('javis_footSnap');
+      localStorage.removeItem('javis_autoResults');
+      localStorage.setItem('javis_v63_purged', '1');
+    }
+  } catch (_) {}
   window.__footSlip = store.get('footSlip', []);
   let lastVoiceSummary = '';
   let cachedBriefing = null;
@@ -2309,8 +2317,8 @@ geminiBrancherReglages();updateCash();renderTasks();renderBets();renderMarket();
       const sim = brain.runTournament(key, 10000);
       const top = sim.result.leaderboard.slice(0, 6);
       if (out) {
-        out.innerHTML = '<div class="item" style="display:block"><b>🏆 ' + sim.preset.name + ' (10 000 simulations)</b><br>' +
-          top.map((r, i) => (i + 1) + '. <b>' + r.team + '</b> — Titre : <span class="ok">' + r.championPct + ' %</span> (Finale : ' + r.finalPct + ' %)').join('<br>') +
+        out.innerHTML = '<div class="item" style="display:block"><b>🏆 ' + esc(sim.preset.name) + ' (10 000 simulations)</b><br>' +
+          top.map((r, i) => (i + 1) + '. <b>' + esc(r.team) + '</b> — Titre : <span class="ok">' + Number(r.championPct) + ' %</span> (Finale : ' + Number(r.finalPct) + ' %)').join('<br>') +
           '</div>';
       }
       const msg = 'Sur dix mille simulations ' + sim.preset.name + ', le favori numéro un est ' + top[0].team + ' avec ' + top[0].championPct + ' pour cent de chances de titre, devant ' + top[1].team + ' à ' + top[1].championPct + ' pour cent.';

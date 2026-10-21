@@ -1,6 +1,6 @@
 {
   "engine": "Football AI Ultra v5.0 Legend",
-  "updatedAt": "2026-10-21T13:25:50.540Z",
+  "updatedAt": "2026-10-21T13:47:07.936Z",
   "sourceAppUrl": "https://football-ai-43e33.web.app",
   "cloeStandaloneUrl": "https://cloe-ia-ultra.web.app",
   "bridgeScriptUrl": "https://football-ai-43e33.web.app/cloe-bridge.js",
@@ -924,7 +924,7 @@
       "accent": "#00e676",
       "items": [
         {
-          "id": 1792589150626,
+          "id": 1792590427995,
           "home": "PSG",
           "away": "Marseille",
           "league": "ligue1",
@@ -945,7 +945,7 @@
           }
         },
         {
-          "id": 1792589150603,
+          "id": 1792590428039,
           "home": "Bayern Munich",
           "away": "Bayer Leverkusen",
           "league": "bundesliga",
@@ -966,7 +966,7 @@
           }
         },
         {
-          "id": 1792589150594,
+          "id": 1792590428046,
           "home": "Inter Milan",
           "away": "Naples",
           "league": "seriea",
@@ -999,7 +999,7 @@
       "accent": "#00e5ff",
       "items": [
         {
-          "id": 1792589150607,
+          "id": 1792590428026,
           "home": "PSG",
           "away": "Marseille",
           "league": "ligue1",
@@ -1020,7 +1020,7 @@
           }
         },
         {
-          "id": 1792589150617,
+          "id": 1792590427969,
           "home": "Arsenal",
           "away": "Liverpool",
           "league": "premier",
@@ -1041,7 +1041,7 @@
           }
         },
         {
-          "id": 1792589150608,
+          "id": 1792590428021,
           "home": "Real Madrid",
           "away": "FC Barcelone",
           "league": "liga",
@@ -1062,7 +1062,7 @@
           }
         },
         {
-          "id": 1792589150623,
+          "id": 1792590428068,
           "home": "Côte d'Ivoire",
           "away": "Maroc",
           "league": "international",
@@ -1095,7 +1095,7 @@
       "accent": "#d500f9",
       "items": [
         {
-          "id": 1792589150634,
+          "id": 1792590427993,
           "home": "Arsenal",
           "away": "Liverpool",
           "league": "premier",
@@ -1116,7 +1116,7 @@
           }
         },
         {
-          "id": 1792589150564,
+          "id": 1792590428035,
           "home": "Inter Milan",
           "away": "Naples",
           "league": "seriea",
@@ -1137,7 +1137,7 @@
           }
         },
         {
-          "id": 1792589150604,
+          "id": 1792590427985,
           "home": "Real Madrid",
           "away": "FC Barcelone",
           "league": "liga",
@@ -1158,7 +1158,7 @@
           }
         },
         {
-          "id": 1792589150681,
+          "id": 1792590428062,
           "home": "PSG",
           "away": "Marseille",
           "league": "ligue1",
@@ -1179,7 +1179,7 @@
           }
         },
         {
-          "id": 1792589150633,
+          "id": 1792590428006,
           "home": "Bayern Munich",
           "away": "Bayer Leverkusen",
           "league": "bundesliga",
@@ -1211,67 +1211,67 @@
       "topFavorites": [
         {
           "team": "Maroc",
-          "qfPct": 61.7,
-          "sfPct": 35.9,
-          "finalPct": 20.9,
+          "qfPct": 60.2,
+          "sfPct": 35.4,
+          "finalPct": 19.6,
           "championPct": 12.7,
-          "fairOutrightOdd": 7.85
+          "fairOutrightOdd": 7.86
         },
         {
           "team": "Sénégal",
-          "qfPct": 61.7,
-          "sfPct": 34.1,
-          "finalPct": 18,
-          "championPct": 10.8,
-          "fairOutrightOdd": 9.23
+          "qfPct": 62.4,
+          "sfPct": 34.4,
+          "finalPct": 18.9,
+          "championPct": 11.1,
+          "fairOutrightOdd": 9.03
         },
         {
           "team": "Côte d'Ivoire",
-          "qfPct": 57.6,
-          "sfPct": 30.1,
-          "finalPct": 15.1,
-          "championPct": 9.2,
-          "fairOutrightOdd": 10.89
+          "qfPct": 57.2,
+          "sfPct": 30.2,
+          "finalPct": 15.4,
+          "championPct": 8.8,
+          "fairOutrightOdd": 11.31
         },
         {
           "team": "Égypte",
-          "qfPct": 54.4,
-          "sfPct": 28.3,
-          "finalPct": 16,
-          "championPct": 7.8,
-          "fairOutrightOdd": 12.82
+          "qfPct": 53.9,
+          "sfPct": 28.1,
+          "finalPct": 16.1,
+          "championPct": 7.6,
+          "fairOutrightOdd": 13.16
         },
         {
           "team": "Nigeria",
-          "qfPct": 55.3,
-          "sfPct": 26.9,
-          "finalPct": 13.4,
-          "championPct": 7.7,
-          "fairOutrightOdd": 12.92
+          "qfPct": 56.3,
+          "sfPct": 27.4,
+          "finalPct": 13.1,
+          "championPct": 7.5,
+          "fairOutrightOdd": 13.33
         },
         {
           "team": "Algérie",
-          "qfPct": 54.9,
+          "qfPct": 55.6,
           "sfPct": 28.2,
-          "finalPct": 15.5,
-          "championPct": 7.3,
-          "fairOutrightOdd": 13.62
+          "finalPct": 14.9,
+          "championPct": 6.8,
+          "fairOutrightOdd": 14.66
         },
         {
           "team": "Tunisie",
-          "qfPct": 52.5,
-          "sfPct": 28.4,
-          "finalPct": 12.8,
-          "championPct": 5.6,
-          "fairOutrightOdd": 17.79
+          "qfPct": 52.3,
+          "sfPct": 27.2,
+          "finalPct": 12.9,
+          "championPct": 5.5,
+          "fairOutrightOdd": 18.12
         },
         {
-          "team": "RD Congo",
-          "qfPct": 45.6,
-          "sfPct": 22.5,
+          "team": "Ghana",
+          "qfPct": 51.9,
+          "sfPct": 25,
           "finalPct": 12,
-          "championPct": 4.8,
-          "fairOutrightOdd": 20.83
+          "championPct": 5,
+          "fairOutrightOdd": 19.84
         }
       ]
     },
@@ -1281,67 +1281,67 @@
       "topFavorites": [
         {
           "team": "Arsenal",
-          "qfPct": 66.4,
-          "sfPct": 35.4,
-          "finalPct": 22.2,
-          "championPct": 10.7,
-          "fairOutrightOdd": 9.33
+          "qfPct": 65.5,
+          "sfPct": 35.3,
+          "finalPct": 22.7,
+          "championPct": 11.3,
+          "fairOutrightOdd": 8.83
         },
         {
           "team": "Real Madrid",
-          "qfPct": 58.3,
-          "sfPct": 30.2,
-          "finalPct": 16.1,
-          "championPct": 9.8,
-          "fairOutrightOdd": 10.22
-        },
-        {
-          "team": "Manchester City",
-          "qfPct": 55,
-          "sfPct": 30,
-          "finalPct": 19.1,
+          "qfPct": 59.6,
+          "sfPct": 30.4,
+          "finalPct": 15.9,
           "championPct": 9.7,
-          "fairOutrightOdd": 10.29
-        },
-        {
-          "team": "FC Barcelone",
-          "qfPct": 63.2,
-          "sfPct": 31.9,
-          "finalPct": 16.6,
-          "championPct": 9.5,
-          "fairOutrightOdd": 10.5
-        },
-        {
-          "team": "Bayern Munich",
-          "qfPct": 51.3,
-          "sfPct": 26.8,
-          "finalPct": 14.2,
-          "championPct": 8.2,
-          "fairOutrightOdd": 12.14
+          "fairOutrightOdd": 10.27
         },
         {
           "team": "Liverpool",
-          "qfPct": 52.8,
-          "sfPct": 29.3,
-          "finalPct": 14.4,
-          "championPct": 8.1,
-          "fairOutrightOdd": 12.35
+          "qfPct": 53.2,
+          "sfPct": 30.2,
+          "finalPct": 16.5,
+          "championPct": 9.7,
+          "fairOutrightOdd": 10.31
         },
         {
-          "team": "Inter Milan",
-          "qfPct": 47.2,
-          "sfPct": 25.6,
-          "finalPct": 13.4,
-          "championPct": 7.6,
-          "fairOutrightOdd": 13.19
+          "team": "FC Barcelone",
+          "qfPct": 63.3,
+          "sfPct": 31.7,
+          "finalPct": 16.1,
+          "championPct": 9.3,
+          "fairOutrightOdd": 10.73
+        },
+        {
+          "team": "Manchester City",
+          "qfPct": 53.8,
+          "sfPct": 28.5,
+          "finalPct": 17.8,
+          "championPct": 8.6,
+          "fairOutrightOdd": 11.66
+        },
+        {
+          "team": "Bayern Munich",
+          "qfPct": 52.2,
+          "sfPct": 27.6,
+          "finalPct": 14.2,
+          "championPct": 8.4,
+          "fairOutrightOdd": 11.85
         },
         {
           "team": "PSG",
-          "qfPct": 48.7,
-          "sfPct": 25.7,
+          "qfPct": 47.8,
+          "sfPct": 24.7,
           "finalPct": 12.8,
-          "championPct": 7.1,
-          "fairOutrightOdd": 14.01
+          "championPct": 7.4,
+          "fairOutrightOdd": 13.48
+        },
+        {
+          "team": "Inter Milan",
+          "qfPct": 46.8,
+          "sfPct": 24.7,
+          "finalPct": 12.3,
+          "championPct": 6.7,
+          "fairOutrightOdd": 14.88
         }
       ]
     },
@@ -1351,70 +1351,70 @@
       "topFavorites": [
         {
           "team": "Espagne",
-          "qfPct": 62.1,
-          "sfPct": 35.5,
-          "finalPct": 20.3,
-          "championPct": 11.9,
-          "fairOutrightOdd": 8.4
+          "qfPct": 62.4,
+          "sfPct": 35.7,
+          "finalPct": 20,
+          "championPct": 12,
+          "fairOutrightOdd": 8.32
         },
         {
           "team": "Argentine",
-          "qfPct": 59.1,
-          "sfPct": 35.4,
-          "finalPct": 19.7,
-          "championPct": 11.5,
-          "fairOutrightOdd": 8.67
+          "qfPct": 61.9,
+          "sfPct": 36.6,
+          "finalPct": 19.9,
+          "championPct": 11.6,
+          "fairOutrightOdd": 8.59
         },
         {
           "team": "France",
-          "qfPct": 62,
-          "sfPct": 31.5,
-          "finalPct": 17.4,
-          "championPct": 9.7,
-          "fairOutrightOdd": 10.31
-        },
-        {
-          "team": "Angleterre",
-          "qfPct": 53.2,
-          "sfPct": 29.9,
-          "finalPct": 18,
-          "championPct": 9.1,
-          "fairOutrightOdd": 10.94
+          "qfPct": 59.4,
+          "sfPct": 29.1,
+          "finalPct": 15.7,
+          "championPct": 9.4,
+          "fairOutrightOdd": 10.64
         },
         {
           "team": "Portugal",
-          "qfPct": 56.9,
-          "sfPct": 27.3,
-          "finalPct": 15.6,
-          "championPct": 7.6,
-          "fairOutrightOdd": 13.19
-        },
-        {
-          "team": "Pays-Bas",
-          "qfPct": 46.8,
-          "sfPct": 24,
-          "finalPct": 13.5,
-          "championPct": 6.5,
-          "fairOutrightOdd": 15.34
+          "qfPct": 57.9,
+          "sfPct": 30,
+          "finalPct": 16.5,
+          "championPct": 7.7,
+          "fairOutrightOdd": 13.05
         },
         {
           "team": "Allemagne",
-          "qfPct": 55.5,
-          "sfPct": 31.6,
-          "finalPct": 15.1,
-          "championPct": 6.5,
-          "fairOutrightOdd": 15.29
+          "qfPct": 55.3,
+          "sfPct": 32.6,
+          "finalPct": 16.6,
+          "championPct": 7.6,
+          "fairOutrightOdd": 13.16
+        },
+        {
+          "team": "Angleterre",
+          "qfPct": 52.9,
+          "sfPct": 27.8,
+          "finalPct": 15.2,
+          "championPct": 7.2,
+          "fairOutrightOdd": 13.97
+        },
+        {
+          "team": "Pays-Bas",
+          "qfPct": 47.1,
+          "sfPct": 23.9,
+          "finalPct": 12.7,
+          "championPct": 6.2,
+          "fairOutrightOdd": 16.23
         },
         {
           "team": "Brésil",
-          "qfPct": 51.9,
-          "sfPct": 23.7,
-          "finalPct": 11.1,
+          "qfPct": 51.6,
+          "sfPct": 23.4,
+          "finalPct": 11.4,
           "championPct": 5.7,
-          "fairOutrightOdd": 17.42
+          "fairOutrightOdd": 17.54
         }
       ]
     }
   },
-  "voiceSummaryFr": "Point Football AI Ultra v5 : 167 clubs et nations actifs. Favori numéro 1 CAN sur 5 000 simulations : Maroc (12.7%). Favori Champions League : Arsenal (10.7%). Ticket Sécurité IA du jour prêt à cote totale 1.64."
+  "voiceSummaryFr": "Point Football AI Ultra v5 : 167 clubs et nations actifs. Favori numéro 1 CAN sur 5 000 simulations : Maroc (12.7%). Favori Champions League : Arsenal (11.3%). Ticket Sécurité IA du jour prêt à cote totale 1.64."
 }

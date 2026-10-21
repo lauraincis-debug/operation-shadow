@@ -1,5 +1,5 @@
-const CACHE = 'Cloé-v38-certified-v6-2';
-const ASSETS = ['./', './index.html', './cloe-bridge.js', './manifest.json', './icon-192.png', './icon-512.png'];
+const CACHE = 'Cloé-v39-certified-v6-3';
+const ASSETS = ['./', './index.html', './cloe-bridge.js', './manifest.webmanifest', './icon.svg'];
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)).then(() => self.skipWaiting()));
@@ -16,8 +16,10 @@ self.addEventListener('fetch', e => {
   if (isNav) {
     e.respondWith(
       fetch(req, { cache: 'no-store' }).then(r => {
-        const clone = r.clone();
-        caches.open(CACHE).then(c => c.put(req, clone));
+        if (r && r.status === 200) {
+          const clone = r.clone();
+          caches.open(CACHE).then(c => c.put(req, clone));
+        }
         return r;
       }).catch(() => caches.match(req).then(m => m || caches.match('./index.html')))
     );

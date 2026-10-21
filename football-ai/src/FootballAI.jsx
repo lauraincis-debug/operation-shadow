@@ -35,6 +35,7 @@ import LiveMatchesTab from "./components/LiveMatchesTab.jsx";
 import HeadToHeadTab from "./components/HeadToHeadTab.jsx";
 import VideoAnalysisTab from "./components/VideoAnalysisTab.jsx";
 import BookmakerScreenshotTab from "./components/BookmakerScreenshotTab.jsx";
+import { doesVideoInsightMatchTeams } from "./engine/videoAnalyzer.js";
 import FantasyTab from "./components/FantasyTab.jsx";
 import CloeBridgeTab from "./components/CloeBridgeTab.jsx";
 import InPlayTab from "./components/InPlayTab.jsx";
@@ -945,7 +946,12 @@ export default function FootballAI() {
       activeMatch.league,
       modelState,
       bookOdds,
-      { videoBoost: videoInsight, matchContext }
+      {
+        videoBoost: doesVideoInsightMatchTeams(videoInsight, activeMatch.home, activeMatch.away)
+          ? videoInsight
+          : null,
+        matchContext,
+      }
     );
   }, [activeMatch, modelState, bookOdds, videoInsight, matchContext]);
 

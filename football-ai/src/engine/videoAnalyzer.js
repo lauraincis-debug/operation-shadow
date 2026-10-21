@@ -794,6 +794,9 @@ export async function analyzeOfficialInternetMatchClip(
     sourceType: "official_internet_video",
     isVerifiedInternetVideo: true,
     isLiveOngoing: Boolean(verifiedClip.verification.isLiveOngoing),
+    targetHome: canonicalTeamName(resolvedMatch?.home || ""),
+    targetAway: canonicalTeamName(resolvedMatch?.away || ""),
+    liveClock: resolvedMatch?.statusText || "EN DIRECT",
     provider: verifiedClip.provider,
     verifiedDateFr: verifiedClip.verification.videoDateFr,
     fileName: verifiedClip.title,
@@ -810,6 +813,91 @@ export async function analyzeOfficialInternetMatchClip(
     tacticalVerdict: `${telemetryNote} Emprise Live : ${territorialTiltHome}% ${resolvedMatch.home} / ${100 - territorialTiltHome}% ${resolvedMatch.away} (Intensité ${pressingScore}/100).`,
   };
 
+  return {
+    ...metrics,
+    liveBetRecommendation: buildLiveInPlayBetRecommendation(resolvedMatch, metrics),
+  };
+}
+
+/**
+ * Vérifie strictement qu'un `videoInsight` appartient bien au duel `(home, away)` en cours d'analyse
+ * afin d'interdire à 100 % toute pollution inter-matchs ([AUDIT3-P1-02]) !
+ */
+export function doesVideoInsightMatchTeams(videoInsight, home, away) {
+  if (!videoInsight || !home || !away) return false;
+  if (!videoInsight.targetHome || !videoInsight.targetAway) return false;
+  return (
+    normalizeKey(videoInsight.targetHome) === normalizeKey(canonicalTeamName(home)) &&
+    normalizeKey(videoInsight.targetAway) === normalizeKey(canonicalTeamName(away))
+  );
+}
+
+/**
+ * Analyse télémétrique temps réel pour un match ACTUELLEMENT EN COURS (`state === "in" && !completed`)
+ * lorsqu'aucun clip MP4 de but n'a encore été publié (ex: match à 0-0 ou Tennis ATP/WTA en direct),
+ * permettant de parier EN DIRECT immédiatement sans jamais inventer de fausse vidéo ([AUDIT3-P2-01]) !
+ */
+export function analyzeLiveMatchTelemetryWithoutClip(
+  resolvedMatch,
+  espnSummaryJson,
+  onProgress = () => {}
+) {
+  if (!resolvedMatch || resolvedMatch.state !== "in" || resolvedMatch.completed) {
+    throw new Error(
+      "Analyse Live refusée : seuls les matchs actuellement EN COURS (`state === 'in'`) peuvent générer un Pari en Direct."
+    );
+  }
+  const boxTeams = espnSummaryJson?.boxscore?.teams || [];
+  const readStat = (teamIdx, keys) => {
+    const stats = boxTeams[teamIdx]?.statistics || [];
+    const found = stats.find((s) => keys.includes(String(s.name || "").toLowerCase()));
+    const val = parseFloat(found?.displayValue ?? "");
+    return Number.isFinite(val) ? val : null;
+  };
+  const possH = readStat(0, ["possession"]);
+  const shotsH = readStat(0, ["totalshots", "shots", "fieldgoals"]);
+  const shotsA = readStat(1, ["totalshots", "shots", "fieldgoals"]);
+  const sh = Number(resolvedMatch.scoreHome ?? 0);
+  const sa = Number(resolvedMatch.scoreAway ?? 0);
+
+  let territorialTiltHome = clamp(50 + (sh - sa) * 6, 34, 66);
+  let pressingScore = clamp(52 + (sh + sa) * 6, 44, 88);
+  let note = `Match EN DIRECT (${sh}-${sa} • ${resolvedMatch.statusText || "LIVE"}) — aucun clip vidéo de but n'est encore publié sur ce score, Pari Live calculé sur le score et le rythme officiels (ou cliquez sur « 📺 Capturer l'onglet Live » pour analyser le direct TV).`;
+
+  if (possH !== null || (shotsH !== null && shotsA !== null)) {
+    const shotShare =
+      shotsH !== null && shotsA !== null && shotsH + shotsA > 0
+        ? (shotsH / (shotsH + shotsA)) * 100
+        : 50;
+    territorialTiltHome = Math.round(clamp((possH ?? shotShare) * 0.55 + shotShare * 0.45, 26, 74));
+    pressingScore = Math.round(clamp(44 + ((shotsH ?? 0) + (shotsA ?? 0)) * 1.9, 36, 93));
+    note = `Télémétrie Live ESPN en cours (${sh}-${sa} • ${resolvedMatch.statusText || "LIVE"}${possH !== null ? ` • Possession ${possH}%/${100 - possH}%` : ""}${shotsH !== null ? ` • Tirs ${shotsH}-${shotsA}` : ""}) — 0 clip de but publié à cet instant.`;
+  }
+
+  const deltaTilt = (territorialTiltHome - 50) / 100;
+  const metrics = {
+    sourceType: "official_live_telemetry",
+    isVerifiedInternetVideo: false,
+    isLiveOngoing: true,
+    targetHome: canonicalTeamName(resolvedMatch.home || ""),
+    targetAway: canonicalTeamName(resolvedMatch.away || ""),
+    liveClock: resolvedMatch.statusText || "EN DIRECT",
+    provider: "Flux Télémétrique Live ESPN (En Cours)",
+    verifiedDateFr: `${resolvedMatch.fullDateFr || resolvedMatch.dateFr || "Aujourd'hui"} (${resolvedMatch.statusText || "LIVE"})`,
+    fileName: `${resolvedMatch.home} vs ${resolvedMatch.away} (Direct en cours)`,
+    durationAnalysedSec: 0,
+    samplesCount: 1,
+    avgPitchPct: 100,
+    pressingScore,
+    territorialTiltHome,
+    homeXgMult: Math.round(clamp(1 + deltaTilt * 0.32, 0.88, 1.18) * 1000) / 1000,
+    awayXgMult: Math.round(clamp(1 - deltaTilt * 0.32, 0.88, 1.18) * 1000) / 1000,
+    embedSrc: "",
+    mp4Url: "",
+    thumbnail: "",
+    tacticalVerdict: note,
+  };
+  onProgress(100);
   return {
     ...metrics,
     liveBetRecommendation: buildLiveInPlayBetRecommendation(resolvedMatch, metrics),

@@ -1,4 +1,4 @@
-const CACHE_NAME = "football-ai-ultra-v5.0";
+const CACHE_NAME = "football-ai-ultra-v6.3";
 const CORE_ASSETS = ["/", "/index.html", "/manifest.webmanifest", "/icon.svg"];
 
 self.addEventListener("install", (event) => {
@@ -22,8 +22,14 @@ self.addEventListener("fetch", (event) => {
   const url = new URL(event.request.url);
   if (url.origin !== self.location.origin) return;
 
-  // Toujours chercher la dernière version HTML sans cache obsolète, repli hors-ligne garanti
-  const fetchOpts = event.request.mode === "navigate" ? { cache: "no-store" } : undefined;
+  const isFreshFirst =
+    event.request.mode === "navigate" ||
+    url.pathname === "/" ||
+    url.pathname.endsWith(".html") ||
+    url.pathname.endsWith(".json") ||
+    url.pathname.endsWith("cloe-bridge.js");
+
+  const fetchOpts = isFreshFirst ? { cache: "no-store" } : undefined;
   event.respondWith(
     fetch(event.request, fetchOpts)
       .then((response) => {

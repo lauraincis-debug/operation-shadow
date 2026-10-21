@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { CLUBS_DB } from "../data/clubs.js";
+import { doesVideoInsightMatchTeams } from "../engine/videoAnalyzer.js";
 import {
   extractScreenshotDataFromImage,
   evaluateScreenshotMarketsAndPickDefinitiveBet,
@@ -40,6 +41,7 @@ export default function BookmakerScreenshotTab({
   const [league, setLeague] = useState("ucl");
   const [engineUsed, setEngineUsed] = useState("");
   const [extractedOptions, setExtractedOptions] = useState([]);
+  const [teamsNeedConfirmation, setTeamsNeedConfirmation] = useState(false);
 
   // Ajout manuel ultra-rapide d'une option supplémentaire lue sur la capture si souhaité
   const [newKind, setNewKind] = useState("OVER");
@@ -72,11 +74,18 @@ export default function BookmakerScreenshotTab({
 
         setEngineUsed(res.engineUsed);
         setBookmakerName(res.bookmakerName || "Betclic");
-        if (res.detectedMatch) {
+        if (res.detectedMatch && !res.teamsUnconfirmed) {
+          setTeamsNeedConfirmation(false);
           setHome(res.detectedMatch.home);
           setAway(res.detectedMatch.away);
           setSport(res.detectedMatch.sport || "soccer");
           setLeague(res.detectedMatch.league || "ucl");
+        } else {
+          // Sécurité Anti-Erreur [AUDIT3-P1-01] : ne JAMAIS calculer sur PSG vs Barcelone par défaut sans confirmation explicite !
+          setTeamsNeedConfirmation(true);
+          setErrMsg(
+            "🛡️ Sécurité Anti-Erreur : les cotes ont été lues, mais les noms des 2 équipes ne sont pas lisibles avec certitude sur cette capture. Sélectionnez les 2 équipes exactes ci-dessous puis cliquez sur « ✅ Confirmer ces 2 équipes » pour calculer le vrai Pari Définitif."
+          );
         }
 
         if (res.options.length === 0) {
@@ -112,6 +121,7 @@ export default function BookmakerScreenshotTab({
 
   const handleLoadBetclicDemo = () => {
     setErrMsg("");
+    setTeamsNeedConfirmation(false);
     setBookmakerName("Betclic");
     setHome("PSG");
     setAway("Barcelone");
@@ -126,8 +136,12 @@ export default function BookmakerScreenshotTab({
     setExtractedOptions(parsed);
   };
 
+  const matchedVideoBoost = doesVideoInsightMatchTeams(videoInsight, home, away)
+    ? videoInsight
+    : null;
+
   const verdict =
-    extractedOptions.length > 0
+    extractedOptions.length > 0 && !teamsNeedConfirmation
       ? evaluateScreenshotMarketsAndPickDefinitiveBet({
           home,
           away,
@@ -138,7 +152,7 @@ export default function BookmakerScreenshotTab({
           modelState,
           liveMatch:
             liveMatches.find((m) => m.home === home && m.away === away) || null,
-          videoInsight,
+          videoInsight: matchedVideoBoost,
           bankrollCapital,
           currency,
         })
@@ -271,13 +285,39 @@ export default function BookmakerScreenshotTab({
               marginBottom: 14,
               padding: "10px 14px",
               borderRadius: 10,
-              background: "rgba(255, 82, 82, 0.12)",
-              border: "1px solid rgba(255, 82, 82, 0.4)",
-              color: "#ff8a80",
+              background: teamsNeedConfirmation ? "rgba(245, 158, 11, 0.14)" : "rgba(255, 82, 82, 0.12)",
+              border: `1px solid ${teamsNeedConfirmation ? "rgba(245, 158, 11, 0.5)" : "rgba(255, 82, 82, 0.4)"}`,
+              color: teamsNeedConfirmation ? "#fde68a" : "#ff8a80",
               fontSize: 12.5,
+              display: "flex",
+              flexWrap: "wrap",
+              alignItems: "center",
+              justifyContent: "space-between",
+              gap: 10,
             }}
           >
-            {errMsg}
+            <span>{errMsg}</span>
+            {teamsNeedConfirmation && (
+              <button
+                type="button"
+                onClick={() => {
+                  setTeamsNeedConfirmation(false);
+                  setErrMsg("");
+                }}
+                style={{
+                  background: "linear-gradient(135deg, #10b981, #059669)",
+                  border: "none",
+                  borderRadius: 8,
+                  padding: "7px 13px",
+                  color: "#fff",
+                  fontWeight: 800,
+                  cursor: "pointer",
+                  fontSize: 12,
+                }}
+              >
+                ✅ Confirmer {home} vs {away} &amp; Calculer le Pari Définitif
+              </button>
+            )}
           </div>
         )}
 

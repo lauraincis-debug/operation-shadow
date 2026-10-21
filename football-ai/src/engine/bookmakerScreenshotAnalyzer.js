@@ -336,11 +336,20 @@ export function evaluateScreenshotMarketsAndPickDefinitiveBet({
   modelState = modelState || getDefaultModelState();
   const isSoccer = !sport || sport === "soccer";
 
+  const safeVideoBoost =
+    videoInsight &&
+    videoInsight.targetHome &&
+    videoInsight.targetAway &&
+    normalizeKey(videoInsight.targetHome) === normalizeKey(home) &&
+    normalizeKey(videoInsight.targetAway) === normalizeKey(away)
+      ? videoInsight
+      : null;
+
   let pred = null;
   let proMkts = null;
   if (isSoccer) {
     pred = computeFullPrediction(home, away, league, modelState, null, {
-      videoBoost: videoInsight,
+      videoBoost: safeVideoBoost,
       liveIntel: liveMatch
         ? {
             homeForm: liveMatch.homeForm,
@@ -573,17 +582,28 @@ export async function extractScreenshotDataFromImage(
   onProgress = () => {},
   visionAuth = {}
 ) {
-  onProgress(12, "Préparation de la capture d'écran Bookmaker...");
+  const explicitKeyArg = typeof onProgress === "string" ? onProgress : "";
+  const safeProgress = typeof onProgress === "function" ? onProgress : () => {};
+  const authObj =
+    typeof visionAuth === "string"
+      ? { geminiApiKey: visionAuth }
+      : visionAuth || {};
+
+  safeProgress(12, "Préparation de la capture d'écran Bookmaker...");
 
   // 1. Si une clé Gemini Vision est disponible, extraction JSON multimodale ultra-précise en < 2s
   const geminiKey =
-    visionAuth.geminiApiKey ||
+    explicitKeyArg ||
+    authObj.geminiApiKey ||
     (typeof localStorage !== "undefined"
       ? (() => {
           try {
-            const mem = JSON.parse(localStorage.getItem("cloe_standalone_memory_v5") || "{}");
-            if (mem.llmProvider === "gemini" && mem.llmApiKey) return mem.llmApiKey;
-            const javisKey = JSON.parse(localStorage.getItem("javis_gemKey") || '""');
+            const memV4 = JSON.parse(localStorage.getItem("cloe_ultra_personal_memory_v4") || "{}");
+            if (memV4.llmProvider === "gemini" && memV4.llmApiKey) return memV4.llmApiKey;
+            const memV5 = JSON.parse(localStorage.getItem("cloe_standalone_memory_v5") || "{}");
+            if (memV5.llmProvider === "gemini" && memV5.llmApiKey) return memV5.llmApiKey;
+            const rawJavis = localStorage.getItem("javis_gemKey") || "";
+            const javisKey = rawJavis.startsWith('"') ? JSON.parse(rawJavis) : rawJavis;
             return javisKey || "";
           } catch {
             return "";
@@ -593,12 +613,12 @@ export async function extractScreenshotDataFromImage(
 
   if (geminiKey && typeof FileReader !== "undefined") {
     try {
-      onProgress(35, "Lecture Vision IA haute précision des cotes & marchés...");
+      safeProgress(35, "Lecture Vision IA haute précision des cotes & marchés...");
       const b64 = await fileToBase64(imageFile);
       const prompt =
         "Lis cette capture d'écran de paris sportifs (Betclic, Winamax, 1xBet, Sportcash, etc.) et réponds UNIQUEMENT en JSON valide strict sans markdown : " +
-        '{"bookmaker":"Betclic","home":"Equipe Domicile","away":"Equipe Exterieur","sport":"soccer","options":[{"kind":"1|N|2|1X|X2|12|BTTS_Y|BTTS_N|OVER|UNDER|CORNERS_OVER|HT_OVER","line":null,"label":"Intitulé exact","bookOdd":1.75}]} ' +
-        "Extrais TOUTES les options de paris et cotes visibles avec exactitude. N'invente aucune cote non présente sur l'image.";
+        '{"bookmaker":"Betclic","home":"Equipe Domicile ou vide si illisible","away":"Equipe Exterieur ou vide si illisible","sport":"soccer","options":[{"kind":"1|N|2|1X|X2|12|BTTS_Y|BTTS_N|OVER|UNDER|CORNERS_OVER|HT_OVER","line":null,"label":"Intitulé exact","bookOdd":1.75}]} ' +
+        "Extrais TOUTES les options de paris et cotes visibles avec exactitude. N'invente AUCUNE équipe ni AUCUNE cote non visible sur l'image (mets \"\" si les noms des équipes ne figurent pas sur l'image).";
 
       const res = await fetch(
         "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent",
@@ -627,22 +647,34 @@ export async function extractScreenshotDataFromImage(
         const txt = json?.candidates?.[0]?.content?.parts?.[0]?.text || "";
         const parsed = JSON.parse(txt.replace(/```json|```/g, "").trim());
         if (parsed && Array.isArray(parsed.options) && parsed.options.length > 0) {
-          onProgress(100, "Capture analysée avec succès via Vision IA !");
+          const rawHome = String(parsed.home || "").trim();
+          const rawAway = String(parsed.away || "").trim();
+          const hasValidTeams =
+            rawHome.length >= 2 &&
+            rawAway.length >= 2 &&
+            !/equipe domicile|illisible|unknown/i.test(rawHome) &&
+            !/equipe exterieur|illisible|unknown/i.test(rawAway);
+          const cleanHome = hasValidTeams ? canonicalTeamName(rawHome) : "";
+          const cleanAway = hasValidTeams ? canonicalTeamName(rawAway) : "";
+          safeProgress(100, "Capture analysée avec succès via Vision IA !");
           return {
             engineUsed: "Gemini Vision Multimodale",
             bookmakerName: parsed.bookmaker || "Betclic",
-            detectedMatch: {
-              home: canonicalTeamName(parsed.home || ""),
-              away: canonicalTeamName(parsed.away || ""),
-              sport: parsed.sport || "soccer",
-              league: "ucl",
-              liveMatch:
-                liveMatches.find(
-                  (m) =>
-                    normalizeKey(m.home).includes(normalizeKey(parsed.home || "")) &&
-                    normalizeKey(m.away).includes(normalizeKey(parsed.away || ""))
-                ) || null,
-            },
+            teamsUnconfirmed: !hasValidTeams,
+            detectedMatch: hasValidTeams
+              ? {
+                  home: cleanHome,
+                  away: cleanAway,
+                  sport: parsed.sport || "soccer",
+                  league: "ucl",
+                  liveMatch:
+                    liveMatches.find(
+                      (m) =>
+                        normalizeKey(m.home).includes(normalizeKey(cleanHome)) &&
+                        normalizeKey(m.away).includes(normalizeKey(cleanAway))
+                    ) || null,
+                }
+              : null,
             rawText: txt,
             options: parsed.options.map((o) => ({
               kind: o.kind || "1",
@@ -659,13 +691,16 @@ export async function extractScreenshotDataFromImage(
   }
 
   // 2. Moteur OCR 100 % Local & Gratuit (sans aucune clé API !) via Tesseract.js (Français + Anglais)
-  onProgress(28, "OCR Local Haute Précision (Français + Anglais) en cours...");
+  safeProgress(28, "OCR Local Haute Précision (Français + Anglais) en cours...");
   const processedBlob = await preprocessScreenshotForOcr(imageFile);
   const Tesseract = await import("tesseract.js");
   const { data } = await Tesseract.recognize(processedBlob, "fra+eng", {
     logger: (m) => {
       if (m.status === "recognizing text" && typeof m.progress === "number") {
-        onProgress(Math.round(30 + m.progress * 65), `Lecture optique des cotes Betclic (${Math.round(m.progress * 100)}%)...`);
+        safeProgress(
+          Math.round(30 + m.progress * 65),
+          `Lecture optique des cotes Betclic (${Math.round(m.progress * 100)}%)...`
+        );
       }
     },
   });
@@ -673,15 +708,18 @@ export async function extractScreenshotDataFromImage(
   const rawText = data?.text || "";
   const bookmakerName = detectBookmakerBrand(rawText);
   const detectedMatch = detectTeamsFromOcrText(rawText, liveMatches);
-  const home = detectedMatch?.home || "PSG";
-  const away = detectedMatch?.away || "Marseille";
-  const options = parseBookmakerMarketsFromText(rawText, home, away);
+  // SÉCURITÉ FINANCIÈRE STRICTE [AUDIT3-P1-01] : ZÉRO substitution silencieuse par "PSG vs Marseille" !
+  const teamsConfirmed = Boolean(detectedMatch?.home && detectedMatch?.away);
+  const labelHome = teamsConfirmed ? detectedMatch.home : "Équipe Domicile";
+  const labelAway = teamsConfirmed ? detectedMatch.away : "Équipe Extérieur";
+  const options = parseBookmakerMarketsFromText(rawText, labelHome, labelAway);
 
-  onProgress(100, "Lecture optique terminée !");
+  safeProgress(100, "Lecture optique terminée !");
   return {
     engineUsed: "OCR Local Haute Précision (Tesseract FRA+ENG)",
     bookmakerName,
-    detectedMatch,
+    teamsUnconfirmed: !teamsConfirmed,
+    detectedMatch: teamsConfirmed ? detectedMatch : null,
     rawText,
     options,
   };
