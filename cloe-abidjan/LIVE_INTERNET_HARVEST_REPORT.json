@@ -1,8 +1,8 @@
 {
   "status": "LIVE_INTERNET_HARVEST_V6_4_CERTIFIED_OK",
   "version": "6.4.0-certified-integral",
-  "harvestedAt": "2026-10-21T15:04:26.357Z",
-  "sha256Integrity": "06d9913caf91f5b5cba1ea14",
+  "harvestedAt": "2026-10-21T15:19:54.739Z",
+  "sha256Integrity": "641842a55dae165688620cb3",
   "totalMatchesAcross4Days": 891,
   "currentlyLiveOngoingMatchesCount": 8,
   "countsBySport": {
@@ -27,8 +27,8 @@
       "sport": "tennis",
       "competition": "Tennis ATP Tour 🎾 • Almaty Open (Men's Singles)",
       "match": "Stefanos Tsitsipas vs Mikhail Kukushkin",
-      "score": "0-0",
-      "liveStatus": "🔴 DIRECT 1st"
+      "score": "1-0",
+      "liveStatus": "🔴 DIRECT 2nd"
     },
     {
       "sport": "tennis",
@@ -41,8 +41,8 @@
       "sport": "tennis",
       "competition": "Tennis ATP Tour 🎾 • Almaty Open (Men's Singles)",
       "match": "Stefanos Tsitsipas vs Mikhail Kukushkin",
-      "score": "0-0",
-      "liveStatus": "🔴 DIRECT 1st"
+      "score": "1-0",
+      "liveStatus": "🔴 DIRECT 2nd"
     },
     {
       "sport": "tennis",
@@ -55,8 +55,8 @@
       "sport": "tennis",
       "competition": "Tennis ATP Tour 🎾 • Almaty Open (Men's Singles)",
       "match": "Stefanos Tsitsipas vs Mikhail Kukushkin",
-      "score": "0-0",
-      "liveStatus": "🔴 DIRECT 1st"
+      "score": "1-0",
+      "liveStatus": "🔴 DIRECT 2nd"
     },
     {
       "sport": "tennis",
@@ -69,8 +69,8 @@
       "sport": "tennis",
       "competition": "Tennis ATP Tour 🎾 • Almaty Open (Men's Singles)",
       "match": "Stefanos Tsitsipas vs Mikhail Kukushkin",
-      "score": "0-0",
-      "liveStatus": "🔴 DIRECT 1st"
+      "score": "1-0",
+      "liveStatus": "🔴 DIRECT 2nd"
     }
   ]
 }
