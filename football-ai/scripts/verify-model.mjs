@@ -813,7 +813,17 @@ const fantasyWithNonSoccerNoise = scoreFantasyPlayers(stateV64, [
 ]);
 assert.ok(fantasyWithNonSoccerNoise.length === playersModV64.FANTASY_PLAYERS.length, "scoreFantasyPlayers filtre les matchs non-soccer sans planter !");
 
-// 16f. [P0-04 + P0-05 + P1-02 + P1-04] Contrôles d'intégrité statiques finaux sur tout le code source
+// 16f. [P0-04 + P0-05 + P1-02 + P1-04 + .firebaserc targets] Contrôles d'intégrité statiques finaux sur tout le code source
+const fbParsed = JSON.parse(fbCfgText);
+const fbRcParsed = JSON.parse(fsNode.readFileSync(pathNode.resolve(".firebaserc"), "utf8"));
+if (Array.isArray(fbParsed.hosting)) {
+  const mappedTargets = fbRcParsed?.targets?.["football-ai-43e33"]?.hosting || {};
+  for (const hBlock of fbParsed.hosting) {
+    if (hBlock.target) {
+      assert.ok(Array.isArray(mappedTargets[hBlock.target]) && mappedTargets[hBlock.target].length > 0, `Target Firebase "${hBlock.target}" DOIT être déclaré dans .firebaserc !`);
+    }
+  }
+}
 const abjHtmlSrc = fsNode.readFileSync(pathNode.resolve("../cloe-abidjan/index.html"), "utf8");
 assert.equal(abjHtmlSrc.includes("localStorage.getItem('javis_gemKey')"), false, "Zéro lecture JSON brute javis_gemKey dans cloe-abidjan/index.html !");
 assert.ok(abjHtmlSrc.includes("javis_v64_purged"), "Migration javis_v64_purged présente dans cloe-abidjan/index.html !");

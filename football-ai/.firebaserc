@@ -1,5 +1,20 @@
 {
   "projects": {
     "default": "football-ai-43e33"
+  },
+  "targets": {
+    "football-ai-43e33": {
+      "hosting": {
+        "app": [
+          "football-ai-43e33"
+        ],
+        "cloe-abidjan": [
+          "cloe-agent-abidjan"
+        ],
+        "cloe-app": [
+          "cloe-ia-ultra"
+        ]
+      }
+    }
   }
 }
