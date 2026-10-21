@@ -84,9 +84,9 @@ jobs:
 
       - name: Deploy Cloé · Agent Personnel Abidjan v6.1 Certifiée (https://cloe-agent-abidjan.web.app)
         run: |
-          ABJ_SITE="cloe-agent-abidjan"
+          export ABJ_SITE="cloe-agent-abidjan"
           npx -y firebase-tools hosting:sites:create "$ABJ_SITE" --project football-ai-43e33 || true
-          TMP_ABJ=$(mktemp -d)
+          export TMP_ABJ=$(mktemp -d)
           cp -a cloe-abidjan "$TMP_ABJ/public"
           node -e '
             const fs = require("fs");
@@ -121,9 +121,9 @@ jobs:
 
       - name: Deploy Cloé IA Ultra v6.1 Certifiée (https://cloe-ia-ultra.web.app) & Save Live Harvest Report
         run: |
-          ULTRA_SITE="cloe-ia-ultra"
+          export ULTRA_SITE="cloe-ia-ultra"
           npx -y firebase-tools hosting:sites:create "$ULTRA_SITE" --project football-ai-43e33 || true
-          TMP_CLOE=$(mktemp -d)
+          export TMP_CLOE=$(mktemp -d)
           cp -a football-ai/cloe-www "$TMP_CLOE/public"
           node -e '
             const fs = require("fs");
