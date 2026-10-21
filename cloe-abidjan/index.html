@@ -1271,16 +1271,9 @@ function memoriserEchange(role,texte){
     pousserConversationFirestore({date:new Date().toISOString(),role,texte:propre});
   }
 }
-async function pousserConversationFirestore(entree){
-  if(!CLOÉ_FIREBASE_CONFIG)return; // synchro inactive : tout reste local, honnêtement
-  try{
-    const {initializeApp}=await import('https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js');
-    const {getAuth}=await import('https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js');
-    const {getFirestore,collection,addDoc}=await import('https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js');
-    const app=initializeApp(CLOÉ_FIREBASE_CONFIG);
-    const user=getAuth(app).currentUser;if(!user)return; // règles : uniquement son propre compte
-    await addDoc(collection(getFirestore(app),'utilisateurs',user.uid,'conversations'),entree);
-  }catch(e){/* local déjà enregistré : la synchro ne bloque jamais la conversation */}
+async function pousserConversationFirestore(_entree){
+  // Synchro distante volontairement désactivée en mode L0 : 100 % des conversations restent sur cet appareil.
+  return;
 }
 function contexteMemoire(){
   const sujets=store.get('sujets',[]);
@@ -1651,7 +1644,11 @@ async function cleDepuisMotDePasse(mdp,sel){
   const base=await crypto.subtle.importKey('raw',new TextEncoder().encode(mdp),'PBKDF2',false,['deriveKey']);
   return crypto.subtle.deriveKey({name:'PBKDF2',salt:sel,iterations:120000,hash:'SHA-256'},base,{name:'AES-GCM',length:256},false,['encrypt','decrypt']);
 }
-function versB64(buf){return btoa(String.fromCharCode(...new Uint8Array(buf)))}
+function versB64(buf){
+  const u8=new Uint8Array(buf),CH=0x8000;let bin='';
+  for(let i=0;i<u8.length;i+=CH)bin+=String.fromCharCode.apply(null,u8.subarray(i,i+CH));
+  return btoa(bin);
+}
 function depuisB64(s){return Uint8Array.from(atob(s),c=>c.charCodeAt(0))}
 document.addEventListener('click',async e=>{
   if(e.target&&e.target.id==='backupBtn'){
@@ -1925,8 +1922,8 @@ geminiBrancherReglages();updateCash();renderTasks();renderBets();renderMarket();
     });
     const optsHtml = Object.entries(grouped).map(([lg, list]) => {
       const lgName = (leaguesMap[lg] && leaguesMap[lg].name) || lg.toUpperCase();
-      return '<optgroup label="' + lgName.replace(/"/g, '') + '">' +
-        list.map(t => '<option value="' + t.replace(/"/g, '&quot;') + '">' + t + ' — Elo ' + (clubsMap[t].elo || 1650) + '</option>').join('') +
+      return '<optgroup label="' + esc(lgName) + '">' +
+        list.map(t => '<option value="' + esc(t) + '">' + esc(t) + ' — Elo ' + Number(clubsMap[t].elo || 1650) + '</option>').join('') +
         '</optgroup>';
     }).join('');
     homeSel.innerHTML = optsHtml;
@@ -2106,12 +2103,15 @@ geminiBrancherReglages();updateCash();renderTasks();renderBets();renderMarket();
     const audit = brain.auditTicket(window.__footSlip || []);
     if (!audit || !audit.weakestLink || !audit.weakestLink.saferAlternative) return;
     const w = audit.weakestLink;
+    const altPct = Number(w.saferAlternative.pct || 72);
     window.__footSlip = (window.__footSlip || []).map(it =>
       (it.id === w.itemId || (it.home + ' vs ' + it.away) === w.matchLabel)
         ? Object.assign({}, it, {
             selectedMarket: {
+              code: w.saferAlternative.code || '1X',
               label: w.saferAlternative.label,
-              pct: w.saferAlternative.pct,
+              prob: Math.min(0.98, Math.max(0.03, altPct / 100)),
+              pct: altPct,
               bookOdd: w.saferAlternative.bookOdd || 1.28
             }
           })
@@ -2123,7 +2123,7 @@ geminiBrancherReglages();updateCash();renderTasks();renderBets();renderMarket();
     toast('🛡️ Maillon faible sécurisé automatiquement !');
   };
 
-  // P0 FIN-01 CORRIGÉ À 100 % : SUPPRESSION TOTALE DU Math.random() !
+  // P0 FIN-01 + AUDIT FINAL [FINAL-P0-01] : SUPPRESSION TOTALE DU Math.random() ET SÉPARATION STRICTE SPREAD / TOTAL !
   // Tout pari simulé est scellé par chaîne de hachage et réglé UNIQUEMENT sur VRAI SCORE OFFICIEL Internet !
   function computeLedgerHash(prevHash, obj) {
     const str = prevHash + '|' + obj.match + '|' + obj.amt + '|' + obj.odd + '|' + obj.day;
@@ -2139,31 +2139,57 @@ geminiBrancherReglages();updateCash();renderTasks();renderBets();renderMarket();
     const sh = Number(realMatch.scoreHome);
     const sa = Number(realMatch.scoreAway);
     if (!Number.isFinite(sh) || !Number.isFinite(sa)) return null;
-    const rawLbl = String(leg.label || leg.marketLabel || leg.match || '');
+    const rawLbl = String(leg.label || leg.marketLabel || leg.match || '').trim();
     const lbl = rawLbl.toUpperCase().replace(',', '.');
     const code = String(leg.code || '').toUpperCase();
 
     // Marchés non vérifiables uniquement par score final (Buteur / Corners / Cartons) -> honnêteté stricte
     if (lbl.includes('BUTEUR') || lbl.includes('CORNER') || lbl.includes('CARTON')) return 'UNVERIFIABLE_PROP';
 
-    const overMatch = lbl.match(/(?:PLUS DE|\+)\s*(\d+\.5)/);
-    if (overMatch) return (sh + sa) > parseFloat(overMatch[1]);
-    const underMatch = lbl.match(/(?:MOINS DE|-)\s*(\d+\.5)/);
-    if (underMatch) return (sh + sa) < parseFloat(underMatch[1]);
+    // 1. TOTAL OVER / UNDER (uniquement vrais marchés de totaux : "Plus de X.5", "Moins de X.5", "+2.5 Buts", "-2.5 Buts", code O/U/TOTAL)
+    const isExplicitTotalOver =
+      /^O\d|^OVER|^TOTAL_OVER/.test(code) ||
+      /(?:PLUS DE|OVER)\s*(\d+(?:\.\d+)?)/.test(lbl) ||
+      /^\+\s*(\d+(?:\.\d+)?)\s*(?:BUTS?|PTS?|POINTS?|JEUX|SETS?|RUNS?)/.test(lbl);
+    if (isExplicitTotalOver) {
+      const mOv = lbl.match(/(?:PLUS DE|OVER|\+)\s*(\d+(?:\.\d+)?)/);
+      if (mOv) return (sh + sa) > parseFloat(mOv[1]);
+    }
+    const isExplicitTotalUnder =
+      /^U\d|^UNDER|^TOTAL_UNDER/.test(code) ||
+      /(?:MOINS DE|UNDER)\s*(\d+(?:\.\d+)?)/.test(lbl) ||
+      /^-\s*(\d+(?:\.\d+)?)\s*(?:BUTS?|PTS?|POINTS?|JEUX|SETS?|RUNS?)/.test(lbl);
+    if (isExplicitTotalUnder) {
+      const mUn = lbl.match(/(?:MOINS DE|UNDER|-)\s*(\d+(?:\.\d+)?)/);
+      if (mUn) return (sh + sa) < parseFloat(mUn[1]);
+    }
 
-    if (code === '1X' || lbl.includes('(1X)') || lbl.includes('(1N)') || lbl.includes('OU NUL')) {
+    // 2. HANDICAP / SPREAD D'ÉQUIPE (ex: "Raptors +7.5 pts", "Celtics -5.5 pts", "Djokovic +1.5 sets", code SPREAD_HOME / SPREAD_AWAY)
+    const spreadMatch = lbl.match(/([+-]\s*\d+(?:\.\d+)?)\s*(?:PTS?|POINTS?|SETS?|BUTS?|RUNS?)?(?:\)|$|\s)/);
+    if (spreadMatch && (code.includes('SPREAD') || code.includes('HANDICAP') || /[+-]\s*\d+\.\d+/.test(lbl))) {
+      const hcap = parseFloat(spreadMatch[1].replace(/\s+/g, ''));
+      if (Number.isFinite(hcap)) {
+        const isAwaySide =
+          code === 'SPREAD_AWAY' ||
+          (leg.away && lbl.includes(String(leg.away).toUpperCase()) && (!leg.home || !lbl.startsWith(String(leg.home).toUpperCase())));
+        return isAwaySide ? (sa + hcap) > sh : (sh + hcap) > sa;
+      }
+    }
+
+    // 3. DOUBLE CHANCE, BTTS, NUL & VAINQUEUR (1 / N / 2 / Moneyline)
+    if (code === '1X' || code === 'DC_1X' || lbl.includes('(1X)') || lbl.includes('(1N)') || lbl.includes('OU NUL')) {
       if (leg.away && rawLbl.toUpperCase().startsWith('NUL OU')) return sa >= sh;
       return sh >= sa;
     }
-    if (code === 'X2' || lbl.includes('(X2)') || lbl.includes('(N2)') || lbl.includes('NUL OU')) return sa >= sh;
-    if (code === '12' || lbl.includes('(12)')) return sh !== sa;
+    if (code === 'X2' || code === 'DC_X2' || lbl.includes('(X2)') || lbl.includes('(N2)') || lbl.includes('NUL OU')) return sa >= sh;
+    if (code === '12' || code === 'DC_12' || lbl.includes('(12)')) return sh !== sa;
     if (lbl.includes('MARQUENT : OUI') || code === 'BTTS_Y') return sh >= 1 && sa >= 1;
     if (lbl.includes('MARQUENT : NON') || code === 'BTTS_N') return !(sh >= 1 && sa >= 1);
 
     // Match Nul sec (Correctif Audit #2 [AUDIT2-FIN-01] : ne renvoie plus jamais sh > sa !)
     if (code === 'N' || /\bMATCH NUL\b|\bNUL \(N\)/.test(lbl)) return sh === sa;
 
-    if (code === '2' || (leg.away && lbl.includes(String(leg.away).toUpperCase()))) return sa > sh;
+    if (code === '2' || code === 'ML_AWAY' || (leg.away && lbl.includes(String(leg.away).toUpperCase()))) return sa > sh;
     return sh > sa;
   }
 

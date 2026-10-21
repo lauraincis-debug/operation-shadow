@@ -40,10 +40,9 @@ export const STAKES_OPTIONS = [
 
 export function getSquadStarsForTeam(teamName) {
   const canon = normalizeKey(canonicalTeamName(teamName));
-  const matched = FANTASY_PLAYERS.filter((p) => {
-    const pClub = normalizeKey(canonicalTeamName(p.club));
-    return pClub === canon || pClub.includes(canon) || canon.includes(pClub);
-  });
+  const matched = FANTASY_PLAYERS.filter(
+    (p) => normalizeKey(canonicalTeamName(p.club)) === canon
+  );
 
   if (matched.length > 0) return matched;
 
