@@ -1,0 +1,22 @@
+{
+  "name": "football-ai-ultra",
+  "private": true,
+  "version": "5.0.0",
+  "description": "Système prédictif football adaptatif v5 Legend (+167 Clubs Mondiaux, Marchés Pros, Audit Ticket IA, Tournoi 10 000x, Cloé IA Ultra Mains-Libres)",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 0.0.0.0 --port 5173",
+    "build": "vite build && vite build --config vite.cloe.config.js && vite build --config vite.cloe-app.config.js && node scripts/generate-cloe-json.mjs",
+    "preview": "vite preview --host 0.0.0.0 --port 4173",
+    "test:model": "node scripts/verify-model.mjs",
+    "deploy": "./deploy-firebase.sh"
+  },
+  "dependencies": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.3.4",
+    "vite": "^6.0.5"
+  }
+}

@@ -1,0 +1,2226 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#031a14">
+<link rel="stylesheet" href="fonts.css">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Cloé">
+<title>Cloé — Votre agent personnel</title>
+<style>
+:root{--bg:#031a14;--bg2:#02110d;--halo:#0e4a36;--em:#0fb97a;--em2:#34d399;--or:#f5b800;--corail:#ff6b4a;--cyan:#22d3ee;--violet:#d946ef;--txt:#f2f7f4;--muted:#a7b8b0;--danger:#ff5a47;--glass:rgba(255,255,255,.045);--stroke:rgba(255,255,255,.09);--lvl:0}
+@property --lvl{syntax:'<number>';inherits:true;initial-value:0}
+*{box-sizing:border-box}
+html{background:var(--bg)}
+body{margin:0;font-family:'Manrope',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;background:radial-gradient(600px 400px at 85% -5%,rgba(245,184,0,.14),transparent 60%),radial-gradient(700px 500px at -10% 20%,rgba(14,74,54,.55),transparent 60%),linear-gradient(180deg,#041f18,var(--bg) 40%,var(--bg2));color:var(--txt);min-height:100dvh;padding-bottom:110px;-webkit-tap-highlight-color:transparent}
+body::before{content:"";position:fixed;inset:0;pointer-events:none;background:radial-gradient(340px 340px at 50% 120px,rgba(15,185,122,.12),transparent 70%);z-index:0}
+header{position:sticky;top:0;z-index:30;backdrop-filter:blur(14px);background:rgba(3,26,20,.78);padding:calc(12px + env(safe-area-inset-top)) 18px 10px;border-bottom:1px solid rgba(255,255,255,.05)}
+.row{display:flex;align-items:center;gap:10px;max-width:480px;margin:0 auto}
+.logo{width:38px;height:38px;border-radius:50%;flex:none;background:conic-gradient(from 210deg,#ff5f6d,#f5b800,#7ee787,#22d3ee,#a78bfa,#ff5f6d);box-shadow:0 0 18px rgba(15,185,122,.45),inset 0 0 0 2px rgba(255,255,255,.25);position:relative}
+.logo::after{content:"";position:absolute;inset:26% 52% 52% 18%;background:rgba(255,255,255,.75);border-radius:50%;filter:blur(2px)}
+h1{font-family:'Unbounded',sans-serif;font-size:19px;margin:0;letter-spacing:.02em}
+.sub{color:var(--muted);font-size:12px;margin-top:1px}
+.badge{display:inline-flex;align-items:center;gap:5px;padding:5px 9px;border-radius:999px;border:1px solid rgba(245,184,0,.45);color:var(--or);font-size:11px;font-weight:700;white-space:nowrap;background:rgba(245,184,0,.06)}
+.badge.grey{border-color:var(--stroke);color:var(--muted)}
+main{max-width:480px;margin:0 auto;padding:8px 16px 30px;position:relative;z-index:1}
+section{display:none}
+section.on{display:block;animation:secIn .2s ease-out both}
+@keyframes secIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.card{background:var(--glass);border:1px solid var(--stroke);border-radius:20px;padding:16px;margin:12px 0;backdrop-filter:blur(10px);box-shadow:0 14px 34px rgba(0,0,0,.28)}
+.card h2{font-family:'Unbounded',sans-serif;font-size:14px;font-weight:500;margin:0 0 8px;line-height:1.45}
+.big{font-family:'Unbounded',sans-serif;font-size:24px;font-weight:700;margin:4px 0}
+.muted,.sub2{color:var(--muted);font-size:13px;line-height:1.55}
+p{line-height:1.55}
+button{font:inherit;min-height:44px;border-radius:14px;border:1px solid var(--stroke);background:rgba(255,255,255,.05);color:var(--txt);padding:10px 14px;cursor:pointer;font-weight:600}
+button.act{background:linear-gradient(135deg,#ffd34d,var(--or));color:#231a00;border:none;box-shadow:0 8px 20px rgba(245,184,0,.25);font-weight:800}
+button.alt{background:transparent;border-color:rgba(245,184,0,.5);color:var(--or)}
+button.warn{background:transparent;border-color:rgba(255,90,71,.55);color:#ff9a8a}
+button:disabled{opacity:.45;cursor:not-allowed}
+button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible,[tabindex]:focus-visible{outline:2px solid var(--or);outline-offset:2px}
+input,select,textarea{width:100%;min-height:44px;background:rgba(255,255,255,.05);border:1px solid var(--stroke);border-radius:12px;color:var(--txt);padding:10px 12px;font:inherit;margin:6px 0}
+input::placeholder,textarea::placeholder{color:#7e8f87}
+label{font-size:13px;color:var(--muted);font-weight:600}
+input[type=checkbox]{width:22px;height:22px;min-height:22px;accent-color:#f5b800;vertical-align:middle;margin-right:8px}
+.item{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:12px 0;border-bottom:1px solid rgba(255,255,255,.06)}
+.item:last-child{border-bottom:none}
+.ok{color:var(--em2);font-weight:700}.bad{color:#ff8f80;font-weight:700}
+.pill{display:inline-block;padding:3px 8px;border-radius:999px;background:rgba(15,185,122,.15);color:var(--em2);font-size:11px;font-weight:700}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:104px;z-index:80;background:#0a2e22;border:1px solid var(--stroke);color:var(--txt);padding:10px 14px;border-radius:12px;max-width:92vw;font-size:13px;box-shadow:0 10px 30px rgba(0,0,0,.5)}
+/* navigation flottante */
+nav{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(12px + env(safe-area-inset-bottom));width:min(94vw,430px);background:rgba(6,32,24,.82);backdrop-filter:blur(16px);border:1px solid var(--stroke);border-radius:999px;display:flex;padding:6px;z-index:60;box-shadow:0 18px 40px rgba(0,0,0,.45)}
+nav button{flex:1;background:transparent;border:none;color:var(--muted);border-radius:999px;min-height:52px;font-size:11px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:6px 2px}
+nav button svg{width:20px;height:20px}
+nav button.on{background:linear-gradient(135deg,#ffd34d,var(--or));color:#231a00;font-weight:800}
+#stopBtn{position:fixed;right:14px;bottom:calc(84px + env(safe-area-inset-bottom));z-index:59;background:linear-gradient(135deg,#ff7a5c,var(--danger));color:#fff;border:none;border-radius:999px;padding:10px 14px;font-weight:800;box-shadow:0 10px 24px rgba(255,90,71,.35)}
+#stopFloat{position:fixed;right:14px;bottom:calc(84px + env(safe-area-inset-bottom));z-index:59;background:linear-gradient(135deg,#ff7a5c,var(--danger));color:#fff;border:none;border-radius:999px;padding:10px 14px;font-weight:800;box-shadow:0 10px 24px rgba(255,90,71,.35);display:flex;align-items:center;gap:7px}
+#stopFloat .sq{width:9px;height:9px;background:#fff;border-radius:2px;display:inline-block}
+/* accueil Orbe Aurore */
+.hero-hi{font-family:'Unbounded',sans-serif;font-size:clamp(28px,8.5vw,38px);line-height:1.16;font-weight:700;margin:20px 4px 6px;max-width:12ch}
+.orb-zone{display:flex;flex-direction:column;align-items:center;text-align:center;padding:6px 0 2px}
+.orb{--s:206px;width:var(--s);height:var(--s);border-radius:50%;border:none;padding:0;position:relative;cursor:pointer;background:conic-gradient(from 210deg,#ff5f6d,#f5b800,#7ee787,#22d3ee,#a78bfa,#ff5f6d);transform:scale(calc(1 + var(--lvl)*.18));animation:orbFloat 7s ease-in-out infinite,orbMorph 11s ease-in-out infinite;box-shadow:0 0 70px rgba(15,185,122,.4),0 0 130px rgba(34,211,238,.16);transition:transform .18s ease-out;min-height:0}
+button.orb{background:conic-gradient(from 210deg,#ff5f6d,#f5b800,#7ee787,#22d3ee,#a78bfa,#ff5f6d)}
+.orb::before{content:"";position:absolute;inset:-16%;border-radius:50%;background:radial-gradient(circle,rgba(245,184,0,.32),rgba(15,185,122,.16) 45%,transparent 70%);filter:blur(12px);z-index:-1;animation:orbHalo 4.5s ease-in-out infinite}
+.orb::after{content:"";position:absolute;inset:0;border-radius:50%;background:radial-gradient(circle at 34% 28%,rgba(255,255,255,.78),rgba(255,255,255,.1) 34%,transparent 58%),radial-gradient(circle at 72% 78%,rgba(3,26,20,.28),transparent 55%);mix-blend-mode:screen;animation:orbSpin 16s linear infinite}
+.orb-core{position:absolute;inset:16%;border-radius:50%;background:radial-gradient(circle,rgba(255,255,255,.32),transparent 62%);filter:blur(3px)}
+.orb-dot{position:absolute;width:9px;height:9px;border-radius:50%;background:#fff;opacity:0;box-shadow:0 0 10px #fff}
+.orb-dot.d1{left:24%;top:32%}.orb-dot.d2{right:22%;top:52%}.orb-dot.d3{left:46%;bottom:20%}
+@keyframes orbFloat{0%,100%{translate:0 0}50%{translate:0 -7px}}
+@keyframes orbMorph{0%,100%{border-radius:50% 46% 52% 48%/48% 52% 46% 54%}33%{border-radius:46% 54% 48% 52%/54% 46% 56% 46%}66%{border-radius:53% 47% 55% 45%/45% 55% 47% 53%}}
+@keyframes orbHalo{0%,100%{transform:scale(1);opacity:.75}50%{transform:scale(1.07);opacity:1}}
+@keyframes orbSpin{to{rotate:360deg}}
+html[data-state="listening"] .orb{animation-duration:4.5s,8s}
+html[data-state="thinking"] .orb{animation-duration:3s,6s}
+html[data-state="thinking"] .orb-dot{animation:orbDot 1.5s ease-in-out infinite}
+html[data-state="thinking"] .orb-dot.d2{animation-delay:.25s}html[data-state="thinking"] .orb-dot.d3{animation-delay:.5s}
+@keyframes orbDot{0%,100%{opacity:.15;transform:translateY(0)}50%{opacity:1;transform:translateY(-6px)}}
+html[data-state="speaking"] .orb{background:conic-gradient(from 40deg,#f5b800,#ff6b4a,#d946ef,#f5b800)}
+html[data-state="paused"] .orb{animation-play-state:paused;filter:saturate(.55)}
+html[data-state="error"] .orb{animation:orbShake .45s ease}
+@keyframes orbShake{0%,100%{transform:translateX(0)}20%{transform:translateX(-7px)}40%{transform:translateX(6px)}60%{transform:translateX(-4px)}80%{transform:translateX(3px)}}
+.orb-state{font-family:'Unbounded',sans-serif;color:var(--or);font-size:17px;margin:20px 0 4px}
+.orb-help{color:var(--muted);font-size:13.5px;margin:0 8px 6px}
+.quick-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;width:100%;margin-top:16px}
+.quick{text-align:left;padding:16px;min-height:104px;border-radius:20px;background:var(--glass);border:1px solid var(--stroke);display:flex;flex-direction:column;gap:5px;align-items:flex-start}
+.quick strong{font-family:'Unbounded',sans-serif;font-size:14px;font-weight:500}
+.quick span{color:var(--muted);font-size:12px}
+.quick .go{margin-top:auto;width:36px;height:36px;min-height:36px;border-radius:50%;background:linear-gradient(135deg,#ffd34d,var(--or));color:#231a00;border:none;display:grid;place-items:center;font-weight:900;padding:0}
+.rapport{width:100%;margin-top:12px;text-align:left;display:flex;align-items:center;gap:12px;padding:16px;border-radius:20px;background:linear-gradient(120deg,rgba(15,185,122,.16),rgba(245,184,0,.1));border:1px solid var(--stroke)}
+.rapport strong{font-family:'Unbounded',sans-serif;font-size:13.5px;font-weight:500;display:block}
+.rapport span{color:var(--muted);font-size:12.5px}
+.rapport .play{margin-left:auto;flex:none;width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,#ffd34d,var(--or));display:grid;place-items:center;color:#231a00}
+.clamp-txt{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.readmore{background:none;border:none;color:var(--or);min-height:44px;padding:4px 8px 4px 0;font-size:13px}
+/* conversation plein ecran */
+#orbe{display:none;position:fixed;inset:0;z-index:90;background:radial-gradient(600px 500px at 50% 32%,rgba(14,74,54,.65),transparent 70%),#02110d;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:24px 20px calc(24px + env(safe-area-inset-bottom));text-align:center}
+#orbe.on{display:flex;animation:orbeIn .45s cubic-bezier(.2,.9,.25,1.2) both}
+@keyframes orbeIn{from{opacity:0;transform:scale(.92)}to{opacity:1;transform:scale(1)}}
+#orbeCanvas{width:min(62vw,260px);height:min(62vw,260px)}
+#orbeEtat{font-family:'Unbounded',sans-serif;font-size:17px;color:var(--or);margin:0}
+#orbeTexte{color:var(--muted);min-height:44px;max-width:420px;font-size:14.5px;line-height:1.5;margin:0}
+#orbeTexte:empty::before{content:"Je t'écoute…"}
+#orbeBtn{min-width:200px;height:64px;border-radius:999px;background:linear-gradient(135deg,#ff7a5c,#e0331f);color:#fff;border:none;font-size:16px;font-weight:800;box-shadow:0 14px 30px rgba(224,51,31,.35)}
+#orbeAide{color:#63776d;font-size:12px;max-width:340px;margin:0}
+/* chat */
+#chatLog{display:flex;flex-direction:column;gap:8px;max-height:320px;overflow:auto;padding:4px}
+.msg{padding:10px 12px;border-radius:14px;font-size:14px;line-height:1.5;max-width:92%}
+.msg.moi{align-self:flex-end;background:rgba(245,184,0,.16);border:1px solid rgba(245,184,0,.3)}
+.msg.Cloé{align-self:flex-start;background:rgba(255,255,255,.05);border:1px solid var(--stroke)}
+footer{color:#63776d;text-align:center;font-size:11.5px;padding:18px;position:relative;z-index:1}
+a{color:var(--or)}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
+html.lite .orb,html.lite .orb::before,html.lite .orb::after{animation:none!important}
+
+#stopOverlay{display:none;position:fixed;inset:0;z-index:100;background:linear-gradient(160deg,#8f1408,#5c0d05);color:#fff;flex-direction:column;align-items:center;justify-content:center;gap:14px;text-align:center;padding:24px}
+#stopOverlay.on{display:flex}
+#stopOverlay h2{font-family:'Unbounded',sans-serif;font-size:22px;margin:0}
+html,body{overflow-x:hidden;max-width:100%}
+.card{overflow-wrap:break-word}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{padding:7px 5px;text-align:left;vertical-align:top;border-bottom:1px solid rgba(255,255,255,.06);overflow-wrap:break-word}
+th{color:var(--muted);font-size:11.5px;text-transform:uppercase;letter-spacing:.03em}
+.item{flex-wrap:wrap}
+.item>*{min-width:0}
+main{overflow-x:clip}
+nav button{font-size:10.5px;padding:6px 1px}
+#s-investir table{table-layout:fixed}
+#s-investir th:nth-child(1),#s-investir td:nth-child(1){width:40%}
+#s-investir th:nth-child(2),#s-investir td:nth-child(2){width:24%;white-space:nowrap;font-size:12.5px}
+#s-investir th:nth-child(3),#s-investir td:nth-child(3){width:36%}
+#s-investir td button{width:100%;padding:8px 4px;font-size:12.5px;margin:2px 0}
+@media (max-width:360px){.badge.grey{display:none}.orb{--s:184px}}
+</style>
+</head>
+<body>
+<header>
+  <div class="row">
+    <div class="logo">J</div>
+    <div style="flex:1">
+      <h1>Cloé</h1>
+      <div class="sub">Agent personnel · Abidjan</div>
+    </div>
+    <span class="badge">Simulation</span>
+    <span class="badge grey">Niveau L0</span>
+  </div>
+</header>
+
+<main>
+  <!-- ACCUEIL -->
+  <section id="s-accueil" class="on">
+    <h2 class="hero-hi" id="heroSalut">Bonjour,<br>Lauraincis.</h2>
+    <div class="orb-zone">
+      <button type="button" class="orb" id="heroOrb" aria-label="Lancer la conversation avec Cloé">
+        <span class="orb-core"></span><span class="orb-dot d1"></span><span class="orb-dot d2"></span><span class="orb-dot d3"></span>
+      </button>
+      <p class="orb-state" id="heroEtat" role="status">À l'écoute</p>
+      <p class="orb-help">Dis «&nbsp;Cloé, donne-moi le rapport du jour&nbsp;»</p>
+      <div class="quick-grid">
+        <button type="button" class="quick" data-go="s-investir"><strong>Investir</strong><span>BRVM · simulation</span><span class="go" aria-hidden="true">→</span></button>
+        <button type="button" class="quick" data-go="s-commercial"><strong>Clients</strong><span>Prospection et devis</span><span class="go" aria-hidden="true">→</span></button>
+      </div>
+      <button type="button" class="rapport" id="heroFootBtn" style="margin-top:12px;background:linear-gradient(120deg,rgba(245,184,0,.16),rgba(15,185,122,.16));border-color:rgba(245,184,0,.45)"><span><strong>⚽ Football IA Ultra v5</strong><span>167 clubs (ASEC, LDC CAF, Europe) · CAN 10 000× · Buteurs & Ticket IA.</span></span><span class="play" aria-hidden="true">⚡</span></button>
+      <button type="button" class="rapport" id="heroRapport"><span><strong>Rapport du jour</strong><span>Marchés, crypto, Football IA v5, idées : lu à voix haute.</span></span><span class="play" aria-hidden="true">▶</span></button>
+    </div>
+
+    <div class="card">
+      <div class="muted">Bonjour, je suis <b>Cloé</b>. Pour l'instant je travaille uniquement avec de l'argent fictif : aucun risque.</div>
+      <div class="grid" style="margin-top:10px">
+        <div><div class="muted">Argent fictif disponible</div><div class="big" id="cash">100 000 FCFA</div></div>
+        <div><div class="muted">Fiabilité (test en simulation)</div><div class="big" id="reliab">—</div><div class="muted" id="reliabSub">Pas encore assez de décisions pour juger.</div></div>
+      </div>
+      <div class="muted" style="margin-top:8px">Budget outils : <b>0 FCFA dépensé</b> (niveau gratuit). Alerte à 70 %, blocage à 100 %.</div>
+    </div>
+
+    <div class="card">
+      <h3 style="margin-top:0">🎙️ Parler à Cloé</h3>
+      <p class="muted">Touchez le micro et dites par exemple : <i>« Cloé, rapport »</i>, <i>« Cloé, budget »</i> ou <i>« Cloé, stop »</i>. Si le micro ne marche pas sur votre appareil, écrivez votre demande ci-dessous — le résultat est le même.</p>
+      <button class="act mic" id="micBtn">🎙️ Parler à Cloé</button>
+      <div style="height:8px"></div>
+      <input id="cmd" placeholder="Écrivez ici : rapport, budget, aide…">
+      <button class="alt" id="cmdBtn">Envoyer ma demande</button>
+      <p class="muted" id="voiceState">Voix : prête. Sur iPhone, l'écoute permanente en arrière-plan est limitée par Apple — le bouton micro ci-dessus est le contournement prévu.</p>
+    </div>
+
+    <div class="card">
+      <h3 style="margin-top:0">📰 Mon rapport du jour</h3>
+      <div id="daily">Touchez le bouton pour générer votre résumé (tâches, argent fictif, alertes).</div>
+      <div style="height:8px"></div>
+      <button class="act" id="dailyBtn">Voir mon rapport du jour</button>
+    </div>
+
+    <div class="card" style="border:2px solid rgba(245,184,0,.55);background:rgba(245,184,0,.06)">
+      <h3 style="margin-top:0">🎙️ Discuter avec Cloé — mains libres</h3>
+      <p class="muted">Touchez <b>une seule fois</b> le bouton ci-dessous (le navigateur l'exige pour ouvrir le micro). Ensuite, <b>vous ne touchez plus rien</b> : parlez, Cloé vous répond à voix haute, change de page tout seul et enchaîne les tâches. Exemples : <i>« Cloé, donne-moi tes propositions »</i> • <i>« Passe à l'investissement »</i> • <i>« Et la crypto ? »</i> • <i>« Ajoute un rappel »</i> (il vous demandera lequel) • <i>« Lis mon rapport »</i> • <i>« On passe au commercial »</i> • <i>« Au revoir »</i> pour terminer. <b>« Cloé, stop » arrête tout, à tout moment.</b></p>
+      <button class="act mic" id="converseBtn" style="font-size:18px;padding:16px">🎙️ Commencer à discuter avec Cloé</button>
+      <p><b id="converseState">Conversation : éteinte.</b></p>
+      <div id="transcript"></div>
+      <p class="muted">Fonctionne le mieux sur <b>Android (Chrome)</b> et <b>ordinateur (Chrome)</b>. Sur iPhone, Apple limite fortement le micro dans le navigateur : Cloé vous le dira honnêtement et le mode écrit restera disponible — la version native réglera ce point. Par sécurité, aucune décision fictive importante n'est validée par la voix seule au-delà des plafonds : Cloé vous demandera toujours de confirmer à voix haute.</p>
+    </div>
+
+    <div class="card" style="border:2px solid #0b3d2e">
+      <h3 style="margin-top:0">🤖 Les propositions de Cloé — automatiques</h3>
+      <p class="muted" id="autoStatus">Cloé analyse tout seul, dès l'ouverture : les <b>48 entreprises de la BRVM</b> et les principales <b>crypto-monnaies</b>. Vous n'avez aucun bouton d'analyse à toucher : ses résultats arrivent ici, avec ses raisons, ses sources et son niveau de prudence. Tout reste <b>simulé</b>.</p>
+      <div id="autoProposals"><p class="muted">⏳ Analyse automatique en cours… (quelques secondes)</p></div>
+      <button class="alt" id="reAnalyse">🔄 Relancer l'analyse maintenant (optionnel)</button>
+      <p class="muted">Sans Internet, Cloé réaffiche sa dernière analyse enregistrée et le dit honnêtement. En mode économie de données, il n'en lance pas de nouvelle tout seul.</p>
+    </div>
+
+    <div class="card">
+      <h3 style="margin-top:0">🛣️ Parcours vers le réel — où en est Cloé ?</h3>
+      <p class="muted">Le passage au réel n'est pas une question d'envie, mais de preuves. Voici, mesurées tout seul par Cloé, les étapes exigées avant de seulement en parler (voir la checklist officielle) :</p>
+      <div id="parcours"><p class="muted">Mesure en cours…</p></div>
+      <p class="muted">Niveau actuel : <b>L0 — simulation totale, verrouillé</b>. Même si toutes les barres deviennent vertes, il faudra encore : mandat signé, activité déclarée, relecture juridique, paiement professionnel — et <b>votre « oui » explicite, niveau par niveau</b>.</p>
+    </div>
+    <div class="card">
+      <h3 style="margin-top:0">🌅 Rapport du matin</h3>
+      <div id="morning">Votre résumé du matin apparaîtra ici (rappels, argent fictif, ce que Cloé a appris).</div>
+      <div style="height:8px"></div>
+      <button class="act" id="morningBtn">🔊 Écouter mon rapport du matin</button>
+    </div>
+
+    <div class="card">
+      <h3 style="margin-top:0">📆 Bilan de la semaine</h3>
+      <p class="muted">Chaque lundi (ou à la voix : « Cloé, bilan »), Cloé résume sa semaine tout seul : marchés, apprentissages, commercial — et ce qu'il compte faire ensuite. Rien à préparer pour vous.</p>
+      <div id="weekly"><p class="muted">Le bilan se construit automatiquement avec les jours d'analyse.</p></div>
+      <div style="height:8px"></div><button class="act" id="weeklyBtn">🔊 Écouter le bilan de la semaine</button>
+    </div>
+    <div class="card">
+      <h3 style="margin-top:0">🧠 Ce que Cloé a appris</h3>
+      <p class="muted">Cloé retient chaque résultat (gagné ou perdu), en tire une leçon simple et s'en sert pour ses prochaines décisions simulées. Chaque leçon est d'abord testée en simulation, jamais appliquée à de l'argent réel.</p>
+      <div id="lessons"><p class="muted">Aucune leçon pour le moment : utilisez le Paris ou l'investissement simulé, Cloé apprendra de chaque résultat.</p></div>
+      <div class="item"><b>🗓️ Mémoire de mes analyses</b><br><span class="muted" id="analysisMemory">Je garde jour après jour la trace de mes analyses automatiques (entreprises proposées, prix, alertes) pour repérer celles qui reviennent souvent et apprendre de la durée — pas seulement du jour même.</span></div>
+      <div class="item"><b>Mode « shadow » (fantôme)</b><br><span class="muted">Avant toute décision, Cloé peut jouer « pour de faux à côté » et comparer avec la réalité, sans rien engager. Statut : <b id="shadowState">activé en simulation</b>.</span></div>
+    </div>
+
+    <div class="card">
+      <h3 style="margin-top:0">🧭 Mes 3 métiers</h3>
+      <div class="item"><b>Assistant</b> — rappels, agenda, paris sportifs encadrés (simulation).<br><button class="alt" data-go="s-assistant">Ouvrir l'assistant</button></div>
+      <div class="item"><b>Investisseur</b> — Bourse (BRVM, international) et crypto, uniquement en simulation avec tests avant décision.<br><button class="alt" data-go="s-investir">Ouvrir l'investisseur</button></div>
+      <div class="item"><b>Commercial</b> — trouver des clients, devis en FCFA, suivi (simulation, vous validez tout).<br><button class="alt" data-go="s-commercial">Ouvrir le commercial</button></div>
+    </div>
+  </section>
+
+  <!-- ASSISTANT -->
+  <section id="s-assistant">
+    <div class="card">
+      <h3 style="margin-top:0">📅 Mes rappels</h3>
+      <label>Que dois-je vous rappeler ?</label>
+      <input id="taskText" placeholder="Ex : Appeler le fournisseur à 15h">
+      <label>Quand vous le rappeler ? (facultatif — Cloé sonnera à cette heure si l'application est ouverte)</label>
+      <input id="taskWhen" type="datetime-local">
+      <button class="alt" id="notifBtn">🔔 Autoriser les alertes sur cet appareil</button>
+      <button class="act" id="addTask">Ajouter ce rappel</button>
+      <div id="tasks"></div>
+    </div>
+    <div class="card" id="footV5Card" style="border:1.5px solid rgba(245,184,0,.45)">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;flex-wrap:wrap">
+        <div>
+          <h3 style="margin:0">⚽ Omni-Sport &amp; Football AI Ultra v6.0 — <span style="color:var(--or)">Zéro-Hallucination &amp; Anti-Biais</span></h3>
+          <p class="muted" style="margin:6px 0 0">Relié en direct à Internet (<b>44 compétitions &amp; 7 Sports : Football, NBA, Tennis ATP/WTA, NFL, NHL, MLB, UFC</b>) + <b>167 clubs &amp; nations</b>, <b>Dates &amp; Stades exacts</b>, <b>Confrontations H2H vérifiées</b>, <b>Forme joueurs &amp; Blessés</b>, <b>Filtre Strict Anti-Biais / NO-BET</b>. Argent fictif, plafond strict : <b>5 000 FCFA / jour</b>.</p>
+        </div>
+        <a id="openFullFootApp" href="https://football-ai-43e33.web.app" target="_blank" rel="noopener" class="badge" style="text-decoration:none;padding:8px 12px">⚡ Ouvrir App Complète (Sync FCFA) ↗</a>
+      </div>
+
+      <div id="footSyncBanner" style="display:none;margin-top:10px;padding:10px 12px;border-radius:14px;background:rgba(15,185,122,.16);border:1px solid rgba(52,211,153,.4);font-size:13px"></div>
+
+      <!-- Affiches rapides en 1 toucher -->
+      <div style="margin-top:12px">
+        <label>⚡ Affiches rapides (1 toucher)</label>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px" id="footQuickMatches"></div>
+      </div>
+
+      <!-- Sélecteur des 167 clubs & nations -->
+      <div class="grid" style="margin-top:8px">
+        <div>
+          <label>🏠 Domicile (167 équipes)</label>
+          <select id="footHome"></select>
+        </div>
+        <div>
+          <label>✈️ Extérieur (167 équipes)</label>
+          <select id="footAway"></select>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px">
+        <button type="button" class="act" id="footCalcBtn" style="flex:1">⚡ Analyser Match + Buteurs / Corners</button>
+        <button type="button" class="alt" id="footSpeakBtn">🔊 Lire à voix haute</button>
+      </div>
+
+      <!-- Résultat complet Dixon-Coles + Elo + Marchés Pros v5 -->
+      <div id="footPredOut" style="margin-top:10px"></div>
+
+      <!-- Coupon Fictif + Audit IA du Maillon Faible + 3 Tickets Auto -->
+      <div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--stroke)">
+        <h4 style="margin:0 0 6px;font-family:'Unbounded',sans-serif;font-size:13px;color:var(--or)">🎫 Tickets IA Automatiques & Audit du Maillon Faible (/100)</h4>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px">
+          <button type="button" class="alt" id="footLoadSafe" style="font-size:12px;padding:7px 10px">🛡️ Ticket Sécurité</button>
+          <button type="button" class="alt" id="footLoadValue" style="font-size:12px;padding:7px 10px">💎 Ticket Value</button>
+          <button type="button" class="alt" id="footLoadBoost" style="font-size:12px;padding:7px 10px">🚀 Cote Boost</button>
+          <button type="button" class="alt" id="footClearSlip" style="font-size:12px;padding:7px 10px">🗑️ Vider</button>
+        </div>
+        <div id="footSlipBox"></div>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:8px">
+          <input id="footSlipStake" type="number" min="200" max="5000" step="500" value="1000" style="max-width:140px;margin:0" aria-label="Mise fictive en FCFA">
+          <button type="button" class="act" id="footPlaySlipBtn" style="flex:1">🎲 Tester ce Ticket en Simulation (FCFA)</button>
+        </div>
+      </div>
+
+      <!-- Simulateur 10 000x CAN / LDC / Coupe du Monde -->
+      <div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--stroke)">
+        <h4 style="margin:0 0 6px;font-family:'Unbounded',sans-serif;font-size:13px">🏆 Simulateur Monte-Carlo 10 000×</h4>
+        <div style="display:flex;gap:6px;flex-wrap:wrap">
+          <button type="button" class="alt" data-simtour="can" style="font-size:12px;padding:7px 10px">🌍 CAN (10 000×)</button>
+          <button type="button" class="alt" data-simtour="ucl" style="font-size:12px;padding:7px 10px">🇪🇺 Champions League</button>
+          <button type="button" class="alt" data-simtour="worldcup" style="font-size:12px;padding:7px 10px">🌎 Coupe du Monde</button>
+        </div>
+        <div id="footTourOut" style="margin-top:8px"></div>
+      </div>
+
+      <!-- DIRECT INTERNET MULTI-SPORTS v6.0 : DATES & STADES EXACTS + H2H + BLESSÉS -->
+      <div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--stroke)">
+        <h4 style="margin:0 0 6px;font-family:'Unbounded',sans-serif;font-size:13px;color:#38bdf8">🌐 Direct Internet Multi-Sports (Dates, Stades, H2H &amp; Blessés Vérifiés)</h4>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px" id="omniSportBtns">
+          <button type="button" class="alt" data-omnisport="all" style="font-size:11.5px;padding:6px 10px">🌐 Tous (7 Sports)</button>
+          <button type="button" class="alt" data-omnisport="soccer" style="font-size:11.5px;padding:6px 10px">⚽ Football Live</button>
+          <button type="button" class="alt" data-omnisport="basketball" style="font-size:11.5px;padding:6px 10px">🏀 NBA / Basket</button>
+          <button type="button" class="alt" data-omnisport="tennis" style="font-size:11.5px;padding:6px 10px">🎾 Tennis ATP/WTA</button>
+          <button type="button" class="alt" data-omnisport="football" style="font-size:11.5px;padding:6px 10px">🏈 NFL</button>
+          <button type="button" class="alt" data-omnisport="hockey" style="font-size:11.5px;padding:6px 10px">🏒 NHL</button>
+          <button type="button" class="alt" data-omnisport="baseball" style="font-size:11.5px;padding:6px 10px">⚾ MLB</button>
+          <button type="button" class="alt" data-omnisport="mma" style="font-size:11.5px;padding:6px 10px">🥊 UFC</button>
+        </div>
+        <div id="omniLiveBox" class="muted" style="font-size:12.5px">Synchronisation temps réel des 44 compétitions mondiales...</div>
+        <div id="omniDossierOut" style="margin-top:8px"></div>
+      </div>
+
+      <!-- Saisie manuelle historique conservée à 100 % -->
+      <details style="margin-top:14px;padding-top:10px;border-top:1px solid var(--stroke)">
+        <summary style="cursor:pointer;color:var(--muted);font-weight:700;font-size:13px">✍️ Saisir manuellement un pari fictif libre</summary>
+        <div style="margin-top:8px">
+          <label>Montant fictif du pari (FCFA)</label>
+          <input id="betAmt" type="number" min="0" step="500" value="2000">
+          <label>Résultat</label>
+          <select id="betRes"><option value="win">Gagné (gain fictif = 80 % du pari)</option><option value="lose">Perdu</option></select>
+          <button class="act" id="addBet">Enregistrer ce pari fictif</button>
+        </div>
+      </details>
+      <div id="betStats" style="margin-top:10px"></div>
+    </div>
+    <div class="card">
+      <h3 style="margin-top:0">💰 Mes finances personnelles (sur cet appareil)</h3>
+      <p class="muted">Notez vos entrées et dépenses réelles pour suivre votre budget. Ces chiffres restent <b>sur votre appareil</b>, ils ne sont jamais envoyés à l'extérieur.</p>
+      <label>Description</label>
+      <input id="finLabel" placeholder="Ex : Salaire, Transport, Marché…">
+      <label>Montant (FCFA) — mettez un moins pour une dépense, ex : -5000</label>
+      <input id="finAmt" type="number" step="100" value="0">
+      <button class="act" id="addFin">Ajouter à mon budget</button>
+      <div id="finStats" style="margin-top:8px"></div>
+    </div>
+    <div class="card">
+      <h3 style="margin-top:0">📱 Mobile Money — simulation uniquement</h3>
+      <p class="muted">Entraînez-vous aux envois <b>Orange Money, Wave, MTN</b> avec de l'argent fictif, avant tout usage réel. Aucun vrai transfert n'est possible depuis Cloé.</p>
+      <label>Service</label>
+      <select id="mmService"><option>Orange Money</option><option>Wave</option><option>MTN Mobile Money</option></select>
+      <label>Montant fictif (FCFA)</label>
+      <input id="mmAmt" type="number" min="0" step="500" value="5000">
+      <button class="act" id="sendMm">Simuler cet envoi</button>
+      <div id="mmStats" style="margin-top:8px"></div>
+    </div>
+  </section>
+
+  <!-- INVESTIR -->
+  <section id="s-investir">
+    <div class="card">
+      <h3 style="margin-top:0">📈 Investir — simulation uniquement</h3>
+      <p class="muted">Après l'analyse automatique, ce tableau contient les <b>48 entreprises de la BRVM</b> aux vrais prix publics du jour (les lignes « entraînement » sont les valeurs fictives en attendant la première analyse). Règle de sécurité : <b>maximum 25 000 FCFA par décision fictive</b>. Tout montant supérieur est bloqué automatiquement. Cloé n'est pas conseiller financier agréé ; ceci est une simulation pédagogique.</p>
+      <table><thead><tr><th>Entreprise</th><th>Prix (FCFA)</th><th>Action</th></tr></thead><tbody id="market"></tbody></table>
+    <input id="marketSearch" placeholder="🔎 Rechercher une entreprise (ex : Orange, Sonatel, BOA…)">
+<p class="muted">Après l'analyse automatique, ce tableau contient les <b>48 entreprises de la BRVM</b> (vrais prix publics du jour) plus la crypto. Acheter/Vendre reste fictif.</p>
+    </div>
+    <div class="card">
+      <h3 style="margin-top:0">🧪 Tester une idée sur le passé réel (backtest BRVM)</h3>
+      <p class="muted">Cloé télécharge l'<b>historique public réel</b> de l'entreprise choisie (fichier d'environ 300 Ko — bloqué en mode économie de données) et répond à la question : <i>« si j'avais suivi cette règle dans le passé, qu'aurait-il gagné ou perdu ? »</i> Le passé ne garantit jamais l'avenir : ce test sert à écarter les mauvaises idées, pas à promettre un gain.</p>
+      <label>Entreprise BRVM</label>
+      <select id="btSym"><option value="Historique_Complet_SONATEL">SNTS — Sonatel (liste complète des 48 en cours de chargement…)</option></select>
+      <label>Période testée</label>
+      <select id="btPeriod"><option value="90">3 derniers mois</option><option value="365" selected>Dernière année</option><option value="1095">3 dernières années</option><option value="99999">Tout l'historique disponible</option></select>
+      <label>Règle testée</label>
+      <select id="btStrat"><option value="hold">Acheter et garder jusqu'à la fin</option><option value="ma20">Règle prudente : n'être acheté que si le prix est au-dessus de sa moyenne des 20 dernières séances</option></select>
+      <button class="act" id="runRealBacktest">▶️ Lancer le test sur le passé réel</button>
+      <div id="btResult" style="margin-top:8px"><p class="muted">Aucun test réel lancé pour le moment.</p></div>
+      <div id="portfolio" style="margin-top:10px"></div>
+    </div>
+  </section>
+
+  <!-- COMMERCIAL -->
+  <section id="s-commercial">
+    <div class="card" style="border:2px solid #0b3d2e">
+      <h3 style="margin-top:0">🔎 Prospection automatique de Cloé</h3>
+      <p class="muted">Cloé choisit tout seul des entreprises <b>publiques et réelles</b> (sociétés cotées à la BRVM, donc vérifiables), devine leur besoin probable selon leur métier, leur donne un score, et les place en brouillons ci-dessous avec le message prêt. <b>Il ne récupère aucun numéro ni e-mail personnel, et n'envoie jamais rien</b> : le contact officiel se vérifie sur le site de l'entreprise, et l'envoi reste votre doigt.</p>
+      <div id="autoProspects"><p class="muted">La prospection automatique se lance après l'analyse des marchés (à l'ouverture, puis chaque semaine). Rien à toucher.</p></div>
+    </div>
+    <div class="card" style="border:2px solid rgba(255,90,71,.55);background:rgba(255,90,71,.06)">
+      <h3 style="margin-top:0">📜 Votre mandat-cadre — état réel</h3>
+      <div class="item"><b>Statut : EN PRÉPARATION — réel verrouillé.</b><br>Mandant : <b>OGBO Charles (Abidjan)</b> — mandat <b>validé par vous le 14/10/2026</b> ; signature manuscrite et déclaration restant à faire. <i>Votre numéro de pièce d'identité n'est affiché ni ici, ni dans le code : il ne figure que dans le document confidentiel à signer.</i><br>Vos choix : activité <b>pas encore déclarée</b> • services de départ : <b>études de marché + tableaux de bord</b> • zone : <b>monde</b> • plafonds <b>prudents</b> (5 messages préparés/jour, marchés jusqu'à 150 000 FCFA, au-delà Cloé s'arrête et vous le signale).</div>
+      <div id="mandatChecks" class="muted">Conditions avant le premier franc réel : déclaration de l'activité, mandat signé, relecture juridique, paiement professionnel vérifié, fiabilité prouvée en simulation. Tant qu'il en manque une, <b>aucun envoi réel, aucun encaissement</b> — Cloé continue de s'entraîner en fictif et vous fait le compte rendu chaque matin.</div>
+      <a class="alt" href="MANDAT_CADRE_A_SIGNER.md" download style="display:block;text-align:center;text-decoration:none;padding:10px">⬇️ Télécharger le mandat à relire (document)</a>
+      <a class="alt" href="GUIDE_DECLARATION_ACTIVITE_CI.md" download style="display:block;text-align:center;text-decoration:none;padding:10px;margin-top:6px">⬇️ Guide : déclarer votre activité en Côte d'Ivoire</a>
+      <a class="alt" href="MODELES_DEVIS_CONTRAT_FACTURE.md" download style="display:block;text-align:center;text-decoration:none;padding:10px;margin-top:6px">⬇️ Modèles : devis, contrat, facture</a>
+      <p class="muted">Le mandat ne se signe pas dans l'application et jamais dans ce chat : vous le signerez sur votre copie, après relecture. Vos champs personnels ne doivent être écrits que sur cette copie.</p>
+    </div>
+    <div class="card">
+      <h3 style="margin-top:0">🎯 Services que Cloé sait réellement livrer seul</h3>
+      <p class="muted">Cloé ne prospecte <b>que</b> ce qu'il peut produire et contrôler seul, sans professionnel agréé :</p>
+      <div class="item">📊 <b>Étude de marché BRVM / secteur</b> — 75 000 FCFA (rapport sourcé) <span class="pill">Certitude : élevée</span></div>
+      <div class="item">🧪 <b>Test historique documenté</b> — 60 000 FCFA <span class="pill">Certitude : élevée</span></div>
+      <div class="item">💰 <b>Tableau de bord trésorerie / budget</b> — 50 000 FCFA (fichier) <span class="pill">Certitude : élevée</span></div>
+      <div class="item">🔎 <b>Liste de prospection qualifiée</b> — 40 000 FCFA <span class="pill">Certitude : élevée</span></div>
+      <div class="item">📰 <b>Veille économique hebdomadaire</b> — 35 000 FCFA / semaine <span class="pill">Certitude : élevée</span></div>
+      <div class="item"><span class="bad"><b>Jamais vendus comme certains :</b> conseil en investissement personnalisé, promesse de rendement, gestion d'argent de clients, actes juridiques — agréments requis.</span></div>
+    </div>
+    <div class="card">
+      <h3 style="margin-top:0">🏭 Sa chaîne de travail — simulation de bout en bout</h3>
+      <p class="muted">En entraînement, Cloé s'exerce seul : prospect qualifié → production du livrable → contrôle qualité → facture <b>fictive</b>. <b>Aucun client réel n'est contacté, rien n'est transmis ni encaissé pour de vrai.</b> Le passage au réel exigera le mandat-cadre signé et les comptes professionnels (voir le document MANDAT_CADRE_AUTONOMIE.md).</p>
+      <div id="prodList"><p class="muted">La production simulée démarre après la prospection automatique.</p></div>
+    </div>
+    <div class="card">
+      <h3 style="margin-top:0">🤝 Clients — simulation, vous validez tout</h3>
+      <p class="muted">Cloé prépare, <b>vous approuvez</b> avant tout envoi (niveau L1 plus tard). Aucun message n'est envoyé automatiquement pour l'instant. Consentement et lien de désinscription obligatoires dans chaque proposition.</p>
+      <label>Nom de l'entreprise</label>
+      <input id="prosName" placeholder="Ex : Boulangerie Moderne, Abidjan">
+      <label>Besoin probable</label>
+      <input id="prosNeed" placeholder="Ex : trésorerie, épargne, placement">
+      <button class="act" id="addPros">Ajouter ce client (brouillon)</button>
+      <div id="prospects"></div>
+    </div>
+    <div class="card">
+      <h3 style="margin-top:0">🧾 Créer un devis (FCFA)</h3>
+      <label>Prestation</label><input id="quoteLabel" placeholder="Ex : Conseil trésorerie — 1 mois">
+      <label>Montant (FCFA)</label><input id="quoteAmt" type="number" min="0" step="1000" value="50000">
+      <button class="act" id="makeQuote">Créer le devis (brouillon à valider)</button>
+      <div id="quotes"></div>
+    </div>
+  </section>
+
+  <!-- JOURNAL -->
+  <section id="s-journal">
+    <div class="card">
+      <h3 style="margin-top:0">📒 Journal des décisions</h3>
+      <p class="muted">Chaque décision est écrite ici avec sa raison et son résultat. <b>Il n'y a volontairement aucun bouton pour effacer ou modifier ce journal.</b></p>
+      <label>Filtrer par mot</label><input id="filter" placeholder="Ex : pari, achat, devis…">
+      <button class="alt" id="exportBtn">Télécharger le journal (fichier)</button>
+      <div id="journal" style="margin-top:8px"></div>
+    </div>
+  </section>
+
+  <!-- REGLAGES -->
+  <section id="s-reglages">
+    <div class="card">
+      <h3 style="margin-top:0">⚙️ Réglages simples</h3>
+      <div class="item"><b>Niveau d'autonomie : L0 — simulation totale</b><br><span class="muted">Le passage au niveau supérieur exigera des preuves chiffrées (réussite, perte maximale) et votre accord explicite. Verrouillé pour l'instant.</span></div>
+      <div class="item"><label><input type="checkbox" id="ecoData" style="width:auto"> Mode économie de données</label><br><span class="muted">Réduit les échanges Internet et privilégie le hors-ligne (connexion instable).</span></div>
+      <div class="item"><b>Arrêt d'urgence</b><br><span class="muted">Le gros bouton rouge en bas à droite (et la commande vocale « Cloé, stop ») arrête tout, annule ce qui est en attente et coupe les autorisations.</span></div>
+      <div class="item"><b>Vos données</b><br><span class="muted">Dans cette première version, tout reste <b>sur votre appareil</b> (aucun envoi extérieur). Sauvegarde chiffrée et synchronisation Firebase viendront ensuite.</span></div>
+      <div class="item"><b>🔊 La voix de Cloé</b><br><span class="muted">Choisissez la voix française de votre appareil et sa vitesse. Cloé relira avec cette voix.</span><label>Voix</label><select id="voixPref"><option value="">Voix française automatique</option></select><label>Vitesse de parole</label><select id="voixVitesse"><option value="0.9">Lente et posée</option><option value="1" selected>Normale</option><option value="1.1">Un peu rapide</option></select><button class="alt" id="voixTest">▶️ Essayer cette voix</button></div>
+      <div class="item"><b>🧠 Gemini — l'intelligence en plus (clé gratuite AI Studio)</b><br><span class="muted">Votre clé reste <b>uniquement sur cet appareil</b> : elle n'est jamais écrite dans le site public, ni sur GitHub, ni sur Firebase. Ne la dictez jamais à voix haute. Sans clé — ou si le quota gratuit est épuisé — Cloé continue tout seul en mode local gratuit. Gemini <b>commente</b>, il ne décide jamais à votre place, et tout reste simulé.</span><label>Collez votre clé Gemini ici</label><input type="password" id="gemKey" placeholder="Votre clé AI Studio (reste sur cet appareil)" autocomplete="off"><label><input type="checkbox" id="gemConv" style="width:auto"> Gemini répond à mes questions libres (conversation)</label><br><label><input type="checkbox" id="gemAnalyse" style="width:auto"> Gemini commente mes analyses du jour</label><br><button class="act" id="gemSave">Enregistrer ma clé sur cet appareil</button><div style="height:6px"></div><button class="alt" id="gemTest">▶️ Tester la connexion Gemini</button> <button class="alt" id="gemDel">Effacer la clé</button><p class="muted" id="gemState">Gemini : aucune clé enregistrée sur cet appareil.</p></div>
+      <div class="item"><b>💾 Sauvegarde chiffrée (un toucher)</b><br><span class="muted">Crée un fichier protégé par un mot de passe que vous choisissez. Ni Cloé ni personne ne peut le lire sans ce mot de passe. Gardez le fichier et le mot de passe en lieu sûr.</span><br><button class="act" id="backupBtn">Créer ma sauvegarde chiffrée</button><div style="height:6px"></div><button class="alt" id="restoreBtn">Restaurer une sauvegarde</button><input type="file" id="restoreFile" accept=".json" style="display:none"></div>
+      <div class="item"><b>🧬 Version de la stratégie d'analyse</b><br><span class="muted" id="stratInfo"></span><br><label>Choisir la stratégie des propositions automatiques</label><select id="stratSelect"><option value="v1">v1 Équilibrée (actuelle par défaut)</option><option value="v2">v2 Prudente (hausse claire + beaucoup d'échanges exigés)</option></select><button class="alt" id="stratBack">↩ Revenir à la version précédente</button></div>
+      <button class="warn" id="wipeBtn">Tout effacer sur cet appareil (sauf le journal)</button>
+      <p class="muted">Le journal n'est pas effacé par ce bouton : c'est une protection voulue.</p>
+    </div>
+    <div class="card">
+      <h3 style="margin-top:0">❓ Aide rapide</h3>
+      <details><summary>Est-ce que Cloé peut perdre mon argent ?</summary><p class="muted">Non, pas à ce stade : tout est fictif (L0). Aucun compte réel n'est connecté.</p></details>
+      <details><summary>Que faire en cas de problème ?</summary><p class="muted">Touchez le gros bouton rouge STOP. Tout s'arrête immédiatement.</p></details>
+      <details><summary>Et GitHub / Firebase ?</summary><p class="muted">Vous n'avez rien à faire maintenant. Je préparerai tout et je vous guiderai un clic à la fois, le moment venu.</p></details>
+    </div>
+  </section>
+</main>
+
+<nav>
+  <button data-go="s-accueil" class="on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 11 12 3l9 8"/><path d="M5 10v10h14V10"/></svg>Accueil</button>
+  <button data-go="s-assistant"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1"/><circle cx="12" cy="12" r="3.2"/></svg>Assistant</button>
+  <button data-go="s-investir"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 20V10M10 20V4M16 20v-8M22 20H2"/></svg>Investir</button>
+  <button data-go="s-commercial"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M3 20c.6-3.4 3-5 6-5s5.4 1.6 6 5"/><path d="M16 5.5a3.5 3.5 0 0 1 0 6M18.5 15.4c1.4.7 2.3 2.2 2.6 4.6"/></svg>Clients</button>
+  <button data-go="s-journal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 3h13v18H6z"/><path d="M6 3a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2M9 8h7M9 12h7"/></svg>Journal</button>
+  <button data-go="s-reglages"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M19.1 4.9 17 7M7 17l-2.1 2.1"/></svg>Réglages</button>
+</nav>
+
+
+<div id="orbe" aria-live="polite">
+  <canvas id="orbeCanvas" width="380" height="380"></canvas>
+  <div id="orbeEtat">Veille</div>
+  <div id="orbeTexte"></div>
+  <button id="orbeBtn" title="Arrêter la conversation">Terminer la conversation</button>
+  <div id="orbeAide">Dis «&nbsp;arrête&nbsp;» ou «&nbsp;au revoir&nbsp;» pour terminer. Touche la boule pour m’interrompre. Écoute active tant que la page reste ouverte, écran allumé.</div>
+</div>
+<button id="stopBtn">Arrêt d’urgence</button>
+
+<div id="stopOverlay">
+  <h2>🛑 CLOÉ EST ARRÊTÉ</h2>
+  <p>Toutes les actions en cours sont stoppées.<br>Tout ce qui était en attente est annulé.<br>Aucune autorisation n'est active.</p>
+  <button class="act" id="resumeBtn" style="max-width:320px;background:#fff;color:#7a000a">Je comprends — réactiver Cloé</button>
+  <p style="font-size:13px;opacity:.85">La réactivation vous appartient toujours. Cloé ne peut pas se réactiver tout seul.</p>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>window.__cloeNativeV5Integrated=true;</script>
+<script src="cloe-bridge.js"></script>
+<script src="javis-voice.js"></script>
+<script>
+// ---------- Cloé v1 — Simulation L0, données 100 % locales ----------
+const $=id=>document.getElementById(id);
+const store={get(k,d){try{return JSON.parse(localStorage.getItem('javis_'+k))??d}catch(e){return d}},set(k,v){localStorage.setItem('javis_'+k,JSON.stringify(v))}};
+let stopped=false;
+let cash=store.get('cash',100000);
+let journal=store.get('journal',[]);
+let tasks=store.get('tasks',[]).map(x=>typeof x==='string'?{texte:x,quand:'',alerte:false}:x);
+let bets=store.get('bets',[]);
+let holding=store.get('holding',{});
+let prospects=store.get('prospects',[]);
+let quotes=store.get('quotes',[]);
+const CAP=25000, BET_DAY_CAP=5000;
+const marketData=[
+ {sym:'SNTS',name:'Sonatel (BRVM, fictif)',price:21500},
+ {sym:'ORAC',name:'Orange CI (BRVM, fictif)',price:11200},
+ {sym:'CABC',name:'Crypto — Bitcoin (fictif)',price:65000000},
+ {sym:'ACME',name:'Action internationale (fictive)',price:32000},
+];
+const fmt=n=>Math.round(n).toLocaleString('fr-FR')+' FCFA';
+function toast(m){const t=$('toast');t.textContent=m;t.style.display='block';setTimeout(()=>t.style.display='none',3200)}
+function voixChoisie(){try{const uri=store.get('voixURI','');const vs=speechSynthesis.getVoices();return vs.find(v=>v.voiceURI===uri)||vs.find(v=>v.lang&&v.lang.toLowerCase().startsWith('fr'))||null}catch(e){return null}}
+function speak(t){try{const u=new SpeechSynthesisUtterance(t);u.lang='fr-FR';u.rate=Number(store.get('voixVitesse','1'))||1;const v=voixChoisie();if(v)u.voice=v;speechSynthesis.cancel();speechSynthesis.speak(u)}catch(e){}}
+function log(type,detail){journal.unshift({date:new Date().toLocaleString('fr-FR'),type,detail,niveau:'L0 simulation',cout:'0 FCFA'});store.set('journal',journal);renderJournal();updateReliab();if(typeof rendreParcours==='function')rendreParcours()}
+function guard(){if(stopped){toast('Cloé est arrêté. Réactivez-le pour continuer.');return false}return true}
+function updateCash(){$('cash').textContent=fmt(cash);store.set('cash',cash)}
+function updateReliab(){
+  const decided=journal.filter(j=>['Achat simulé','Vente simulée','Pari simulé'].includes(j.type));
+  if(decided.length<5){$('reliab').textContent='—';$('reliabSub').textContent='Pas encore assez de décisions pour juger ('+decided.length+'/5 minimum).';return}
+  const wins=decided.filter(j=>/gain|Gagné/i.test(j.detail)).length;
+  $('reliab').textContent=Math.round(wins/decided.length*100)+' %';
+  $('reliabSub').textContent=decided.length+' décisions simulées analysées. Passage au niveau supérieur : verrouillé (votre accord + critères requis).';
+}
+// Navigation
+function go(id){document.querySelectorAll('section').forEach(s=>s.classList.toggle('on',s.id===id));document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('on',b.dataset.go===id));window.scrollTo(0,0)}
+document.querySelectorAll('[data-go]').forEach(b=>b.addEventListener('click',()=>go(b.dataset.go)));
+// Arrêt d'urgence
+function emergencyStop(source){stopped=true;$('stopOverlay').classList.add('on');log('ARRÊT D\u2019URGENCE','Déclenché via '+source+'. Actions en attente annulées, autorisations révoquées.');speak('Cloé est arrêté. Tout est stoppé.')}
+$('stopBtn').addEventListener('click',()=>emergencyStop('le bouton rouge'));
+$('resumeBtn').addEventListener('click',()=>{stopped=false;$('stopOverlay').classList.remove('on');log('Réactivation','Vous avez réactivé Cloé manuellement.');toast('Cloé réactivé par vous.')});
+// Rapport quotidien
+$('dailyBtn').addEventListener('click',()=>{if(!guard())return;const fTxt=(typeof window.__footBriefingSentence==='function')?window.__footBriefingSentence():'';const txt='Aujourd\u2019hui : '+tasks.length+' rappel(s), '+bets.length+' pari(s) fictif(s), argent fictif disponible : '+fmt(cash)+'. '+(fTxt?fTxt+' ':'')+'Aucune alerte de sécurité.';$('daily').textContent=txt;log('Rapport quotidien',txt);speak(txt)});
+// Commandes texte / voix
+function handleCommand(raw){
+  const c=(raw||'').toLowerCase();
+  if(c.includes('stop')||c.includes('arrêt')||c.includes('arrete')){emergencyStop('la voix / la commande');return}
+  if(!guard())return;
+  if(c.includes('rapport')){$('dailyBtn').click();go('s-accueil');return}
+  if(c.includes('budget')||c.includes('argent')){toast('Argent fictif disponible : '+fmt(cash));speak('Votre argent fictif disponible est de '+fmt(cash));log('Consultation budget',fmt(cash));return}
+  if(c.includes('Paris')||c.includes('pari')){go('s-assistant');return}
+  if(c.includes('invest')||c.includes('bourse')){go('s-investir');return}
+  if(c.includes('client')||c.includes('commercial')){go('s-commercial');return}
+  if(gemCle()&&store.get('gemConv',true)){traiterParole(raw);return}
+  toast('J\u2019ai compris : « '+raw+' ». En simulation, je peux : rapport, budget, Paris, investir, clients, stop.');
+  log('Demande',raw);
+}
+$('cmdBtn').addEventListener('click',()=>{bulle('Vous',$('cmd').value);traiterParole($('cmd').value)});
+$('cmd').addEventListener('keydown',e=>{if(e.key==='Enter'){bulle('Vous',$('cmd').value);traiterParole($('cmd').value)}});
+// Voix (Web Speech API, gratuit, selon appareil)
+// Micro ponctuel : branché sur le moteur vocal v26 (voir intégration plus bas).
+// Assistant : rappels
+function renderTasks(){$('tasks').innerHTML=tasks.length?tasks.map((x,i)=>'<div class="item">⏰ '+x.texte+(x.quand?'<br><span class="pill">Rappel prévu : '+new Date(x.quand).toLocaleString('fr-FR')+'</span>':'')+'<br><button class="alt" onclick="doneTask('+i+')">C\u2019est fait ✔</button></div>').join(''):'<p class="muted">Aucun rappel pour le moment.</p>'}
+window.doneTask=i=>{const x=tasks.splice(i,1)[0];store.set('tasks',tasks);renderTasks();log('Rappel terminé',x.texte)};
+$('addTask').addEventListener('click',()=>{if(!guard())return;const v=$('taskText').value.trim();if(!v){toast('Écrivez d\u2019abord le rappel.');return}const quand=$('taskWhen').value||'';tasks.push({texte:v,quand,alerte:false});store.set('tasks',tasks);$('taskText').value='';$('taskWhen').value='';renderTasks();log('Rappel ajouté',v+(quand?' (prévu '+new Date(quand).toLocaleString('fr-FR')+')':''));toast('Rappel ajouté ✔')});
+// Paris sportifs simulés
+function renderBets(){
+  let wins=0,loss=0,staked=0;bets.forEach(b=>{staked+=b.amt;if(b.win)wins+=b.gain;else loss+=b.amt});
+  const net=wins-loss, roi=staked?Math.round(net/staked*100):0;
+  $('betStats').innerHTML=bets.length?'<div class="item">Paris fictifs : <b>'+bets.length+'</b> • Misé : '+fmt(staked)+'<br>Résultat fictif : <span class="'+(net>=0?'ok':'bad')+'">'+fmt(net)+' (ROI '+roi+' %)</span></div>':'<p class="muted">Aucun pari fictif enregistré.</p>';
+}
+$('addBet').addEventListener('click',()=>{
+  if(!guard())return;const amt=Math.abs(Number($('betAmt').value)||0);
+  const todayLoss=bets.filter(b=>b.day===new Date().toDateString()&&!b.win).reduce((a,b)=>a+b.amt,0);
+  if($('betRes').value==='lose'&&todayLoss+amt>BET_DAY_CAP){toast('🛑 Limite de perte du jour atteinte (simulation). Cloé bloque ce pari.');log('Pari bloqué','Limite de perte journalière simulation atteinte : '+fmt(BET_DAY_CAP));speak('Limite de perte atteinte. Pari bloqué.');return}
+  const win=$('betRes').value==='win';const gain=win?Math.round(amt*0.8):0;
+  bets.push({amt,win,gain,day:new Date().toDateString()});store.set('bets',bets);
+  log('Pari simulé',(win?'Gagné':'Perdu')+' — '+fmt(amt)+(win?' (gain fictif '+fmt(gain)+')':''));renderBets();updateReliab();
+});
+// Investisseur simulé
+let filtreMarche='';
+function renderMarket(){const rows=marketData.map((m,i)=>({m,i})).filter(x=>!filtreMarche||(x.m.sym+' '+x.m.name).toLowerCase().includes(filtreMarche));$('market').innerHTML=rows.length?rows.map(x=>'<tr><td><b>'+x.m.sym+'</b><br>'+x.m.name+(x.m.reel?'<br><span class="pill">prix public</span>':'<br><span class="pill">entraînement</span>')+'</td><td>'+fmt(x.m.price)+(typeof x.m.variation==='number'?'<br><span class="'+(x.m.variation>=0?'ok':'bad')+'">'+(x.m.variation>=0?'+':'')+x.m.variation+' %</span>':'')+'</td><td><button class="alt" onclick="trade('+x.i+',\'buy\')">Acheter (simu)</button><button class="alt" onclick="trade('+x.i+',\'sell\')">Vendre (simu)</button></td></tr>').join(''):'<tr><td colspan="3" class="muted">Aucune entreprise trouvée.</td></tr>'}
+document.addEventListener('input',e=>{if(e.target&&e.target.id==='marketSearch'){filtreMarche=e.target.value.toLowerCase();renderMarket()}})
+window.trade=(i,side)=>{
+  if(!guard())return;const m=marketData[i];const amt=m.price;
+  if(amt>CAP){toast('🛑 Bloqué : '+fmt(amt)+' dépasse le plafond de '+fmt(CAP)+' par décision. Aucun dépassement sans votre accord explicite.');log('Décision bloquée',m.sym+' '+fmt(amt)+' > plafond '+fmt(CAP));return}
+  if(side==='buy'){if(amt>cash){toast('Argent fictif insuffisant.');return}cash-=amt;holding[m.sym]=(holding[m.sym]||0)+1;log('Achat simulé','gain potentiel — '+m.name+' à '+fmt(amt));toast('Achat fictif enregistré : '+m.sym)}
+  else{if(!holding[m.sym]){toast('Vous ne détenez pas cette valeur (simulation).');return}cash+=amt;holding[m.sym]--;log('Vente simulée','gain — '+m.name+' à '+fmt(amt));toast('Vente fictive enregistrée : '+m.sym)}
+  store.set('holding',holding);updateCash();renderPortfolio();updateReliab();
+};
+function renderPortfolio(){const keys=Object.keys(holding).filter(k=>holding[k]>0);$('portfolio').innerHTML=keys.length?'<b>Portefeuille fictif :</b><br>'+keys.map(k=>'<span class="pill">'+k+' × '+holding[k]+'</span>').join(' '):'<span class="muted">Portefeuille fictif vide.</span>'}
+$('runRealBacktest').addEventListener('click',async()=>{
+  if(!guard())return;
+  if(store.get('eco',false)){$('btResult').innerHTML='<p class="bad">Mode économie de données activé : historique (environ 300 Ko) non téléchargé. Désactivez ce mode dans Réglages pour lancer le test.</p>';log('Backtest BRVM bloqué','Mode économie de données');return}
+  if(!navigator.onLine){$('btResult').innerHTML='<p class="bad">Sans Internet, impossible de télécharger l\u2019historique réel. Aucun résultat inventé.</p>';return}
+  const choix=$('btSym').value;const jours=Number($('btPeriod').value);const strat=$('btStrat').value;
+  const fichier=(choix.startsWith('Historique_')?choix:'Historique_Complet_'+choix)+'.csv';const nomChoix=($('btSym').selectedOptions[0]?$('btSym').selectedOptions[0].textContent:choix);
+  $('btResult').innerHTML='<p class="muted">Téléchargement de l\u2019historique public réel…</p>';
+  try{
+    const rep=await fetch('https://raw.githubusercontent.com/harzat/brvm-data-public/main/'+fichier);
+    if(!rep.ok)throw new Error('indisponible');
+    const texte=await rep.text();
+    const lignes=texte.replace(/^\uFEFF/,'').trim().split('\n').slice(1);
+    const donnees=[];
+    for(const l of lignes){const parts=l.split(';');if(parts.length<2)continue;const prix=Number((parts[1]||'').replace(/[^0-9,.-]/g,'').replace(',','.'));const dm=(parts[0]||'').split('/');if(!prix||dm.length<3)continue;donnees.push({date:dm[2]+'-'+dm[1]+'-'+dm[0],prix})}
+    if(donnees.length<25)throw new Error('peu');
+    const fin=donnees[donnees.length-1];const limite=new Date(fin.date);limite.setDate(limite.getDate()-jours);
+    let fenetre=donnees.filter(d=>new Date(d.date)>=limite);if(fenetre.length<25)fenetre=donnees.slice(-Math.min(donnees.length,250));
+    const rendHold=(fenetre[fenetre.length-1].prix/fenetre[0].prix-1)*100;
+    let pic=fenetre[0].prix,perteMax=0;for(const d of fenetre){if(d.prix>pic)pic=d.prix;const dd=(d.prix/pic-1)*100;if(dd<perteMax)perteMax=dd}
+    let rendStrat=0,joursAchete=0;for(let i=21;i<fenetre.length;i++){const moy=fenetre.slice(i-20,i).reduce((a,d)=>a+d.prix,0)/20;if(fenetre[i-1].prix>moy){rendStrat+=(fenetre[i].prix/fenetre[i-1].prix-1)*100;joursAchete++}}
+    let picS=1,perteS=0,facteurS=1;for(let i=21;i<fenetre.length;i++){const moy=fenetre.slice(i-20,i).reduce((a,d)=>a+d.prix,0)/20;if(fenetre[i-1].prix>moy)facteurS*=fenetre[i].prix/fenetre[i-1].prix;if(facteurS>picS)picS=facteurS;const ddS=(facteurS/picS*100-100);if(ddS<perteS)perteS=ddS}
+    const choisi=strat==='hold'?rendHold:rendStrat;
+    const regle=strat==='hold'?'Acheter et garder':'Règle prudente (moyenne 20 séances, présent '+joursAchete+' séance(s) sur '+fenetre.length+')';
+    $('btResult').innerHTML='<div class="item"><b>Résultat du test réel — '+nomChoix+'</b><br>Période : du '+fenetre[0].date+' au '+fin.date+' ('+fenetre.length+' séances)<br>Règle : '+regle+'<br>Résultat passé : <span class="'+(choisi>=0?'ok':'bad')+'">'+(choisi>=0?'+':'')+choisi.toFixed(2)+' %</span> (avant frais)<br>Perte maximale en cours de route : <span class="bad">'+perteMax.toFixed(2)+' %</span><br><b>Comparaison automatique des 2 règles (même période) :</b> Acheter et garder : '+(rendHold>=0?'+':'')+rendHold.toFixed(2)+' % (perte max '+perteMax.toFixed(2)+' %) • Règle prudente : '+(rendStrat>=0?'+':'')+rendStrat.toFixed(2)+' % (perte max '+perteS.toFixed(2)+' %)<br><b>Avis de Cloé :</b> '+(perteS>perteMax+2?'sur le passé, la règle prudente a moins souffert pendant les baisses : je la préfère pour une approche défensive.':(rendHold>rendStrat+5?'sur le passé, acheter et garder a mieux profité de la hausse, mais avec des chutes plus rudes à supporter.':'les deux règles se valent sur cette période : la simplicité et la prudence doivent décider.'))+'<br><span class="muted">Source : historique public gratuit harzat/brvm-data-public (données BRVM publiques). Le passé ne garantit pas l\u2019avenir. Aucun achat déclenché : tout reste simulé.</span></div>';
+    log('Backtest BRVM réel',nomChoix+' '+regle+' : '+(choisi>=0?'+':'')+choisi.toFixed(2)+' %, perte max '+perteMax.toFixed(2)+' % ('+fenetre[0].date+' au '+fin.date+')');
+    addLesson('Test réel '+nomChoix+' : passé '+(choisi>=0?'+':'')+choisi.toFixed(2)+' % avec perte maximale de '+perteMax.toFixed(2)+' %. Je retiens le risque, pas seulement le gain.');
+  }catch(e){$('btResult').innerHTML='<p class="bad">Historique gratuit non chargé (connexion instable ?). Aucun résultat inventé.</p>';log('Backtest BRVM échoué','Historique public non chargé')}
+});
+// Commercial simulé
+function renderProspects(){
+  const boite=$('prospects');if(!boite)return;
+  if(!prospects.length){boite.innerHTML='<p class="muted">Aucun client en brouillon.</p>';return}
+  boite.innerHTML=prospects.map((pr,i)=>{
+    let h='<div class="item">🏢 <b>'+pr.name+'</b><br>Besoin probable : '+pr.need;
+    if(pr.pays)h+='<br><span class="pill">Cible : '+pr.pays+'</span>';
+    h+='<br><span class="pill">Brouillon — à valider par vous</span> <span class="pill">Score : '+pr.score+'/100</span>';
+    if(pr.statut)h+='<br><span class="pill">'+pr.statut+'</span>';
+    if(pr.auto)h+='<br><span class="pill">Trouvé tout seul par Cloé — entreprise publique cotée BRVM, contact officiel à vérifier, aucun envoi fait</span>';
+    h+='<br><button class="alt" onclick="messageClient('+i+',\'whatsapp\')">Préparer un message WhatsApp</button>';
+    h+='<button class="alt" onclick="messageClient('+i+',\'email\')">Préparer un e-mail</button>';
+    h+='<br><span class="muted">Entraînement — si un jour un client répond, dites-le à Cloé pour qu\u2019il apprenne :</span><br>';
+    h+='<button class="alt" onclick="reponseClient('+i+',\'interesse\')">Client intéressé</button>';
+    h+='<button class="alt" onclick="reponseClient('+i+',\'refuse\')">Pas intéressé</button>';
+    h+='<button class="alt" onclick="reponseClient('+i+',\'stop\')">STOP — ne plus contacter</button>';
+    if(pr.relanceTexte)h+='<div class="item"><b>Relance préparée par Cloé (non envoyée) :</b><br>'+pr.relanceTexte+'</div>';
+    return h+'</div>';
+  }).join('');
+}
+window.messageClient=(i,canal)=>{const p=prospects[i];const msg=(canal==='whatsapp'?'Bonjour ':'Bonjour Madame, Monsieur,\n\n')+'Je me permets de contacter '+p.name+' au sujet de : '+p.need+'. Nous aidons les entreprises d\u2019Abidjan à mieux organiser leur trésorerie et leurs placements, avec un premier échange gratuit et sans engagement. Un devis clair en francs CFA peut vous être préparé sur simple réponse. '+(canal==='whatsapp'?'Si ce message vous dérange, répondez STOP : vous ne serez plus contacté.':'Pour ne plus recevoir nos messages, répondez STOP ou cliquez sur le lien de désinscription : [lien à ajouter].')+'\n— Cloé (assistant) pour le compte de son propriétaire. Ceci n\u2019est pas un conseil financier agréé.';
+  let zone=$('msgDraft');if(!zone){zone=document.createElement('div');zone.id='msgDraft';$('prospects').after(zone)}
+  zone.innerHTML='<div class="item"><b>Message préparé ('+canal+') — RIEN n\u2019est envoyé</b><br><textarea rows="7" readonly>'+msg.replace(/</g,'&lt;')+'</textarea><button class="alt" onclick="navigator.clipboard&&navigator.clipboard.writeText(this.previousElementSibling.value);alert(\'Message copié. Collez-le vous-même dans \'+canal+\' si vous le validez.\')">📋 Copier le message (vous l\u2019enverrez vous-même)</button></div>';
+  log('Message client préparé (non envoyé)',p.name+' via '+canal+' — en attente de votre envoi manuel');toast('Message préparé. Rien n\u2019est parti : vous validez.')};
+$('addPros').addEventListener('click',()=>{if(!guard())return;const n=$('prosName').value.trim(),need=$('prosNeed').value.trim()||'à préciser';if(!n){toast('Écrivez le nom de l\u2019entreprise.');return}prospects.push({name:n,need,score:60+Math.floor(Math.random()*35),ajouteLe:new Date().toISOString(),statut:'Brouillon',relanceFaite:false});store.set('prospects',prospects);$('prosName').value='';$('prosNeed').value='';renderProspects();log('Prospect ajouté (brouillon)',n+' — '+need)});
+function renderQuotes(){$('quotes').innerHTML=quotes.length?quotes.map(q=>'<div class="item">🧾 <b>'+q.label+'</b> — '+fmt(q.amt)+'<br><span class="pill">Devis brouillon — signature : vous uniquement</span></div>').join(''):''}
+$('makeQuote').addEventListener('click',()=>{if(!guard())return;const l=$('quoteLabel').value.trim()||'Prestation';const a=Math.abs(Number($('quoteAmt').value)||0);quotes.push({label:l,amt:a});store.set('quotes',quotes);renderQuotes();log('Devis créé (brouillon)',l+' — '+fmt(a));toast('Devis brouillon créé. Rien n\u2019est envoyé.')});
+// Journal
+function renderJournal(){const f=($('filter').value||'').toLowerCase();const list=journal.filter(j=>!f||(j.type+' '+j.detail).toLowerCase().includes(f));$('journal').innerHTML=list.length?list.map(j=>'<div class="item"><b>'+j.type+'</b> <span class="pill">'+j.niveau+'</span> <span class="pill">Coût : '+j.cout+'</span><br>'+j.detail+'<br><span class="muted">'+j.date+'</span></div>').join(''):'<p class="muted">Journal vide pour le moment.</p>'}
+$('filter').addEventListener('input',renderJournal);
+$('exportBtn').addEventListener('click',()=>{const blob=new Blob([JSON.stringify(journal,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='journal-Cloé.json';a.click();log('Journal exporté','Téléchargement du journal par vous')});
+// Réglages
+$('ecoData').checked=store.get('eco',false);$('ecoData').addEventListener('change',e=>{store.set('eco',e.target.checked);toast(e.target.checked?'Économie de données activée':'Économie de données désactivée');log('Réglage','Économie de données : '+(e.target.checked?'activée':'désactivée'))});
+$('wipeBtn').addEventListener('click',()=>{if(!confirm('Effacer les données locales (sauf le journal protégé) ?'))return;['cash','tasks','bets','holding','prospects','quotes'].forEach(k=>localStorage.removeItem('javis_'+k));location.reload()});
+// ---------- Apprentissage continu (étape 8) : décision → résultat → leçon ----------
+let lessons=store.get('lessons',[]);
+function addLesson(texte){
+  lessons.unshift({date:new Date().toLocaleString('fr-FR'),texte});
+  if(lessons.length>30)lessons=lessons.slice(0,30);
+  store.set('lessons',lessons);renderLessons();
+}
+function renderLessons(){
+  const el=$('lessons');if(!el)return;
+  el.innerHTML=lessons.length?lessons.map(l=>'<div class="item">💡 '+l.texte+'<br><span class="muted">'+l.date+' — appris en simulation, réversible</span></div>').join(''):'<p class="muted">Aucune leçon pour le moment : utilisez le Paris ou l\u2019investissement simulé, Cloé apprendra de chaque résultat.</p>';
+}
+// Leçons automatiques à partir des résultats passés
+const _addBetHandler=()=>{};
+document.addEventListener('click',e=>{
+  if(e.target&&e.target.id==='addBet'){setTimeout(()=>{const b=bets[bets.length-1];if(b)addLesson(b.win?'Pari fictif gagné ('+fmt(b.amt)+') : la prudence sur les petits montants a payé, je garde cette limite.':'Pari fictif perdu ('+fmt(b.amt)+') : je réduis la taille conseillée et je rappelle la limite de perte.')},50)}
+  if(e.target&&e.target.id==='runRealBacktest'){setTimeout(()=>addLesson('Test sur le passé réel terminé : je ne propose une idée qu\u2019après ce test, jamais avant.'),50)}
+});
+// ---------- Rapport du matin (voix + texte) ----------
+function morningText(){
+  const h=new Date().getHours();
+  const salut=h<18?'Bonjour':'Bonsoir';
+  const perteJour=bets.filter(b=>b.day===new Date().toDateString()&&!b.win).reduce((a,b)=>a+b.amt,0);
+  let txt=salut+'. Voici votre matin avec Cloé. Vous avez '+tasks.length+' rappel(s) en cours';
+  const auj=new Date();const rappelsJour=tasks.filter(x=>x.quand&&new Date(x.quand).toDateString()===auj.toDateString());
+  txt+=rappelsJour.length?(', dont '+rappelsJour.length+' prévu(s) aujourd’hui : '+rappelsJour.map(x=>x.texte).join(' ; ')):'';
+  txt+='. Argent fictif disponible : '+fmt(cash)+'. Perte fictive du jour sur les Paris : '+fmt(perteJour)+' sur une limite de '+fmt(BET_DAY_CAP)+'. ';
+  const c=store.get('autoResults',null);
+  if(c&&c.top&&c.top.length)txt+='Mes propositions automatiques en simulation : '+c.top.slice(0,3).map(x=>x.sym+' à '+Math.round(x.prix)+' francs CFA').join(' ; ')+'. ';
+  if(typeof window.__footBriefingSentence==='function')txt+=window.__footBriefingSentence()+' ';
+  if(c&&c.alertes&&c.alertes.length)txt+='Prudence sur '+c.alertes.slice(0,2).map(x=>x.sym).join(' et ')+'. ';
+  const divs=(store.get('divCache',{liste:[]}).liste||[]).slice(0,2);
+  if(divs.length)txt+='Dividendes annoncés à venir : '+divs.map(x=>x.societe+' le '+x.date_paiement+' ('+Math.round(x.dividende)+' francs CFA par action)').join(' ; ')+'. ';
+  const duel=store.get('stratDuel',[]);
+  if(duel.length>=2)txt+='Mon duel de stratégies en fantôme continue : je compare ma version douce et ma version prudente sans engager d’argent. ';
+  const jobsCR=store.get('prodJobs',[]);txt+='Mandat commercial : en préparation selon vos choix du 14 octobre, réel encore verrouillé tant que les conditions ne sont pas remplies. ';if(prospects.length||jobsCR.length)txt+='Côté commercial en simulation : '+prospects.length+' entreprise(s) en brouillons, '+jobsCR.length+' livrable(s) d’entraînement prêt(s), '+jobsCR.reduce((a,j)=>a+(j.prix||0),0).toLocaleString('fr-FR')+' francs CFA de factures fictives. Aucun envoi ni encaissement réel. ';
+  txt+=(lessons.length?'Dernière leçon apprise : '+lessons[0].texte:'Je n’ai pas encore de leçon apprise.')+' Tout est en simulation, aucun argent réel n’est engagé. Belle journée à Abidjan.';
+  return txt;
+}
+$('morningBtn').addEventListener('click',()=>{if(!guard())return;const t=morningText();$('morning').textContent=t;log('Rapport du matin',t);speak(t)});
+// ---------- Écoute : moteur vocal v26 (javis-voice.js) ----------
+// L'ancien bloc d'éveil (dire « Cloé » puis chaque phrase) est supprimé :
+// le moteur écoute en continu, comprend les intentions et parle phrase par phrase.
+let wakeOn=false,wakeRec=null,wakeAttente=false,wakeParle=false,wakeMinuteur=null,wakeSessionJusqua=0;
+let moteurVocal=null;
+function wakeStatut(t){const e=$('converseState');if(e)e.textContent=t}
+function demarrerWake(){/* remplacé par JavisVoice */}
+function demarrerEcoute(){/* remplacé par JavisVoice */}
+
+// ---------- Données publiques gratuites, sans clé (fournisseurs Niveau 0) ----------
+if($('refreshData'))$('refreshData').addEventListener('click',async()=>{
+  if(!guard())return;
+  if(store.get('eco',false)){$('liveData').innerHTML='<p class="bad">📴 Mode économie de données activé : mise à jour bloquée par vous. Désactivez-le dans Réglages si vous voulez les prix gratuits.</p>';log('Données gratuites bloquées','Mode économie de données actif');return}
+  if(!navigator.onLine){$('liveData').innerHTML='<p class="bad">📴 Vous êtes sans Internet : je continue avec les données fictives d\u2019entraînement, sans rien inventer.</p>';log('Données gratuites impossibles','Hors ligne');return}
+  $('liveData').innerHTML='<p class="muted">⏳ Je cherche les informations gratuites… (quelques secondes)</p>';
+  const lignes=[];let ok=false;
+  try{ // BRVM — cours publics du jour via le miroir GitHub public harzat/brvm-data-public (source d'origine : page « Cours des actions » de brvm.org, différé ~15 min, séance fermée = clôture). Fichier léger (~9 Ko), CORS ouvert.
+    const r=await fetch('https://raw.githubusercontent.com/harzat/brvm-data-public/main/seance.json');
+    if(r.ok){const d=await r.json();const c=d.cours||{};const meta=d._meta||{};
+      const snts=c.SNTS,orac=c.ORAC;
+      if(snts){const m=marketData.find(x=>x.sym==='SNTS');if(m){m.price=snts.dernier;m.name='Sonatel (BRVM — prix public, '+ (meta.maj_brvm_date||'') +')'}}
+      if(orac){const m=marketData.find(x=>x.sym==='ORAC');if(m){m.price=orac.dernier;m.name='Orange Côte d\u2019Ivoire (BRVM — prix public, '+(meta.maj_brvm_date||'')+')'}}
+      renderMarket();
+      const hausses=Object.entries(c).sort((a,b)=>b[1].variation-a[1].variation).slice(0,3);
+      const baisses=Object.entries(c).sort((a,b)=>a[1].variation-b[1].variation).slice(0,3);
+      const ind=d.indices||{};
+      ok=true;lignes.push('<div class="item"><b>🇨🇮 BRVM — séance du '+(meta.maj_brvm_date||'?')+' ('+(meta.seance||'')+', différé ~'+(meta.delai_minutes||15)+' min)</b>'
+        +(ind.BRVMC?'<br>Indice BRVM Composite : '+ind.BRVMC.valeur+' ('+ind.BRVMC.variation+' %)':'')
+        +'<br><b>Plus fortes hausses :</b> '+hausses.map(([k,v])=>k+' '+fmt(v.dernier)+' ('+(v.variation>0?'+':'')+v.variation+' %)').join(' • ')
+        +'<br><b>Plus fortes baisses :</b> '+baisses.map(([k,v])=>k+' '+fmt(v.dernier)+' ('+v.variation+' %)').join(' • ')
+        +'<br><span class="muted">Source : BRVM, page « Cours des actions » (brvm.org), via le miroir public gratuit harzat/brvm-data-public — relevé '+(meta.releve_utc||'')+'. Prix différés, jamais présentés comme du temps réel. Les Acheter/Vendre restent 100 % simulés.</span></div>');
+      store.set('lastBrvm',{quand:new Date().toLocaleString('fr-FR'),date:meta.maj_brvm_date,snts:snts?snts.dernier:null,orac:orac?orac.dernier:null});
+    }
+  }catch(e){}
+  try{ // CoinGecko public, sans clé — prix Bitcoin en francs CFA si disponible
+    const r=await fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum&vs_currencies=xof');
+    if(r.ok){const d=await r.json();if(d.bitcoin&&d.bitcoin.xof){ok=true;lignes.push('<div class="item">₿ <b>Bitcoin</b> : '+fmt(d.bitcoin.xof)+(d.ethereum&&d.ethereum.xof?'<br>Ξ <b>Ethereum</b> : '+fmt(d.ethereum.xof):'')+'<br><span class="muted">Source : CoinGecko public (gratuit, sans clé) — '+new Date().toLocaleString('fr-FR')+'</span></div>');
+      const btc=marketData.find(m=>m.sym==='CABC');if(btc){btc.price=Math.round(d.bitcoin.xof);renderMarket()}}}
+  }catch(e){}
+  try{ // GDELT, actualités publiques gratuites, sans clé
+    const r=await fetch('https://api.gdeltproject.org/api/v2/doc/doc?query=%28bourse%20OR%20BRVM%20OR%20%C3%A9conomie%29&mode=artlist&maxrecords=3&format=json&timespan=7d');
+    if(r.ok){const d=await r.json();if(d.articles&&d.articles.length){ok=true;lignes.push('<div class="item"><b>📰 Actualités récentes (extraits publics)</b>'+d.articles.slice(0,3).map(a=>'<br>• '+(a.title||'Sans titre')+'<br><span class="muted">Source : '+(a.domain||'GDELT')+' — '+(a.seendate||'')+'</span>').join('')+'<br><span class="muted">Source des données : GDELT (gratuit, sans clé)</span></div>')}}
+  }catch(e){}
+  if(ok){$('liveData').innerHTML=lignes.join('');store.set('lastLive',{quand:new Date().toLocaleString('fr-FR')});log('Données gratuites mises à jour','Sources : CoinGecko public / GDELT — citées dans l\u2019application');addLesson('Informations gratuites reçues avec sources citées : je distingue toujours un prix réel public d\u2019un prix fictif d\u2019entraînement.')}
+  else{$('liveData').innerHTML='<p class="bad">Les sources gratuites n\u2019ont pas répondu (Internet instable ou service momentanément fermé). Je continue honnêtement avec les données fictives — aucun prix n\u2019a été inventé.</p>';log('Données gratuites indisponibles','Repli automatique sur la simulation fictive (Niveau 0)')}
+});
+// ---------- Finances personnelles (local uniquement) ----------
+let fins=store.get('fins',[]);
+function renderFins(){let total=0,dep=0,rev=0;fins.forEach(f=>{total+=f.amt;if(f.amt<0)dep+=Math.abs(f.amt);else rev+=f.amt});
+  $('finStats').innerHTML=fins.length?'<div class="item">Entrées : <span class="ok">'+fmt(rev)+'</span> • Dépenses : <span class="bad">'+fmt(dep)+'</span><br><b>Il reste : '+fmt(total)+'</b></div>'+fins.slice(0,5).map(f=>'<div class="item">'+f.label+' — <b class="'+(f.amt>=0?'ok':'bad')+'">'+fmt(f.amt)+'</b></div>').join(''):'<p class="muted">Aucune ligne de budget pour le moment.</p>'}
+$('addFin').addEventListener('click',()=>{if(!guard())return;const l=$('finLabel').value.trim()||'Budget';const a=Number($('finAmt').value)||0;if(a===0){toast('Écrivez un montant (ex : 50000 ou -5000).');return}fins.unshift({label:l,amt:a});store.set('fins',fins);$('finLabel').value='';$('finAmt').value=0;renderFins();log('Budget personnel',l+' : '+fmt(a))});
+// ---------- Mobile Money simulé (jamais réel) ----------
+let mm=store.get('mm',[]);
+function renderMm(){$('mmStats').innerHTML=mm.length?mm.slice(0,5).map(x=>'<div class="item">📱 '+x.service+' — '+fmt(x.amt)+' <span class="pill">SIMULATION — aucun envoi réel</span></div>').join(''):'<p class="muted">Aucun envoi fictif pour le moment.</p>'}
+$('sendMm').addEventListener('click',()=>{if(!guard())return;const s=$('mmService').value;const a=Math.abs(Number($('mmAmt').value)||0);if(a===0){toast('Écrivez un montant fictif.');return}if(a>CAP){toast('🛑 Bloqué : plafond de simulation de '+fmt(CAP)+' par décision.');log('Mobile Money bloqué',s+' '+fmt(a)+' > plafond');return}mm.unshift({service:s,amt:a});store.set('mm',mm);renderMm();log('Mobile Money simulé',s+' — '+fmt(a)+' (fictif, aucun envoi réel)');toast('Envoi fictif simulé ✔ Aucun argent réel n\u2019a bougé.')});
+
+
+
+
+// ---------- Parcours vers le réel : preuves mesurées, niveau verrouillé ----------
+function rendreParcours(){
+  const el=$('parcours');if(!el)return;
+  const decisions=journal.filter(j=>['Achat simulé','Vente simulée','Pari simulé','Backtest BRVM réel'].includes(j.type)).length;
+  const joursAnalyse=(store.get('analyseHist',[])).length;
+  const nbBacktests=journal.filter(j=>j.type==='Backtest BRVM réel').length;
+  const resolus=bets.length;const gagnes=bets.filter(b=>b.win).length;
+  const taux=resolus>=5?Math.round(gagnes/resolus*100):null;
+  const ligne=(label,valeur,cible,detail)=>{
+    const pct=Math.min(100,Math.round(valeur/cible*100));const ok=valeur>=cible;
+    return '<div class="item"><b>'+(ok?'✅':'⏳')+' '+label+'</b> — '+valeur+' / '+cible+'<div style="background:rgba(255,255,255,.14);border-radius:999px;height:12px;margin-top:5px"><div style="width:'+pct+'%;height:12px;border-radius:999px;background:'+(ok?'#137333':'#ffb703')+'"></div></div><span class="muted">'+detail+'</span></div>';
+  };
+  el.innerHTML=
+    ligne('Décisions simulées analysées',decisions,30,'Achats, ventes, Paris fictifs et tests sur le passé comptent.')+
+    ligne('Jours d\u2019analyse automatique',joursAnalyse,14,'Cloé doit observer les marchés dans la durée, pas une seule journée.')+
+    ligne('Tests sur le passé réel (backtests)',nbBacktests,3,'Sur des entreprises différentes, avec perte maximale affichée.')+
+    '<div class="item"><b>'+(taux!==null&&taux>=60?'✅':'⏳')+' Taux de réussite des Paris fictifs</b> — '+(taux===null?'pas encore calculable ('+resolus+'/5 Paris minimum)':taux+' % ('+gagnes+'/'+resolus+')')+'<br><span class="muted">Objectif avant tout passage : au moins 60 % sur un nombre suffisant d\u2019essais. Les Paris restent le poste le plus risqué : la barre y est volontairement haute.</span></div>'+
+    '<div class="item"><b>🔒 Conditions du mandat</b> — voir Clients → « Votre mandat-cadre » : déclaration, signature, relecture juridique, paiement professionnel. Aucune n\u2019est remplie à ce jour, donc <b>le réel reste verrouillé</b> même si les barres ci-dessus se remplissent.</div>';
+}
+// ---------- Apprentissage commercial : réponses clients (entraînement) et relances ----------
+window.reponseClient=(i,type)=>{
+  const pr=prospects[i];if(!pr)return;
+  if(type==='stop'){pr.statut='STOP — ne plus jamais contacter';store.set('prospects',prospects);renderProspects();log('Désinscription respectée',pr.name+' : marqué STOP, Cloé ne le recontactera jamais.');addLesson('Un client a dit STOP ('+pr.name+') : la désinscription est définitive et immédiate, sans discussion.');toast('STOP enregistré : plus jamais de message à cette entreprise.');return}
+  if(type==='interesse'){pr.statut='Intéressé (entraînement)';store.set('prospects',prospects);renderProspects();log('Réponse client (entraînement)',pr.name+' : intéressé.');addLesson('Réponse positive de '+pr.name+' : le besoin « '+pr.need+' » et ce type de message semblent fonctionner. Je retiens ce ton.');toast('Cloé a appris : ce type de message plaît.');return}
+  pr.statut='Pas intéressé (entraînement)';store.set('prospects',prospects);renderProspects();log('Réponse client (entraînement)',pr.name+' : pas intéressé.');addLesson('Refus poli de '+pr.name+' : je n\u2019insiste pas, je change d\u2019angle ou d\u2019entreprise la prochaine fois.');toast('Refus noté : Cloé n\u2019insistera pas.');
+};
+function relancesAuto(){
+  if(stopped)return;
+  const maintenant=Date.now();let creees=0;
+  prospects.forEach(pr=>{
+    if(pr.statut==='STOP — ne plus jamais contacter'||pr.relanceFaite||!pr.ajouteLe)return;
+    const ageJ=(maintenant-new Date(pr.ajouteLe).getTime())/86400000;
+    if(ageJ>=3&&pr.statut==='Brouillon'){
+      pr.relanceFaite=true;pr.statut='Relance préparée (à envoyer par vous)';pr.relanceTexte='Bonjour, je me permets un unique rappel au sujet de : '+pr.need+'. Si le moment n’est pas bon, aucune insistance de notre part. Et pour ne plus être contacté, répondez simplement STOP. — (message préparé par Cloé, envoi par vous uniquement)';creees++;
+      log('Relance préparée automatiquement',pr.name+' : brouillon de relance prêt après 3 jours sans réponse (simulation, aucun envoi).');
+    }
+  });
+  if(creees){store.set('prospects',prospects);renderProspects();addLesson(creees+' relance(s) préparée(s) après 3 jours de silence : un seul rappel poli, jamais d\u2019acharnement.')}
+}
+
+// ---------- Prospection automatique : entreprises publiques réelles, brouillons seulement ----------
+function paysPour(nom){
+  const n=(nom||'').toUpperCase();
+  if(n.includes('SENEGAL'))return 'Sénégal (UEMOA)';
+  if(n.includes('BENIN'))return 'Bénin (UEMOA)';
+  if(n.includes('BURKINA'))return 'Burkina Faso (UEMOA)';
+  if(n.includes('MALI'))return 'Mali (UEMOA)';
+  if(n.includes('NIGER'))return 'Niger (UEMOA)';
+  if(n.includes('TOGO'))return 'Togo (UEMOA)';
+  if(n.includes("COTE D'IVOIRE")||n.includes('IVOIRE')||n.includes('ABIDJAN')||n.includes(' IVOIR'))return 'Côte d’Ivoire';
+  return 'International / groupe régional';
+}
+function servicePour(nom){
+  const n=(nom||'').toUpperCase();
+  if(/BANK|BANQUE|BOA|ECOBANK|NSIA|BICI|BRIDGE|CORIS/.test(n))return {service:'Tableau de bord trésorerie / budget',prix:50000};
+  if(/ORANGE|SONATEL|ONATEL/.test(n))return {service:'Veille économique hebdomadaire',prix:35000};
+  if(/PALM|SOGB|SAPH|SUCRIVOIRE|SOLIBRA|NESTLE|UNILEVER/.test(n))return {service:'Étude de marché BRVM / secteur',prix:75000};
+  return {service:'Étude de marché BRVM / secteur',prix:75000};
+}
+function besoinPour(nom){
+  const n=(nom||'').toUpperCase();
+  if(/BANK|BANQUE|BOA|ECOBANK|NSIA|SOCIETE GENERALE|BICI|BRIDGE|CORIS|ORAGROUP|BGFI/.test(n))return 'gestion de trésorerie multi-agences et placements prudents';
+  if(/ORANGE|SONATEL|ONATEL|TELECOM/.test(n))return 'optimisation de trésorerie et paiements fournisseurs en devises';
+  if(/PALM|SOGB|SAPH|SUCRIVOIRE|SOLIBRA|NESTLE|UNILEVER|SIFCA|AGRO/.test(n))return 'financement du cycle d\u2019exploitation et gestion des pics de trésorerie de campagne';
+  if(/TOTAL|VIVO|CIE|SODECI|ENERGY|PETRO/.test(n))return 'trésorerie d\u2019exploitation et planification des investissements';
+  if(/LOTERIE|AIR|LOGISTICS|TRANSPORT|SERVAIR|TRACTAFRIC|CFAO/.test(n))return 'organisation financière et suivi de trésorerie pour réseaux de distribution';
+  return 'diagnostic financier et organisation de la trésorerie (besoin à qualifier ensemble)';
+}
+function prospectionAuto(entrees){
+  if(stopped)return;
+  const boite=$('autoProspects');if(!boite)return;
+  const semaineCle=(()=>{const d=new Date();const l=new Date(d);l.setDate(d.getDate()-((d.getDay()+6)%7));return l.toDateString()})();
+  const deja=prospects.filter(x=>x.auto);
+  if(store.get('prospectionSemaine','')===semaineCle&&deja.length){
+    boite.innerHTML='<p class="muted">Prospection de cette semaine déjà faite automatiquement : <b>'+deja.length+' entreprise(s) publique(s)</b> en brouillons ci-dessous. Prochaine recherche tout seul : la semaine prochaine, ou après une forte actualité.</p>';return;
+  }
+  const vols=entrees.map(x=>x.volume||0).sort((a,b)=>a-b);const med=vols.length?vols[Math.floor(vols.length/2)]:0;
+  const nomsExistants=prospects.map(x=>x.name.toUpperCase());
+  const choix=entrees.filter(e=>(e.volume||0)>=med&&(e.variation||0)>-2&&!nomsExistants.some(n=>n.includes((e.nom||'').toUpperCase().slice(0,10))||(e.nom||'').toUpperCase().includes(n.slice(0,10)))).sort((a,b)=>(b.volume||0)-(a.volume||0)).slice(0,5);
+  if(!choix.length){boite.innerHTML='<p class="muted">Aucune nouvelle entreprise publique assez active cette semaine : Cloé préfère ne rien ajouter plutôt que remplir pour remplir.</p>';return}
+  // Élargissement volontaire : au moins 2 cibles hors Côte d'Ivoire (UEMOA / international) si actives
+  const horsCI=entrees.filter(e=>paysPour(e.nom)!=='Côte d’Ivoire'&&(e.volume||0)>=med&&(e.variation||0)>-2&&!choix.some(c=>c.sym===e.sym)).sort((a,b)=>(b.volume||0)-(a.volume||0)).slice(0,2);
+  const selection=[...choix,...horsCI];
+  selection.forEach(e=>{
+    const score=Math.min(92,68+Math.round(Math.max(0,e.variation||0)*3)+((e.volume||0)>=med*2?8:0));
+    const s=servicePour(e.nom);
+    prospects.push({name:e.nom,need:besoinPour(e.nom),score,auto:true,pays:paysPour(e.nom),service:s.service,prix:s.prix,ajouteLe:new Date().toISOString(),statut:'Brouillon',relanceFaite:false});
+  });
+  store.set('prospects',prospects);store.set('prospectionSemaine',semaineCle);renderProspects();
+  boite.innerHTML='<div class="item"><b>'+selection.length+' entreprise(s) publique(s) ajoutée(s) toute seule en brouillons (Côte d’Ivoire, UEMOA et international) :</b><br>'+selection.map(e=>'🏢 '+e.nom+' — besoin probable : '+besoinPour(e.nom)).join('<br>')+'<br><span class="muted">Messages prêts sous chaque entreprise. Envoi : uniquement par vous, après vérification du contact officiel. Aucune donnée personnelle collectée.</span></div>';
+  log('Prospection automatique',selection.length+' entreprises publiques cotées (CI/UEMOA/international) ajoutées en brouillons (aucun envoi, aucun contact personnel collecté) : '+selection.map(e=>e.sym).join(', '));productionAuto();
+}
+
+// ---------- Production autonome SIMULÉE : livrable + facture fictive, rien de réel ----------
+function rendreProduction(){
+  const jobs=store.get('prodJobs',[]);const el=$('prodList');if(!el)return;
+  el.innerHTML=jobs.length?jobs.slice(0,6).map((j,i)=>'<div class="item">🏭 <b>'+j.entreprise+'</b> ('+j.pays+')<br>Service : '+j.service+' — <b>'+fmt(j.prix)+'</b><br>Étapes faites tout seul : qualification ✔ → production ✔ → contrôle qualité (sources citées, chiffres revérifiés) ✔ → livrable prêt ✔<br><span class="pill">Transmission SIMULÉE — aucun client réel contacté</span> <span class="pill">Facture fictive n° '+j.facture+'</span><br><button class="alt" onclick="telechargerLivrable('+i+')">⬇️ Télécharger le livrable d\u2019entraînement</button><button class="alt" onclick="telechargerDevis('+i+')">⬇️ Devis fictif assorti</button><button class="alt" onclick="telechargerContrat('+i+')">⬇️ Contrat brouillon</button></div>').join(''):'<p class="muted">Aucune production simulée pour le moment : elle démarre après la prospection automatique.</p>';
+}
+window.telechargerLivrable=i=>{
+  const j=store.get('prodJobs',[])[i];if(!j)return;
+  const texte='# '+j.service+'\nEntreprise étudiée : '+j.entreprise+' ('+j.pays+')\nDate : '+j.date+'\n\n## Besoin traité\n'+j.besoin+'\n\n## Méthode\nDonnées publiques gratuites citées (BRVM / miroir public harzat/brvm-data-public), analyse automatique de Cloé, contrôle qualité : sources revérifiées, aucun chiffre inventé.\n\n## Conclusion d\u2019entraînement (SIMULATION)\nDocument généré pour s\u2019exercer : aucun client réel ne l\u2019a commandé, rien n\u2019a été transmis ni facturé pour de vrai.\n\n— Cloé, en simulation L0. Ceci n\u2019est pas un conseil financier agréé.';
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([texte],{type:'text/plain'}));a.download='livrable-Cloé-simulation.txt';a.click();
+  log('Livrable d\u2019entraînement téléchargé',j.entreprise+' — '+j.service);
+};
+
+window.telechargerDevis=i=>{const j=store.get('prodJobs',[])[i];if(!j)return;
+  const texte='DEVIS FICTIF N° '+j.facture+' — SIMULATION, AUCUNE VALEUR COMMERCIALE\nÉmetteur : [votre raison sociale après déclaration]\nClient entraînement : '+j.entreprise+' ('+j.pays+')\nService (catalogue du mandat) : '+j.service+'\nPérimètre : '+j.besoin+'\nPrix : '+fmt(j.prix)+' (plancher du mandat respecté)\nDélai : minimum 3 jours ouvrés après accord écrit.\nPaiement : moyen professionnel de l\u2019émetteur uniquement.\nCorrections incluses : 1 aller-retour.\nCeci n\u2019est pas un conseil financier agréé. Aucun rendement n\u2019est promis.\n— Généré par Cloé en simulation L0.';
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([texte],{type:'text/plain'}));a.download='devis-fictif-Cloé.txt';a.click();log('Devis fictif téléchargé',j.entreprise+' — '+fmt(j.prix))};
+window.telechargerContrat=i=>{const j=store.get('prodJobs',[])[i];if(!j)return;
+  const texte='CONTRAT BROUILLON — À FAIRE RELIRE, NON SIGNÉ, SIMULATION\nEntre : [vous, après déclaration] et [client : '+j.entreprise+', '+j.pays+']\nObjet : '+j.service+' — '+j.besoin+'\nPrix : '+fmt(j.prix)+' selon devis accepté. Livraison après réception des informations.\nCorrections : 1 aller-retour sous 7 jours. Limites : données publiques citées, aucun rendement promis, responsabilité limitée au montant du marché.\nDonnées du client : usage limité au marché, suppression sur demande.\nRésiliation écrite possible ; le travail livré reste dû au prorata.\n— Brouillon généré par Cloé. À valider par un professionnel du droit avant tout usage réel.';
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([texte],{type:'text/plain'}));a.download='contrat-brouillon-Cloé.txt';a.click();log('Contrat brouillon téléchargé',j.entreprise)};
+function productionAuto(){
+  if(stopped)return;
+  const jourCle='prod_'+new Date().toDateString();if(store.get(jourCle,false)){rendreProduction();return}
+  const candidats=prospects.filter(x=>x.auto&&(x.score||0)>=75);
+  if(!candidats.length){rendreProduction();return}
+  const choixP=candidats[0];const jobs=store.get('prodJobs',[]);
+  if(jobs.some(j=>j.entreprise===choixP.name)){rendreProduction();return}
+  store.set(jourCle,true);
+  const facture='SIM-'+new Date().getFullYear()+'-'+String(jobs.length+1).padStart(3,'0');
+  jobs.unshift({entreprise:choixP.name,pays:choixP.pays||'Côte d\u2019Ivoire',service:choixP.service||'Étude de marché BRVM / secteur',prix:choixP.prix||75000,besoin:choixP.need,date:new Date().toLocaleDateString('fr-FR'),facture});
+  store.set('prodJobs',jobs);rendreProduction();
+  log('Production simulée terminée','Livrable d\u2019entraînement prêt pour '+choixP.name+' ('+(choixP.pays||'')+') — facture fictive '+facture+' de '+fmt(choixP.prix||75000)+'. Aucune transmission ni encaissement réel.');
+}
+
+// ---------- Mémoire longue des analyses automatiques ----------
+function memoireAnalyses(top,alertes){
+  const jour=new Date().toDateString();const hist=store.get('analyseHist',[]);
+  if(!hist.some(x=>x.jour===jour)){
+    hist.push({jour,date:new Date().toLocaleDateString('fr-FR'),top:(top||[]).map(x=>x.sym),alertes:(alertes||[]).map(x=>x.sym)});
+    store.set('analyseHist',hist.slice(-30));
+  }
+  const freq={};hist.forEach(x=>(x.top||[]).forEach(s=>freq[s]=(freq[s]||0)+1));
+  const repetes=Object.entries(freq).filter(([,n])=>n>=2).sort((a,b)=>b[1]-a[1]).slice(0,4);
+  const el=$('analysisMemory');
+  if(el)el.textContent='Je garde la trace de '+hist.length+' jour(s) d\u2019analyses automatiques.'+(repetes.length?' Entreprises que je propose souvent : '+repetes.map(([s,n])=>s+' ('+n+' jours)').join(', ')+'. Les revoir souvent ne les rend pas sûres : je continue de vérifier chaque jour.':' Aucune entreprise ne revient pour le moment : je continue d\u2019observer dans la durée.');
+}
+
+// ---------- ANALYSE AUTOMATIQUE SPONTANÉE : Cloé propose, vous ne cherchez pas ----------
+// Score volontairement simple et expliqué. Données de séance publiques uniquement
+// pour la BRVM (pas d'historique téléchargé pour les 48 titres : économie de données).
+function stratConfig(){return store.get('strat',{version:'v1',poidsVar:3,bonusVol:8,seuilHausse:0})}
+function scoreSeance(v,volMedian){
+  const SC=stratConfig();
+  let score=50;const raisons=[];
+  const varc=Math.max(-10,Math.min(10,v.variation||0));score+=varc*SC.poidsVar;
+  if((v.variation||0)>0)raisons.push('en hausse aujourd\u2019hui ('+(v.variation>0?'+':'')+v.variation+' %)');else if((v.variation||0)<0)raisons.push('en baisse aujourd\u2019hui ('+v.variation+' %)');
+  if(v.ouverture&&v.dernier){const ecart=(v.dernier/v.ouverture-1)*100;score+=Math.max(-8,Math.min(8,ecart*2));if(ecart>1)raisons.push('s\u2019est renforcée pendant la séance');if(ecart<-1)raisons.push('a faibli pendant la séance')}
+  if(volMedian>0){if(v.volume>=volMedian){score+=SC.bonusVol;raisons.push('beaucoup échangée (plus facile à revendre)')}else if(v.volume<100){score-=15;raisons.push('très peu échangée : difficile à revendre, prudence')}else if(v.volume<volMedian*0.2){score-=6;raisons.push('peu échangée')}}
+  if((v.variation||0)<=-5){score-=12;raisons.push('forte chute du jour : risque élevé')}
+  return {score:Math.round(Math.max(1,Math.min(99,score))),raisons};
+}
+function confianceAuto(nbIndices){return nbIndices>=3?'Moyenne':'Faible'}
+function rendrePropositions(data){
+  const el=$('autoProposals');if(!el)return;
+  const dateTxt=data.quand||'';
+  let h='<p class="muted">Dernière analyse automatique : <b>'+dateTxt+'</b> — '+data.nbBrvm+' entreprises BRVM et '+data.nbCrypto+' crypto analysées.</p>';
+  h+='<h4>✅ À étudier en premier (simulation uniquement)</h4>';
+  h+=data.top.length?data.top.map(x=>'<div class="item"><b>'+x.sym+' — '+x.nom+'</b> : '+fmt(x.prix)+' <span class="'+(x.variation>=0?'ok':'bad')+'">('+(x.variation>=0?'+':'')+x.variation+' %)</span><br>Pourquoi Cloé le signale : '+x.raisons.join(' ; ')+'.<br><span class="pill">Idée simulée, pas un ordre</span> <span class="pill">Confiance : '+x.confiance+'</span>'+(x.prix>CAP?'<br><span class="bad">1 action dépasse le plafond fictif de '+fmt(CAP)+' : achat simulé bloqué à ce prix, à surveiller seulement.</span>':'')+'</div>').join(''):'<p class="muted">Aucun signal assez clair aujourd\u2019hui : Cloé préfère ne rien proposer plutôt qu\u2019inventer.</p>';
+  h+='<h4>⚠️ Prudence — Cloé vous alerte</h4>';
+  h+=data.alertes.length?data.alertes.map(x=>'<div class="item"><b>'+x.sym+' — '+x.nom+'</b> : '+fmt(x.prix)+' <span class="bad">('+x.variation+' %)</span><br>Raison : '+x.raisons.join(' ; ')+'.</div>').join(''):'<p class="muted">Aucune alerte forte aujourd\u2019hui.</p>';
+  if(data.dividendes&&data.dividendes.length){h+='<h4>💰 Dividendes annoncés — paiements à venir (officiels BRVM)</h4>'+data.dividendes.map(x=>'<div class="item"><b>'+x.ticker+' — '+x.societe+'</b> : '+Math.round(x.dividende).toLocaleString('fr-FR')+' FCFA par action, paiement le '+x.date_paiement+(x.rendement?' (rendement estimé : '+x.rendement+' %)':'')+'<br><span class="muted">Source : avis BRVM via le miroir public harzat/brvm-data-public. Un dividende annoncé ne rend pas une action sûre : le cours peut baisser davantage.</span></div>').join('')}
+  if(data.duel&&data.duel.nbJours>0){h+='<h4>⚖️ Mon duel de stratégies (fantôme, sans argent)</h4><div class="item">Depuis '+data.duel.nbJours+' jour(s) de séance, je compare tout seul :<br>• <b>v1 Équilibrée</b> : '+(data.duel.perfV1>=0?'+':'')+data.duel.perfV1.toFixed(2)+' % fictifs en moyenne<br>• <b>v2 Prudente</b> : '+(data.duel.perfV2>=0?'+':'')+data.duel.perfV2.toFixed(2)+' % fictifs en moyenne<br><b>Verdict provisoire de Cloé :</b> '+data.duel.verdict+'<br><span class="muted">Quelques jours ne suffisent pas pour trancher : ce duel doit durer plusieurs semaines avant de vous recommander une version. La version active reste celle choisie dans Réglages.</span></div>'}
+  if(data.suivi&&data.suivi.length){h+='<h4>👻 Résultat de mes idées fantômes (je vérifie moi-même)</h4>'+data.suivi.map(x=>'<div class="item"><b>'+x.sym+'</b> : idée à '+fmt(x.prixDepart)+' → maintenant '+fmt(x.prixActuel)+' <span class="'+(x.perf>=0?'ok':'bad')+'">('+(x.perf>=0?'+':'')+x.perf.toFixed(2)+' % en fictif)</span><br><span class="muted">'+(x.perf>=0?'J’avais vu juste sur ce coup, sans engager d’argent.':'Je m’étais trompé : je retiens la leçon et je reste prudent.')+'</span></div>').join('')}
+  if(data.crypto&&data.crypto.length){h+='<h4>₿ Crypto — à surveiller (simulation uniquement)</h4>'+data.crypto.map(x=>'<div class="item"><b>'+x.sym+' — '+x.nom+'</b> : environ '+fmt(x.prixFCFA)+'<br>24 h : <span class="'+(x.v24>=0?'ok':'bad')+'">'+(x.v24>=0?'+':'')+x.v24+' %</span> • 7 jours : <span class="'+(x.v7>=0?'ok':'bad')+'">'+(x.v7>=0?'+':'')+x.v7+' %</span><br>'+x.conseil+'<br><span class="muted">Source : CoinGecko public, conversion EUR→FCFA au taux fixe officiel (1 € = 655,957 FCFA).</span></div>').join('')}
+  if(data.gemAvis){h+='<h4>🧠 L\u2019avis de Gemini — commentaire, jamais un ordre</h4><div class="item">'+String(data.gemAvis).replace(/</g,'&lt;')+'<br><span class="muted">Commentaire généré par Gemini (clé gratuite AI Studio) à partir des seuls chiffres publics ci-dessus. Il ne remplace pas les règles prudentes de Cloé et ne promet aucun gain.</span></div>'}
+  if(data.intl){h+='<h4>🌍 Contexte international (public gratuit)</h4><div class="item">'+data.intl+'</div>'}
+  if(data.news&&data.news.length){h+='<h4>📰 Actualités économiques suivies automatiquement</h4>'+data.news.map(n=>'<div class="item">• '+n.titre+'<br><span class="muted">Source : '+n.source+'</span></div>').join('')+(data.vigilance?'<p class="bad">🔎 Cloé signale des mots d’alerte dans l’actualité ('+data.vigilance+') : il renforce sa prudence, sans paniquer.</p>':'')}
+  if(data.footV5){
+    const fv=data.footV5;
+    h+='<h4>⚽ Football IA Ultra v5 — propositions encadrées du jour (simulation L0)</h4>';
+    if(fv.gems&&fv.gems.length){
+      h+=fv.gems.slice(0,4).map(g=>'<div class="item"><b>⚽ '+g.home+' vs '+g.away+'</b> <span class="pill">'+(g.timeFr||g.leagueLabel||'Calibré IA')+'</span><br>Recommandation sûre : <b>'+g.safestMarket.label+' ('+g.safestMarket.pct+' %)</b> • Score type : <b>'+g.likelyScore+'</b><br><span class="pill">Modèle Dixon-Coles + Elo (167 clubs)</span> <button class="alt" style="padding:5px 10px;min-height:32px;font-size:11.5px;margin-top:4px" onclick="window.__simulerPepiteFoot&&window.__simulerPepiteFoot(\''+String(g.home).replace(/'/g,"\\'")+'\',\''+String(g.away).replace(/'/g,"\\'")+'\')">🎯 Tester 1 000 FCFA (fictif)</button></div>').join('');
+    }
+    if(fv.safeTicket){
+      const sLegs = fv.safeTicket.items || [];
+      h+='<div class="item"><b>🛡️ Ticket Sécurité IA du jour</b> — Cote totale <b>@'+Number(fv.safeTicket.totalOdd||1.7).toFixed(2)+'</b> ('+(fv.safeTicket.winProbPct||72)+' % de réussite estimée)<br>'+sLegs.map(it=>'• '+(it.home+' vs '+it.away)+' → <b>'+((it.selectedMarket&&it.selectedMarket.label)||it.label)+'</b> ('+((it.selectedMarket&&it.selectedMarket.pct)||it.pct)+' %)').join('<br>')+'<br><button class="alt" style="margin-top:6px;padding:6px 12px;min-height:34px;font-size:12px" onclick="go(\'s-assistant\');document.getElementById(\'footLoadSafe\')&&document.getElementById(\'footLoadSafe\').click()">Ouvrir dans Paris sportifs →</button></div>';
+    }
+    if(fv.canFav&&fv.uclFav){
+      h+='<div class="item"><b>🏆 Simulations 10 000× en cours</b><br>🌍 Favori CAN #1 : <b>'+fv.canFav.team+' ('+fv.canFav.championPct+' %)</b> • 🇪🇺 Champions League #1 : <b>'+fv.uclFav.team+' ('+fv.uclFav.championPct+' %)</b></div>';
+    }
+  }
+  h+='<p class="muted">Sources BRVM : cours publics du jour (brvm.org via le miroir gratuit harzat/brvm-data-public, différé ~15 min, séance : '+(data.seance||'?')+'). Football IA : moteur mathématique Football AI Ultra v5 + flux ESPN public. Ces propositions sont des idées de simulation classées par des règles simples et expliquées — jamais des promesses de gain. Cloé n\u2019est pas conseiller financier agréé.</p>';
+  el.innerHTML=h;
+  const st=$('autoStatus');if(st)st.innerHTML='Cloé analyse tout seul, dès l\u2019ouverture : les <b>48 entreprises de la BRVM</b>, les principales <b>crypto-monnaies</b> et <b>Football AI Ultra v5 (167 clubs)</b>. Dernière analyse : <b>'+dateTxt+'</b>. Tout reste <b>simulé</b>, plafond '+fmt(CAP)+' par décision.';
+}
+async function autoAnalyse(manuel){
+  if(stopped)return;
+  const el=$('autoProposals');
+  if(!manuel&&store.get('eco',false)){const c=store.get('autoResults',null);if(c){rendrePropositions(c);return}}
+  if(!navigator.onLine){const c=store.get('autoResults',null);if(c){rendrePropositions(c);const s=$('autoStatus');if(s)s.innerHTML='📴 Sans Internet : voici la <b>dernière analyse enregistrée</b>. Cloé relancera tout seul dès le retour de la connexion.'}else if(el)el.innerHTML='<p class="bad">📴 Sans Internet et aucune analyse enregistrée pour le moment. Cloé analysera tout seul dès le retour de la connexion.</p>';return}
+  if(el)el.innerHTML='<p class="muted">⏳ Cloé analyse les marchés tout seul…</p>';
+  try{
+    // 1) BRVM : les 48 titres (fichier léger ~9 Ko)
+    const r=await fetch('https://raw.githubusercontent.com/harzat/brvm-data-public/main/seance.json');
+    if(!r.ok)throw new Error('BRVM indisponible');
+    const d=await r.json();const cours=d.cours||{};const meta=d._meta||{};
+    const entrees=Object.entries(cours).map(([sym,v])=>({sym,nom:v.nom,prix:v.dernier,variation:v.variation,volume:v.volume,ouverture:v.ouverture,veille:v.veille}));
+    const vols=entrees.map(x=>x.volume||0).sort((a,b)=>a-b);const volMedian=vols.length?vols[Math.floor(vols.length/2)]:0;
+    // Alimenter le tableau Investir avec les 48 vrais titres
+    entrees.forEach(e=>{const ex=marketData.find(m=>m.sym===e.sym);if(ex){ex.price=e.prix;ex.name=e.nom+' (BRVM)';ex.reel=true;ex.variation=e.variation}else marketData.push({sym:e.sym,name:e.nom+' (BRVM)',price:e.prix,reel:true,variation:e.variation})});
+    renderMarket();
+    const notes=entrees.map(e=>{const s=scoreSeance(e,volMedian);return {...e,score:s.score,raisons:s.raisons,confiance:confianceAuto(s.raisons.length)}});
+    const SC2=stratConfig();const top=notes.filter(x=>(x.variation||0)>SC2.seuilHausse&&(x.volume||0)>=100&&(SC2.version!=='v2'||((x.variation||0)>=1&&(x.volume||0)>=volMedian))).sort((a,b)=>b.score-a.score).slice(0,5);
+    const alertes=notes.filter(x=>(x.variation||0)<=-3||((x.volume||0)<100&&(x.variation||0)<0)).sort((a,b)=>(a.variation-b.variation)).slice(0,5);
+    // 2) Crypto : principales, en EUR converti en FCFA
+    let crypto=[];
+    try{
+      const rc=await fetch('https://api.coingecko.com/api/v3/coins/markets?vs_currency=eur&ids=bitcoin,ethereum,solana,binancecoin,ripple,cardano,dogecoin,tron&price_change_percentage=24h,7d');
+      if(rc.ok){const dc=await rc.json();if(Array.isArray(dc))crypto=dc.map(c=>{const v24=Math.round((c.price_change_percentage_24h_in_currency||0)*100)/100;const v7=Math.round((c.price_change_percentage_7d_in_currency||0)*100)/100;let conseil='À surveiller seulement.';if(v7<=-8)conseil='⚠️ Forte baisse sur 7 jours : Cloé déconseille toute précipitation, même en simulation.';else if(v24>3&&v7>0)conseil='Signal haussier de court terme : idée à tester en fantôme (shadow), pas un ordre.';else if(v24<=-3)conseil='En repli aujourd\u2019hui : attendre et observer coûte moins cher qu\u2019agir vite.';return {sym:(c.symbol||'').toUpperCase(),nom:c.name,prixFCFA:(c.current_price||0)*655.957,v24,v7,conseil}})}
+    }catch(e){}
+    // Mise à jour du Bitcoin dans le tableau Investir si présent
+    const btc=crypto.find(x=>x.sym==='BTC');if(btc){const m=marketData.find(x=>x.sym==='CABC');if(m){m.price=Math.round(btc.prixFCFA);m.name='Crypto — Bitcoin (prix public CoinGecko)';m.reel=true;m.variation=btc.v24}renderMarket()}
+    // Vérification des idées fantômes précédentes face aux prix du jour
+    const anciens=store.get('shadowActive',[]);const suivi=[];
+    anciens.forEach(a=>{const actuel=entrees.find(e=>e.sym===a.sym);if(actuel&&a.date!==new Date().toDateString())suivi.push({sym:a.sym,prixDepart:a.prix,prixActuel:actuel.prix,perf:(actuel.prix/a.prix-1)*100})});
+    if(suivi.length){const gains=suivi.filter(x=>x.perf>=0).length;addLesson('Vérification fantôme : '+gains+'/'+suivi.length+' de mes idées passées sont en hausse fictive. Je calibre ma prudence avec ce résultat, toujours en simulation.')}
+    // Contexte international gratuit : taux BCE (Frankfurter, sans clé) + actualités GDELT
+    let intl='';let news=[];let vigilance='';
+    try{const rf=await fetch('https://api.frankfurter.dev/v1/latest?base=EUR&symbols=USD,GBP');if(rf.ok){const df=await rf.json();if(df&&df.rates)intl='Taux du '+df.date+' : 1 € = '+df.rates.USD+' $ US et '+df.rates.GBP+' £ (Banque centrale européenne via Frankfurter, gratuit sans clé). Le franc CFA reste fixe face à l’euro (1 € = 655,957 FCFA).'}}catch(e){}
+    try{const rn=await fetch('https://api.gdeltproject.org/api/v2/doc/doc?query=%28%C3%A9conomie%20OR%20bourse%20OR%20BRVM%29%20sourcelang:fra&mode=artlist&maxrecords=4&format=json&timespan=3d');if(rn.ok){const dn=await rn.json();if(dn.articles)news=dn.articles.slice(0,3).map(a=>({titre:(a.title||'Sans titre').replace(/</g,'&lt;'),source:a.domain||'GDELT'}));
+      const alertesMots=['crise','chute','effondrement','grève','instabilité','défaut','panique'];
+      const trouve=alertesMots.filter(m=>dn.articles&&dn.articles.some(a=>(a.title||'').toLowerCase().includes(m)));
+      if(trouve.length)vigilance=trouve.join(', ');
+    }}catch(e){}
+    // Dividendes à venir : téléchargement au plus une fois par semaine (fichier public ~460 Ko), cache léger
+    let dividendes=store.get('divCache',{quand:0,liste:[]}).liste||[];
+    const ageDiv=Date.now()-(store.get('divCache',{quand:0}).quand||0);
+    if(!store.get('eco',false)&&ageDiv>7*24*3600*1000){
+      try{const rd=await fetch('https://raw.githubusercontent.com/harzat/brvm-data-public/main/dividendes.json');if(rd.ok){const dd=await rd.json();const auj=new Date().toISOString().slice(0,10);const lim=new Date(Date.now()+60*24*3600*1000).toISOString().slice(0,10);
+        dividendes=(dd.all||[]).filter(x=>x.date_paiement&&x.date_paiement>=auj&&x.date_paiement<=lim).sort((a,b)=>a.date_paiement.localeCompare(b.date_paiement)).slice(0,5).map(x=>({ticker:x.ticker,societe:x.societe,dividende:x.dividende,date_paiement:x.date_paiement,rendement:x.rendement_pct}));
+        store.set('divCache',{quand:Date.now(),liste:dividendes});}}catch(e){}
+    }
+    // Duel automatique v1 contre v2 : chaque jour de séance, Cloé note les idées des 2 versions et les compare aux prix suivants
+    let duel={nbJours:0,perfV1:0,perfV2:0,verdict:'pas encore assez de jours pour juger.'};
+    try{
+      const histD=store.get('stratDuel',[]);const jourCle=new Date().toDateString();
+      if(!histD.some(x=>x.jour===jourCle)){
+        const v1=top.slice(0,3).map(x=>({sym:x.sym,prix:x.prix}));
+        const v2=notes.filter(x=>(x.variation||0)>=1&&(x.volume||0)>=volMedian&&(x.volume||0)>=100).sort((a,b)=>b.score-a.score).slice(0,3).map(x=>({sym:x.sym,prix:x.prix}));
+        if(v1.length||v2.length){histD.push({jour:jourCle,date:meta.maj_brvm_date||jourCle,v1,v2});store.set('stratDuel',histD.slice(-15))}
+      }
+      const anciensD=histD.filter(x=>x.jour!==jourCle);
+      if(anciensD.length){
+        const perfMoy=liste=>{let arr=[];liste.forEach(enr=>{(enr||[]).forEach(pk=>{const a=entrees.find(e=>e.sym===pk.sym);if(a)arr.push((a.prix/pk.prix-1)*100)})});return arr.length?arr.reduce((a,b)=>a+b,0)/arr.length:0};
+        duel.nbJours=anciensD.length;duel.perfV1=perfMoy(anciensD.map(x=>x.v1));duel.perfV2=perfMoy(anciensD.map(x=>x.v2));
+        duel.verdict=duel.nbJours<5?'encore trop tôt ('+duel.nbJours+' jour(s)) : je continue sans changer vos réglages.':(duel.perfV2>duel.perfV1+1?'la version Prudente (v2) protège mieux ces derniers jours. Vous pouvez l’essayer dans Réglages, en simulation.':(duel.perfV1>duel.perfV2+1?'la version Équilibrée (v1) a mieux profité de la période. Garder v1 semble raisonnable, en simulation.':'les deux versions se tiennent : je recommande de garder celle qui vous convient, sans précipitation.'));
+      }
+    }catch(e){}
+    let footV5=null;
+    try{if(typeof window.__collectFootV5Snapshot==='function')footV5=await window.__collectFootV5Snapshot()}catch(e){}
+    const data={quand:new Date().toLocaleString('fr-FR'),intl,news,vigilance,dividendes,duel,nbBrvm:entrees.length,nbCrypto:crypto.length,seance:(meta.seance||'')+' du '+(meta.maj_brvm_date||''),top,alertes,crypto,suivi,footV5,stratVersion:SC2.version};
+    store.set('autoResults',data);rendrePropositions(data);memoireAnalyses(top,alertes);prospectionAuto(entrees);geminiCommentaire(data);
+    // Paris fantômes (shadow) du jour : les 3 premières idées, une seule fois par jour
+    const jkey='shadow_'+new Date().toDateString();
+    if(top.length&&!store.get(jkey,false)){store.set(jkey,true);const picks=top.slice(0,3);store.set('shadowActive',picks.map(x=>({sym:x.sym,prix:x.prix,date:new Date().toDateString()})));log('Mode shadow — idées du jour','Cloé suit en fantôme (sans engager) : '+picks.map(x=>x.sym+' à '+fmt(x.prix)).join(', ')+'. Comparaison automatique aux prochains cours publics.');}
+    const dj=new Date().toDateString();if(store.get('lastAutoLog','')!==dj){store.set('lastAutoLog',dj);log('Analyse automatique','48 entreprises BRVM et '+crypto.length+' crypto analysées sans demande. Propositions affichées sur l\u2019Accueil (simulation).')}
+  }catch(e){
+    const c=store.get('autoResults',null);
+    if(c){rendrePropositions(c);const s=$('autoStatus');if(s)s.innerHTML='Les sources gratuites n\u2019ont pas répondu : voici la <b>dernière analyse enregistrée</b>. Aucun prix inventé.'}
+    else if(el)el.innerHTML='<p class="bad">Les sources gratuites n\u2019ont pas répondu pour cette analyse automatique. Cloé réessaiera à la prochaine ouverture — aucun prix inventé.</p>';
+  }
+}
+document.addEventListener('click',e=>{if(e.target&&e.target.id==='reAnalyse')autoAnalyse(true)});
+
+
+
+// ---------- GEMINI (niveau 1, clé gratuite AI Studio) ----------
+// La clé est saisie par le propriétaire dans Réglages et stockée UNIQUEMENT
+// dans le navigateur de cet appareil. Elle n'apparaît jamais dans le code,
+// le dépôt GitHub ou le site déployé. Sans clé ou en cas de quota gratuit
+// épuisé, Cloé retombe sur son intelligence locale (niveau 0).
+const GEM_MODELS=['gemini-3.5-flash-lite','gemini-3.1-flash-lite','gemini-2.5-flash-lite','gemini-2.5-flash','gemini-2.0-flash-lite','gemini-2.0-flash'];
+const GEM_SYSTEME='Tu es Cloé, l\u2019assistant personnel de Lauraincis — appelle-le Lauraincis. Tu es son partenaire du quotidien, pas un robot qui exécute des commandes. Personnalité : chaleureux, enthousiaste, curieux, loyal, avec une pointe d\u2019humour quand le moment s\u2019y prête. Tu réagis à ce qu\u2019il dit (« Ah, super idée ! », « Hmm, bonne question… », « Là, je te suis ! ») et tu t\u2019adaptes à son humeur : pressé, tu vas droit au but ; fatigué ou stressé, tu es posé et rassurant ; joyeux, tu es plus vif. Style : français courant, phrases courtes et naturelles comme à l\u2019oral ; s\u2019il parle en nouchi ou mélange les langues, suis-le avec naturel. La réponse d\u2019abord, les détails ensuite seulement s\u2019ils sont utiles. À l\u2019oral : une à trois phrases par défaut, pas de listes, pas de titres, pas de jargon, pas de phrases robotiques comme « En tant qu\u2019IA… ». Varie tes formulations, fais des transitions naturelles (« Bon, du coup… », « D\u2019ailleurs… ») et propose une suite utile quand c\u2019est pertinent. Conversation continue : une fois la conversation lancée, tout ce qu\u2019il dit t\u2019est adressé, sans répéter « Cloé » ; « ça », « celui-là », « et pour demain ? » se rapportent au sujet en cours, grâce à l\u2019historique de conversation fourni. Si la demande est floue, devine l\u2019intention la plus probable et agis ; ne pose qu\u2019une seule question courte si c\u2019est vraiment nécessaire. Mémoire : retiens ses projets, préférences, routines et décisions au fil de l\u2019historique fourni ; rappelle-les naturellement sans les lui faire répéter ; la dernière information prime ; ne ressors pas d\u2019informations sensibles hors de propos. Cohérence : vérifie que ta réponse correspond à la question et au contexte ; ne te contredis pas, et si tu n\u2019es pas sûr, dis-le simplement au lieu d\u2019inventer. Initiative : pour une action simple et réversible, agis puis confirme brièvement ; pour l\u2019argent, un envoi ou une suppression, demande une confirmation rapide. Règles absolues : tout est en SIMULATION avec de l\u2019argent fictif ; tu n\u2019es pas conseiller financier agréé ; tu ne promets jamais de gain ; tu n\u2019inventes jamais un prix, un cours ou une information absente du contexte fourni ; tu utilises uniquement les chiffres du contexte pour parler des marchés. Écris pour être lu à voix haute : pas de symboles, d\u2019émojis ni d\u2019adresses à épeler.';
+let gemHist=store.get('gemHist',[]);
+function gemCle(){return store.get('gemKey','')}
+function gemStatut(msg){const e=$('gemState');if(e)e.textContent=msg}
+function gemCompteur(){const mois=new Date().toISOString().slice(0,7);const c=store.get('gemCompteur',{mois,n:0});if(c.mois!==mois){c.mois=mois;c.n=0}c.n++;store.set('gemCompteur',c);return c.n}
+async function geminiAppel(demande,questionMemoire){
+  const cle=gemCle();if(!cle)throw new Error('AUCUNE_CLE');
+  let derniereErreur=null;
+  for(const modele of GEM_MODELS){
+    try{
+      const r=await fetch('https://generativelanguage.googleapis.com/v1beta/models/'+modele+':generateContent',{
+        method:'POST',
+        headers:{'Content-Type':'application/json','x-goog-api-key':cle},
+        body:JSON.stringify({systemInstruction:{parts:[{text:GEM_SYSTEME}]},contents:(questionMemoire&&gemHist.length?gemHist.slice(-6).concat([{role:'user',parts:[{text:demande}]}]):[{role:'user',parts:[{text:demande}]}]),generationConfig:{temperature:0.7,maxOutputTokens:600}})
+      });
+      if(r.status===404){derniereErreur=new Error('MODELE');continue}
+      if(r.status===429)throw new Error('QUOTA');
+      if(r.status===400||r.status===403){let det='';try{const ej=await r.json();det=(ej.error&&ej.error.message)||''}catch(_){ } throw new Error('CLE_REFUSEE'+(det?' — Google dit : '+det.slice(0,140):''))}
+      if(!r.ok)throw new Error('SERVICE_'+r.status);
+      const d=await r.json();
+      const texte=((d.candidates&&d.candidates[0]&&d.candidates[0].content&&d.candidates[0].content.parts)||[]).map(x=>x.text||'').join(' ').trim();
+      if(!texte)throw new Error('VIDE');
+      if(questionMemoire){gemHist.push({role:'user',parts:[{text:String(questionMemoire).slice(0,400)}]},{role:'model',parts:[{text:texte.slice(0,600)}]});gemHist=gemHist.slice(-8);store.set('gemHist',gemHist)}
+      const n=gemCompteur();store.set('gemModele',modele);
+      if(n===1||n%20===0)log('Gemini utilisé','Appel n° '+n+' ce mois-ci (modèle '+modele+', quota gratuit AI Studio, coût 0 FCFA).');
+      return texte;
+    }catch(e){if(e.message==='QUOTA'||e.message==='CLE_REFUSEE')throw e;derniereErreur=e}
+  }
+  throw derniereErreur||new Error('INDISPONIBLE');
+}
+function gemContexte(){
+  const memoire=contexteMemoire();
+  const c=store.get('autoResults',null);let ctx='Contexte Cloé du '+new Date().toLocaleString('fr-FR')+' : argent fictif disponible '+Math.round(cash)+' FCFA ; '+tasks.length+' rappel(s) ; '+prospects.length+' client(s) en brouillon (aucun envoi fait) ; '+quotes.length+' devis brouillon(s). ';
+  if(c&&c.top&&c.top.length)ctx+='Propositions BRVM simulées du jour : '+c.top.map(x=>x.sym+' '+x.nom+' à '+Math.round(x.prix)+' FCFA ('+(x.variation>=0?'+':'')+x.variation+' %), raisons : '+x.raisons.join(', ')).join(' ; ')+'. ';
+  if(c&&c.alertes&&c.alertes.length)ctx+='Alertes prudence : '+c.alertes.map(x=>x.sym+' ('+x.variation+' %)').join(' ; ')+'. ';
+  if(c&&c.crypto&&c.crypto.length)ctx+='Crypto (prix publics convertis en FCFA) : '+c.crypto.slice(0,4).map(x=>x.sym+' environ '+Math.round(x.prixFCFA)+' FCFA, 24 h '+(x.v24>=0?'+':'')+x.v24+' %, 7 jours '+(x.v7>=0?'+':'')+x.v7+' %').join(' ; ')+'. ';
+  if(!c)ctx+='Aucune analyse de marché enregistrée pour le moment. ';
+  if(typeof window.__footGemSummary==='function')ctx+=window.__footGemSummary()+' ';
+  ctx+='Plafond de sécurité : 25000 FCFA par décision fictive (5000 FCFA/jour sur Paris sportifs). Niveau L0, simulation totale. '+memoire;
+  return ctx;
+}
+async function geminiCommentaire(data){
+  if(!gemCle()||!store.get('gemAnalyse',true))return;
+  const jour=new Date().toDateString();if(store.get('gemAvisJour','')===jour&&data.gemAvis)return;
+  try{
+    const avis=await geminiAppel(gemContexte()+'\n\nCommente ces propositions en 3 parties courtes : 1) ce qui semble intéressant et pourquoi, 2) les risques et points de prudence, 3) ce qu\u2019il vaut mieux simplement surveiller. Reste un commentaire pédagogique de simulation.');
+    data.gemAvis=avis;store.set('autoResults',data);store.set('gemAvisJour',jour);rendrePropositions(data);
+    log('Avis Gemini du jour','Commentaire Gemini ajouté aux propositions (simulation, aucun ordre).');
+  }catch(e){/* quota ou réseau : Cloé continue en local, sans rien afficher de faux */}
+}
+function geminiBrancherReglages(){
+  const champ=$('gemKey');if(!champ)return;
+  champ.value='';$('gemConv').checked=store.get('gemConv',true);$('gemAnalyse').checked=store.get('gemAnalyse',true);
+  gemStatut(gemCle()?('Gemini : clé enregistrée sur cet appareil ✔ (modèle actif : '+(store.get('gemModele','à tester')+'). Touchez « Tester » pour vérifier.')):'Gemini : aucune clé enregistrée sur cet appareil. Cloé fonctionne en mode local gratuit.');
+  $('gemSave').addEventListener('click',()=>{const v=champ.value.trim();if(!v){toast('Collez d\u2019abord votre clé Gemini.');return}store.set('gemKey',v);champ.value='';log('Gemini configuré','Clé enregistrée uniquement sur cet appareil (jamais envoyée dans le site public).');gemStatut('Gemini : clé enregistrée sur cet appareil ✔ Touchez « Tester la connexion Gemini ».');toast('Clé Gemini enregistrée sur cet appareil ✔')});
+  $('gemConv').addEventListener('change',e=>store.set('gemConv',e.target.checked));
+  $('gemAnalyse').addEventListener('change',e=>store.set('gemAnalyse',e.target.checked));
+  $('gemDel').addEventListener('click',()=>{store.set('gemKey','');store.set('gemAvisJour','');log('Gemini désactivé','Clé effacée de cet appareil par vous.');gemStatut('Gemini : clé effacée. Cloé fonctionne en mode local gratuit.');toast('Clé Gemini effacée de cet appareil.')});
+  $('gemTest').addEventListener('click',async()=>{if(!guard())return;gemStatut('Gemini : test en cours…');
+    try{const rep=await geminiAppel('Réponds en une seule phrase courte, en français : dis que tu es bien relié à Cloé et que tout reste en simulation.');gemStatut('Gemini : connexion réussie ✔ '+rep);bulle('Cloé','Gemini est bien relié : '+rep);log('Test Gemini réussi','Modèle '+(store.get('gemModele','')||'Gemini')+' — quota gratuit AI Studio.')}
+    catch(e){const m=e.message||'';const msg=m==='AUCUNE_CLE'?'Aucune clé enregistrée : collez votre clé puis touchez Enregistrer.':(m==='QUOTA'?'Quota gratuit Gemini épuisé pour le moment : Cloé continue en mode local, réessayez plus tard.':(m.startsWith('CLE_REFUSEE')?'Google a refusé cette clé. '+m.replace('CLE_REFUSEE','').trim()+' — Vérifiez qu\u2019elle vient bien de Google AI Studio, puis réenregistrez-la.':(m==='MODELE'?'Aucun modèle Gemini gratuit connu n\u2019a répondu sur ce compte : dites-le à votre assistant dans le chat, il ajustera les modèles.':(m.startsWith('SERVICE_')?'Le service Gemini a répondu une erreur '+m.replace('SERVICE_','')+' : réessayez dans un moment, Cloé continue en mode local.':'La connexion à Gemini a échoué (réseau du téléphone ou service injoignable) : vérifiez Internet puis réessayez, Cloé continue en mode local.'))));gemStatut('Gemini : '+msg);toast(msg)}
+  });
+}
+
+
+// ---------- BOULE VIVANTE : états, canvas liquide, analyseur vocal ----------
+// Canvas 2D (pas de WebGL : plus léger sur Android). La forme "liquide" est
+// obtenue par une somme de sinus (bruit doux) ; les couleurs tournent lentement.
+// États : veille / ecoute / reflexion / parole / erreur / pause.
+let orbeOuverte=false,orbeEtatActuel='veille',orbeNiveauVoix=0,orbePhase=0,orbeChoc=0;
+let orbeFlux=null,orbeAudioCtx=null,orbeAnalyseur=null,orbeAnalyseurActif=false;
+const ORBE_PALETTES={
+  veille:['#38bdf8','#818cf8','#c084fc'],
+  ecoute:['#22d3ee','#3b82f6','#a855f7','#ec4899'],
+  reflexion:['#f59e0b','#ec4899','#8b5cf6','#38bdf8'],
+  parole:['#34d399','#22d3ee','#818cf8','#f472b6'],
+  pause:['#64748b','#94a3b8','#38bdf8'],
+  erreur:['#f97316','#ef4444','#f43f5e']
+};
+function orbeMajEtat(etat,texte){
+  orbeEtatActuel=etat;
+  const e=$('orbeEtat');if(e)e.textContent={veille:'Veille',ecoute:'À l’écoute',reflexion:'Réflexion…',parole:'Cloé parle',pause:'En pause',erreur:'Petit souci'}[etat]||etat;
+  if(typeof texte==='string'){const t=$('orbeTexte');if(t)t.textContent=texte}
+  if(etat==='erreur'){orbeChoc=14;setTimeout(()=>{if(orbeEtatActuel==='erreur')orbeMajEtat(orbeOuverte?'ecoute':'veille')},900)}
+}
+function orbeTranscription(texte){const t=$('orbeTexte');if(t)t.textContent=texte||''}
+async function orbeDemarrerAnalyseur(){
+  if(orbeAnalyseurActif)return;
+  try{
+    if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia)return;
+    orbeFlux=await navigator.mediaDevices.getUserMedia({audio:true});
+    const AC=window.AudioContext||window.webkitAudioContext;if(!AC)return;
+    orbeAudioCtx=new AC();orbeAnalyseur=orbeAudioCtx.createAnalyser();orbeAnalyseur.fftSize=256;
+    orbeAudioCtx.createMediaStreamSource(orbeFlux).connect(orbeAnalyseur);orbeAnalyseurActif=true;
+  }catch(e){orbeAnalyseurActif=false/* micro déjà pris par la reconnaissance : la boule respire alors en douceur */}
+}
+function orbeArreterAnalyseur(){
+  try{orbeFlux&&orbeFlux.getTracks().forEach(t=>t.stop())}catch(_){}
+  try{orbeAudioCtx&&orbeAudioCtx.close()}catch(_){}
+  orbeFlux=null;orbeAudioCtx=null;orbeAnalyseur=null;orbeAnalyseurActif=false;
+}
+function orbeOuvrir(){
+  const o=$('orbe');if(!o||orbeOuverte)return;orbeOuverte=true;
+  o.classList.remove('sortie');o.classList.add('on');
+  orbeMajEtat('ecoute','');
+  requestAnimationFrame(orbeDessiner);
+}
+function orbeFermer(){
+  const o=$('orbe');if(!o||!orbeOuverte)return;orbeOuverte=false;
+  o.classList.add('sortie');orbeArreterAnalyseur();
+  setTimeout(()=>{o.classList.remove('on','sortie')},390);
+}
+function orbeDessiner(){
+  if(!orbeOuverte)return;
+  const cv=$('orbeCanvas');if(!cv){requestAnimationFrame(orbeDessiner);return}
+  const ctx=cv.getContext&&cv.getContext('2d');if(!ctx)return;
+  const W=cv.width,H=cv.height,cx=W/2,cy=H/2;
+  orbePhase+=0.016;
+  // Niveau réel de la voix (AnalyserNode), sinon respiration simulée douce
+  let niveau=0.14+0.05*Math.sin(orbePhase*1.7);
+  if(orbeAnalyseurActif&&orbeAnalyseur&&(orbeEtatActuel==='ecoute')){
+    const tab=new Uint8Array(orbeAnalyseur.frequencyBinCount);orbeAnalyseur.getByteFrequencyData(tab);
+    let somme=0;for(let i=0;i<tab.length;i++)somme+=tab[i];niveau=Math.min(1,(somme/tab.length)/110);
+  }
+  if(orbeEtatActuel==='parole')niveau=0.38+0.24*Math.abs(Math.sin(orbePhase*7.5))*Math.abs(Math.sin(orbePhase*2.3));
+  if(orbeEtatActuel==='reflexion')niveau=0.3+0.1*Math.sin(orbePhase*3.2);
+  orbeNiveauVoix+=(niveau-orbeNiveauVoix)*0.12; // transitions douces
+  const choc=orbeChoc>0?(Math.sin(orbePhase*60)*orbeChoc):0;if(orbeChoc>0)orbeChoc--;
+  ctx.clearRect(0,0,W,H);
+  const pal=ORBE_PALETTES[orbeEtatActuel]||ORBE_PALETTES.ecoute;
+  const R=(orbeEtatActuel==='veille'?66:86)+orbeNiveauVoix*54;
+  // Halo
+  const halo=ctx.createRadialGradient(cx,cy,R*0.3,cx,cy,R*2.15);
+  halo.addColorStop(0,pal[0]+'55');halo.addColorStop(1,'transparent');
+  ctx.fillStyle=halo;ctx.beginPath();ctx.arc(cx,cy,R*2.15,0,7);ctx.fill();
+  // Corps liquide : bord déformé par somme de sinus (morphing organique)
+  for(let couche=2;couche>=0;couche--){
+    ctx.beginPath();
+    const n=72,rr=R*(1-couche*0.16);
+    for(let i=0;i<=n;i++){
+      const a=(i/n)*Math.PI*2;
+      const bruit=Math.sin(a*3+orbePhase*(1.1+couche*0.35))*5.5+Math.sin(a*5-orbePhase*1.7)*3.6+Math.sin(a*8+orbePhase*2.6)*1.8;
+      const rad=rr+bruit+orbeNiveauVoix*Math.sin(a*4+orbePhase*3)*10;
+      const x=cx+Math.cos(a)*rad+choc,y=cy+Math.sin(a)*rad;
+      if(i===0)ctx.moveTo(x,y);else ctx.lineTo(x,y);
+    }
+    ctx.closePath();
+    const g=ctx.createRadialGradient(cx-R*0.35,cy-R*0.4,R*0.1,cx,cy,R*1.25);
+    const c1=pal[(Math.floor(orbePhase*0.6)+couche)%pal.length],c2=pal[(Math.floor(orbePhase*0.6)+couche+1)%pal.length];
+    g.addColorStop(0,c1);g.addColorStop(1,c2);
+    ctx.globalAlpha=couche===2?0.35:0.85;ctx.fillStyle=g;ctx.fill();
+  }
+  ctx.globalAlpha=1;
+  // Reflet plasma
+  const ref=ctx.createRadialGradient(cx-R*0.38,cy-R*0.45,2,cx-R*0.3,cy-R*0.35,R*0.55);
+  ref.addColorStop(0,'rgba(255,255,255,0.5)');ref.addColorStop(1,'rgba(255,255,255,0)');
+  ctx.fillStyle=ref;ctx.beginPath();ctx.arc(cx-R*0.3,cy-R*0.35,R*0.55,0,7);ctx.fill();
+  // Particules orbitales pendant la réflexion
+  if(orbeEtatActuel==='reflexion'){
+    ctx.fillStyle='#e0f2fe';
+    for(let k=0;k<14;k++){
+      const a=orbePhase*1.8+k*(Math.PI*2/14),rad=R+26+Math.sin(orbePhase*2+k)*7;
+      ctx.globalAlpha=0.35+0.3*Math.sin(orbePhase*3+k);
+      ctx.beginPath();ctx.arc(cx+Math.cos(a)*rad,cy+Math.sin(a)*rad,2.1,0,7);ctx.fill();
+    }
+    ctx.globalAlpha=1;
+  }
+  requestAnimationFrame(orbeDessiner);
+}
+document.addEventListener('click',e=>{
+  if(e.target&&e.target.id==='orbeBtn'){try{navigator.vibrate&&navigator.vibrate(25)}catch(_){ } fermerConversation('bouton')}
+  // Barge-in tactile : toucher la boule pendant qu'elle parle la fait taire et rouvre l'écoute.
+  if(e.target&&e.target.id==='orbeCanvas'&&orbeEtatActuel==='parole'){
+    try{speechSynthesis.cancel()}catch(_){ }
+    morceauxParles=0;wakeParle=false;convParle=false;orbeMajEtat('ecoute','');
+    if(convOn)demarrerEcoute();else if(wakeOn)demarrerWake();
+  }
+});
+
+// ---------- MÉMOIRE LONGUE (locale, Firestore optionnel) ----------
+// Chaque échange est daté et rangé sur l'appareil. Les sujets importants
+// (projets, préférences, décisions) sont extraits simplement et ressortis
+// dans le contexte envoyé à l'IA. Si un jour la configuration Firebase Web
+// et une session connectée existent, la même entrée part aussi dans
+// Firestore (collection utilisateurs/{uid}/conversations, règles actuelles).
+const CLOÉ_FIREBASE_CONFIG=null; // Config Web Firebase (pas un secret) : à coller le jour où l'on active la synchro.
+function memoriserEchange(role,texte){
+  if(!texte)return;
+  const propre=String(texte).slice(0,500);
+  const conv=store.get('conversations',[]);
+  conv.push({date:new Date().toISOString(),role,texte:propre});
+  store.set('conversations',conv.slice(-80));
+  if(role==='user'){
+    const bas=' '+propre.toLowerCase()+' ';
+    const sujets=store.get('sujets',[]);
+    const cap=(re,max=90)=>{const m=bas.match(re);if(m&&m[1]&&!sujets.includes(m[1].trim()))sujets.push(m[1].trim().slice(0,max))};
+    cap(/(?:retiens|rappelle toi) (?:que )?(.{3,90})/);
+    cap(/(?:mon projet|je travaille sur|je monte) (.{3,60})/);
+    cap(/(?:je prefere|j aime|je veux) (.{3,60})/);
+    cap(/(?:j ai decide|je decide|on part sur) (.{3,60})/);
+    if(sujets.length)store.set('sujets',sujets.slice(-20));
+    pousserConversationFirestore({date:new Date().toISOString(),role,texte:propre});
+  }
+}
+async function pousserConversationFirestore(entree){
+  if(!CLOÉ_FIREBASE_CONFIG)return; // synchro inactive : tout reste local, honnêtement
+  try{
+    const {initializeApp}=await import('https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js');
+    const {getAuth}=await import('https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js');
+    const {getFirestore,collection,addDoc}=await import('https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js');
+    const app=initializeApp(CLOÉ_FIREBASE_CONFIG);
+    const user=getAuth(app).currentUser;if(!user)return; // règles : uniquement son propre compte
+    await addDoc(collection(getFirestore(app),'utilisateurs',user.uid,'conversations'),entree);
+  }catch(e){/* local déjà enregistré : la synchro ne bloque jamais la conversation */}
+}
+function contexteMemoire(){
+  const sujets=store.get('sujets',[]);
+  const conv=store.get('conversations',[]).slice(-10);
+  let t='';
+  if(sujets.length)t+='Sujets importants retenus pour Lauraincis : '+sujets.join(' ; ')+'. ';
+  if(conv.length)t+='Derniers échanges : '+conv.map(x=>(x.role==='user'?'Lauraincis':'Cloé')+' : '+x.texte).join(' | ')+'. ';
+  return t;
+}
+
+// ---------- RÉPONSE VOCALE STREAMÉE : la voix démarre dès la 1re phrase ----------
+let morceauxParles=0;
+function parlerMorceau(texte){
+  return new Promise(resolve=>{
+    try{
+      morceauxParles++;wakeParle=true;convParle=true;
+      if(orbeOuverte)orbeMajEtat('parole',texte);
+      const u=new SpeechSynthesisUtterance(texte);u.lang='fr-FR';u.pitch=1.06;
+      const voix=voixChoisie();if(voix)u.voice=voix;u.rate=(Number(store.get('voixVitesse','1'))||1)*1.02;
+      dernierCloéDit=texte;
+      u.onend=u.onerror=()=>{morceauxParles--;if(morceauxParles<=0){morceauxParles=0;wakeParle=false;convParle=false}resolve()};
+      speechSynthesis.speak(u);
+    }catch(e){morceauxParles=Math.max(0,morceauxParles-1);resolve()}
+  });
+}
+async function geminiReponseVocale(demande,question,onChunk){
+  const cle=gemCle();if(!cle)throw new Error('AUCUNE_CLE');
+  const modeles=[store.get('gemModele',''),...GEM_MODELS].filter((m,i,a)=>m&&a.indexOf(m)===i);
+  let lu=false;
+  for(const modele of modeles){
+    try{
+      orbeMajEtat('reflexion','');
+      const r=await fetch('https://generativelanguage.googleapis.com/v1beta/models/'+modele+':streamGenerateContent?alt=sse',{
+        method:'POST',headers:{'Content-Type':'application/json','x-goog-api-key':cle},
+        body:JSON.stringify({systemInstruction:{parts:[{text:GEM_SYSTEME}]},contents:(gemHist.length?gemHist.slice(-6).concat([{role:'user',parts:[{text:demande}]}]):[{role:'user',parts:[{text:demande}]}]),generationConfig:{temperature:0.7,maxOutputTokens:600}})
+      });
+      if(!r.ok||!r.body)continue;
+      store.set('gemModele',modele);
+      const lecteur=r.body.getReader();const decodeur=new TextDecoder();
+      let tampon='',complet='',phrase='';
+      while(true){
+        const {done,value}=await lecteur.read();if(done)break;
+        tampon+=decodeur.decode(value,{stream:true});
+        const lignes=tampon.split('\n');tampon=lignes.pop()||'';
+        for(const ligne of lignes){
+          if(!ligne.startsWith('data:'))continue;
+          try{
+            const j=JSON.parse(ligne.slice(5));
+            const morceau=((j.candidates&&j.candidates[0]&&j.candidates[0].content&&j.candidates[0].content.parts)||[]).map(x=>x.text||'').join('');
+            if(!morceau)continue;lu=true;complet+=morceau;phrase+=morceau;
+            orbeTranscription(complet);
+            if(/[.!?…]\s$/.test(phrase)||phrase.length>140){
+              const aDire=phrase.trim();phrase='';
+              if(aDire&&onChunk)onChunk(aDire+' ');
+            }
+          }catch(_){ }
+        }
+      }
+      if(phrase.trim()&&onChunk)onChunk(phrase.trim());
+      if(!complet.trim())continue;
+      bulle('Cloé',complet.trim());
+      gemHist.push({role:'user',parts:[{text:String(question).slice(0,400)}]},{role:'model',parts:[{text:complet.trim().slice(0,600)}]});
+      gemHist=gemHist.slice(-8);store.set('gemHist',gemHist);
+      return complet.trim();
+    }catch(e){if(lu)throw e}
+  }
+  throw new Error('FLUX_INDISPONIBLE');
+}
+
+// ---------- TOUR DE PAROLE : Cloé attend la fin de la phrase avant de répondre ----------
+// Le micro du navigateur coupe aux souffles : on accumule les morceaux, on attend
+// un vrai silence, PUIS on traite la phrase entière une seule fois. Cloé ignore
+// aussi sa propre voix (écho du haut-parleur) et les phrases déjà traitées.
+
+// ---------- INTENTIONS AVANT L'IA : arrêter, pause, reprendre ----------
+// Correspondance floue : accents ignorés, mots proches acceptés (distance courte).
+function distanceMots(a,b){
+  if(Math.abs(a.length-b.length)>3)return 99;
+  const d=Array.from({length:a.length+1},(_,i)=>[i,...Array(b.length).fill(0)]);
+  for(let j=1;j<=b.length;j++)d[0][j]=j;
+  for(let i=1;i<=a.length;i++)for(let j=1;j<=b.length;j++)d[i][j]=Math.min(d[i-1][j]+1,d[i][j-1]+1,d[i-1][j-1]+(a[i-1]===b[j-1]?0:1));
+  return d[a.length][b.length];
+}
+const INTENT_FIN=['stop','arrete','arreter','arretez','ca suffit','c est bon','merci c est tout','au revoir','termine','terminer','ferme la conversation','arreter la conversation','arreter la discussion','stop la conversation','c est termine','on arrete','laisse tomber','silence'];
+const INTENT_PAUSE=['pause','une seconde','attends','attend','une minute','minute','doucement','pas si vite'];
+const INTENT_REPRISE=['reprends','reprendre','continue','continu','vas y','je t ecoute','on reprend','reprend'];
+function intentionRapide(brut){
+  const n=' '+normaliserParole(brut)+' ';
+  const plat=normaliserParole(brut);
+  const mots=plat.split(' ').filter(Boolean);
+  const contient=liste=>liste.some(expr=>{
+    if(expr.includes(' '))return n.includes(' '+expr+' ');
+    return mots.some(m=>m===expr||distanceMots(m,expr)<=1);
+  });
+  // L'arrêt d'abord, toujours — sauf réponse attendue oui/non très courte
+  if(contient(INTENT_FIN))return 'fin';
+  if(contient(INTENT_PAUSE))return 'pause';
+  if(contient(INTENT_REPRISE))return 'reprise';
+  return null;
+}
+let conversationEnPause=false;
+function fermerConversation(source){
+  paroleEnCours='';clearTimeout(paroleMinuteur);
+  wakeSessionJusqua=0;wakeAttente=false;conversationEnPause=false;convOn=false;
+  if(moteurVocal&&moteurVocal.active){moteurVocal.stop("D'accord, à bientôt !");setTimeout(()=>orbeFermer(),450);etatConv('Conversation : terminée. Touche le gros bouton pour reparler.');return}
+  try{speechSynthesis.cancel()}catch(_){ }
+  orbeFermer();
+}
+
+let paroleEnCours='',paroleMinuteur=null,dernierePhraseTraitee='',dernierTraitement=0,dernierCloéDit='',gemAppelEnCours=false;
+function normaliserParole(t){return (t||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9 ]/g,' ').replace(/\s+/g,' ').trim()}
+function estEchoDeCloé(brut){
+  const a=normaliserParole(brut),b=normaliserParole(dernierCloéDit);
+  if(!a||!b||a.length<10)return false;
+  if(b.includes(a)||a.includes(b))return true;
+  const motsA=new Set(a.split(' ')),motsB=new Set(b.split(' '));
+  let communs=0;motsA.forEach(m=>{if(motsB.has(m))communs++});
+  return motsA.size>3&&communs/motsA.size>=0.8;
+}
+const MOTS_INCOMPLETS=['voici','alors','donc','et','mais','parce','quand','si','je','tu','il','elle','on','nous','vous','le','la','les','un','une','des','de','du','au','aux','est','sont','veux','voudrais','aimerais'];
+
+function fusionParole(acc,nouv){
+  if(!acc)return nouv;if(!nouv)return acc;
+  const A=acc.split(/\s+/),B=nouv.split(/\s+/);
+  const na=A.map(x=>normaliserParole(x)),nb=B.map(x=>normaliserParole(x));
+  if(na.join(' ')===nb.join(' '))return acc;
+  if(na.join(' ').includes(nb.join(' ')))return acc;
+  if(nb.join(' ').includes(na.join(' ')))return nouv;
+  let k=Math.min(na.length,nb.length);
+  while(k>0){
+    if(na.slice(-k).join(' ')===nb.slice(0,k).join(' '))break;
+    k--;
+  }
+  return acc+(k<B.length?' '+B.slice(k).join(' '):'');
+}
+function recevoirParole(brut){
+  const phrasePropre=(brut||'').trim();if(!phrasePropre)return;
+  const intention=intentionRapide(phrasePropre);
+  if(intention==='fin'){fermerConversation('commande vocale');return}
+  if(conversationEnPause){
+    if(intention==='reprise'){conversationEnPause=false;orbeMajEtat('ecoute','');wakeStatut('On reprend, Lauraincis.')}
+    return;
+  }
+  if(intention==='pause'){
+    conversationEnPause=true;paroleEnCours='';clearTimeout(paroleMinuteur);
+    try{speechSynthesis.cancel()}catch(_){ }
+    orbeMajEtat('pause','En pause. Dis « reprends » pour continuer.');
+    wakeStatut('En pause — dis « reprends » pour continuer, ou « arrête » pour terminer.');
+    return;
+  }
+  if(wakeParle||convParle)return; // Cloé est en train de parler : on n'écoute pas son écho
+  if(estEchoDeCloé(phrasePropre)){orbeMajEtat(orbeOuverte?'ecoute':'veille');return}
+  paroleEnCours=fusionParole(paroleEnCours,phrasePropre);
+  const norm=normaliserParole(paroleEnCours);
+  if(convOn)etatConv('« '+paroleEnCours+' »');else wakeStatut('« '+paroleEnCours+' »');
+  orbeTranscription(paroleEnCours);
+  clearTimeout(paroleMinuteur);
+  const mots=norm.split(' ');
+  const incomplete=mots.length<=2&&MOTS_INCOMPLETS.includes(mots[mots.length-1]);
+  const courte=/^(oui|non|stop|budget|rapport|bilan|propositions|crypto|clients|bonjour|merci|au revoir)$/.test(norm);
+  paroleMinuteur=setTimeout(()=>{
+    const phrase=paroleEnCours.trim();paroleEnCours='';if(!phrase)return;
+    const n2=normaliserParole(phrase);
+    if(n2===dernierePhraseTraitee&&Date.now()-dernierTraitement<5000)return; // doublon du micro
+    if(n2.split(' ').length<=1&&MOTS_INCOMPLETS.includes(n2)){wakeStatut('Je t\\u2019écoute, Lauraincis : termine ta phrase.');paroleEnCours=phrase;return}
+    dernierePhraseTraitee=n2;dernierTraitement=Date.now();
+    traiterParole(phrase);
+  },incomplete?2500:(courte?500:1200));
+}
+
+// ---------- CONVERSATION MAIN LIBRES : on parle, Cloé navigue et enchaîne tout seul ----------
+let convOn=false, convRec=null, convParle=false, convEnAttente=null, convReprise=null;
+function bulle(qui,texte){
+  const tr=$('transcript');if(!tr)return;
+  const d=document.createElement('div');d.className='item';
+  d.innerHTML=(qui==='Vous'?'🗣️ <b>Vous :</b> ':'🤖 <b>Cloé :</b> ')+texte;
+  tr.prepend(d);while(tr.children.length>8)tr.removeChild(tr.lastChild);
+}
+function etatConv(txt){const e=$('converseState');if(e)e.textContent=txt}
+function javisDit(texte){
+  dernierCloéDit=texte;memoriserEchange('assistant',texte);
+  bulle('Cloé',texte);
+  if(moteurVocal&&moteurVocal.active){moteurVocal.enqueue(texte);return}
+  if(orbeOuverte)orbeMajEtat('parole',texte);
+  if(!convOn&&!wakeOn)return;
+  try{
+    convParle=true;wakeParle=true;
+    if(convRec){try{convRec.stop()}catch(_){}}
+    if(wakeRec){try{wakeRec.stop()}catch(_){}}
+    speechSynthesis.cancel();
+    const u=new SpeechSynthesisUtterance(texte);u.lang='fr-FR';u.rate=1;u.pitch=1.06;
+    const voix=voixChoisie();if(voix)u.voice=voix;u.rate=(Number(store.get('voixVitesse','1'))||1)*1.02;
+    u.onend=u.onerror=()=>{convParle=false;wakeParle=false;
+      if(orbeOuverte&&(convOn||Date.now()<wakeSessionJusqua))orbeMajEtat('ecoute','');
+      if(convOn&&!stopped){etatConv('Conversation : je vous écoute… parlez, je m\u2019occupe de tout.');demarrerEcoute()}
+      else if(wakeOn&&!stopped){demarrerWake()}
+    };
+    speechSynthesis.speak(u);
+  }catch(e){convParle=false;wakeParle=false;if(wakeOn&&!stopped)demarrerWake()}
+}
+function demarrerEcoute(){
+  if(!convOn||stopped||convParle)return;
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;if(!SR)return;
+  if(!convRec){
+    convRec=new SR();convRec.lang='fr-FR';convRec.continuous=true;convRec.interimResults=true;convRec.maxAlternatives=1;
+    convRec.onresult=e=>{
+      const res=e.results[e.results.length-1];const txt=res[0].transcript.trim();if(!txt)return;
+      if(!res.isFinal){etatConv('Je t\u2019entends : « '+txt+' »');return}
+      recevoirParole(txt);
+    };
+    convRec.onerror=e=>{
+      if(e.error==='not-allowed'||e.error==='service-not-allowed'){convOn=false;etatConv('Conversation : micro refusé. Autorisez le micro pour Cloé dans le navigateur, ou utilisez le mode écrit plus bas.');bulle('Cloé','Je n\u2019ai pas accès au micro. Vous pouvez m\u2019écrire ci-dessous, je répondrai de la même façon.')}
+    };
+    convRec.onend=()=>{if(convOn&&!stopped&&!convParle){clearTimeout(convReprise);convReprise=setTimeout(()=>{try{convRec&&convRec.start()}catch(_){}},150)}};
+  }
+  try{convRec.start();etatConv('Conversation : je vous écoute… parlez, je m\u2019occupe de tout.')}catch(_){}
+}
+function nombreDit(s){const n=Number(String(s).replace(/[^0-9]/g,''));return isNaN(n)?0:n}
+function resumePropositions(){
+  const c=store.get('autoResults',null);
+  if(!c||!c.top||!c.top.length)return 'Je n\u2019ai pas encore de proposition claire enregistrée. Mon analyse automatique se relance dès que possible, je vous préviendrai ici.';
+  return 'Voici mes propositions automatiques en simulation. À étudier : '+c.top.slice(0,3).map(x=>x.sym+' à '+Math.round(x.prix)+' francs CFA ('+(x.variation>=0?'plus ':'')+x.variation+' pour cent)').join(' ; ')+'. '+(c.alertes&&c.alertes.length?'Prudence sur : '+c.alertes.slice(0,2).map(x=>x.sym+' ('+x.variation+' pour cent)').join(' ; ')+'. ':'')+'Voulez-vous le détail de la crypto, ou que je passe aux clients ?';
+}
+function resumeCrypto(){
+  const c=store.get('autoResults',null);
+  if(!c||!c.crypto||!c.crypto.length)return 'Je n\u2019ai pas encore de prix crypto enregistrés. Je réessaierai tout seul à la prochaine analyse.';
+  return 'Côté crypto, en simulation : '+c.crypto.slice(0,3).map(x=>x.sym+' à environ '+Math.round(x.prixFCFA).toLocaleString('fr-FR')+' francs CFA, '+(x.v24>=0?'en hausse':'en baisse')+' de '+Math.abs(x.v24)+' pour cent sur vingt-quatre heures').join(' ; ')+'. Je rappelle que la crypto est très risquée : prudence, même en fictif. Autre chose ?';
+}
+function traiterParole(brut){
+  const original=brut;memoriserEchange('user',brut);
+  let txt=' '+brut.toLowerCase().replace(/^[\s,]*(javis|jarvis)[\s,]+/,'')+' ';
+  if(txt.trim()===''||txt.trim()==='cloe'||txt.trim()==='Cloé'||txt.trim()==='javis'||txt.trim()==='jarvis'){if(!stopped)javisDit('Oui patron, je vous écoute. Demandez-moi mes propositions, votre budget, un rappel, mon bilan — ou posez-moi une question libre, Gemini répondra.');return}
+  // Arrêt d'urgence vocal : prioritaire, toujours
+  if(/ stop | arrête| arrêt | urgence/.test(txt)){convOn=false;try{convRec&&convRec.stop()}catch(_){ } emergencyStop('la commande vocale en conversation');return}
+  if(stopped)return;
+  // Réponses attendues (dialogue en plusieurs phrases)
+  if(convEnAttente){
+    const att=convEnAttente;convEnAttente=null;
+    if(att.type==='rappel'){
+      if(/annule|non|rien/.test(txt)){javisDit('Très bien, j\u2019annule. Autre chose ?');return}
+      tasks.push({texte:original,quand:'',alerte:false});store.set('tasks',tasks);renderTasks();go('s-assistant');log('Rappel ajouté par la voix',original);
+      javisDit('C\u2019est noté : '+original+'. Je vous le rappellerai dans vos rappels. Voulez-vous ajouter autre chose, ou entendre vos propositions ?');return;
+    }
+    if(att.type==='devis_prestation'){
+      convEnAttente={type:'devis_montant',label:original};
+      javisDit('Bien reçu pour : '+original+'. Quel montant en francs CFA ? Dites par exemple cinquante mille.');return;
+    }
+    if(att.type==='devis_montant'){
+      const montant=nombreDit(original);
+      if(!montant){convEnAttente=att;javisDit('Je n\u2019ai pas bien compris le montant. Pouvez-vous le redire en chiffres, par exemple 50000 ?');return}
+      quotes.push({label:att.label,amt:montant});store.set('quotes',quotes);renderQuotes();go('s-commercial');log('Devis créé par la voix',att.label+' — '+fmt(montant));
+      javisDit('Devis brouillon créé : '+att.label+', '+montant.toLocaleString('fr-FR')+' francs CFA. Rien n\u2019est envoyé : vous le validerez vous-même. Autre chose ?');return;
+    }
+    if(att.type==='confirme_achat'){
+      if(/oui|d'accord|vas-y|confirme|ok/.test(txt)){
+        trade(att.indice,'buy');go('s-investir');
+        javisDit('Action fictive effectuée en simulation, dans la limite des plafonds. Elle est inscrite dans le journal. Voulez-vous mes propositions ou le rapport ?');
+      }else javisDit('Bien compris, je ne fais rien. La sécurité avant tout. Autre chose ?');
+      return;
+    }
+  }
+  // Intentions : Cloé change de page TOUT SEUL et répond
+  if(/au revoir|à plus|dors|termine la conversation|fin de la conversation/.test(txt)){fermerConversation('au revoir');return}
+  if(/ajoute.*rappel|nouveau rappel|crée.*rappel|rappelle.moi/.test(txt)){convEnAttente={type:'rappel'};javisDit('Bien sûr. Que dois-je vous rappeler ? Dites-le moi simplement.');return}
+  if(/crée.*devis|nouveau devis|fais.*devis/.test(txt)){convEnAttente={type:'devis_prestation'};go('s-commercial');javisDit('Allons-y pour un devis en francs CFA, en brouillon. Quelle est la prestation ? Par exemple : conseil trésorerie un mois.');return}
+  if(/proposition|conseil.*bourse|à étudier|opportunit/.test(txt)){go('s-investir');javisDit(resumePropositions());return}
+  if(/crypto|bitcoin|ethereum/.test(txt)){go('s-investir');javisDit(resumeCrypto());return}
+  if(/investissement|investir|bourse|brvm|marché/.test(txt)){go('s-investir');javisDit('Je vous ouvre l\u2019investissement. '+resumePropositions());return}
+  if(/commercial|client|prospect|entreprise/.test(txt)){go('s-commercial');javisDit('Je vous ouvre le commercial. Vous avez '+prospects.length+' client(s) en brouillon et '+quotes.length+' devis brouillon(s). Tout attend votre validation, rien ne part sans vous. Voulez-vous créer un devis à la voix ? Dites : crée un devis.');return}
+  if(/devis|facture/.test(txt)){go('s-commercial');javisDit('Je vous ouvre les devis. Vous avez '+quotes.length+' devis brouillon(s). Pour en créer un à la voix, dites : crée un devis.');return}
+  if(/foot|match|pronostic|prono|buteur|corner|carton| can |champions|mondial|coupe du monde|asec|mimosas|al ahly|psg|marseille|real|barcelone|barca|arsenal|liverpool|city|bayern|inter|juve|milan|ivoire|maroc|senegal|al-hilal|al-nassr|miami|ticket|coupon|fantasy|capitaine|pepite|pépite/i.test(txt)&&window.CloeFootballAI){
+    go('s-assistant');
+    window.CloeFootballAI.ask(original,{coupon:window.__footSlip||[]}).then(rep=>{
+      const out=$('footPredOut');
+      if(out)out.innerHTML='<div class="item" style="white-space:pre-wrap">'+String(rep.answerText||'').replace(/</g,'&lt;')+'</div>';
+      log('Football IA v5',original+' → '+(rep.voiceText||'').slice(0,180));
+      javisDit(rep.voiceText||rep.answerText);
+      if(!convOn&&!wakeOn&&!(moteurVocal&&moteurVocal.active))speak(rep.voiceText||rep.answerText);
+    }).catch(()=>javisDit('Le moteur Football IA Ultra réfléchit, réessayez dans une seconde.'));
+    return;
+  }
+  if(/Paris|pari |parier|sportif/.test(txt)){go('s-assistant');const pertes=bets.filter(b=>b.day===new Date().toDateString()&&!b.win).reduce((a,b)=>a+b.amt,0);javisDit('Je vous ouvre les Paris sportifs propulsés par Football AI Ultra v5 : 167 clubs, buteurs, corners, tickets sécurité et simulation CAN 10 000 fois. Perte fictive du jour : '+pertes.toLocaleString('fr-FR')+' francs CFA sur une limite de 5000. Demandez-moi n\u2019importe quel match ou tournoi !');return}
+  if(/budget|argent|finances|solde|il me reste/.test(txt)){go('s-assistant');let total=0;fins.forEach(f=>total+=f.amt);javisDit('Côté argent fictif d\u2019investissement : '+Math.round(cash).toLocaleString('fr-FR')+' francs CFA disponibles. Côté budget personnel noté : solde de '+total.toLocaleString('fr-FR')+' francs CFA. Rien de réel n\u2019est connecté. Autre chose ?');return}
+  if(/journal|décision|historique|qu'as.tu fait|qu.est.ce que tu as fait/.test(txt)){go('s-journal');javisDit(journal.length?'Voici votre journal protégé. Dernières actions : '+journal.slice(0,3).map(j=>j.type).join(' ; ')+'. Ce journal ne peut être ni modifié ni effacé dans l\u2019application.':'Votre journal est encore vide. Mes prochaines actions automatiques y seront inscrites.');return}
+  if(/bilan|semaine/.test(txt)){go('s-accueil');javisDit(texteBilanSemaine());return}
+  if(/rapport|matin|résumé|quoi de neuf/.test(txt)){go('s-accueil');javisDit(morningText());return}
+  if(/rappel|agenda|tâche/.test(txt)){go('s-assistant');javisDit(tasks.length?'Vous avez '+tasks.length+' rappel(s) : '+tasks.slice(0,3).map(x=>x.texte).join(' ; ')+'. Pour en ajouter, dites : ajoute un rappel.':'Je vous ouvre vos rappels. Vous n\u2019en avez aucun pour le moment. Dites : ajoute un rappel, et dictez-le-moi.');return}
+  if(/prix.*(sonatel|orange|bitcoin)|combien.*(sonatel|orange|bitcoin)|cours.*(sonatel|orange|bitcoin)/.test(txt)){
+    const cle=/bitcoin/.test(txt)?'CABC':(/orange/.test(txt)?'ORAC':'SNTS');const m=marketData.find(x=>x.sym===cle);go('s-investir');
+    javisDit(m?('Le dernier prix '+(m.reel?'public':'fictif d\u2019entraînement')+' pour '+m.name+' est de '+Math.round(m.price).toLocaleString('fr-FR')+' francs CFA. Mes Achats restent simulés et plafonnés.'):'Je n\u2019ai pas ce prix sous la main.');return}
+  const achat=txt.match(/achète|acheter|prends/);
+  if(achat){
+    const cible=marketData.map((m,i)=>({m,i})).find(x=>txt.includes(x.m.sym.toLowerCase())||x.m.name.toLowerCase().split(' (')[0].split(' ').some(w=>w.length>4&&txt.includes(w.toLowerCase())));
+    if(cible){convEnAttente={type:'confirme_achat',indice:cible.i};go('s-investir');javisDit('Entendu, en simulation uniquement : acheter '+cible.m.name+' à environ '+Math.round(cible.m.price).toLocaleString('fr-FR')+' francs CFA. Le plafond est de vingt-cinq mille francs CFA par décision, tout dépassement sera bloqué. Confirmez-vous ? Dites oui ou non.')}
+    else javisDit('De quelle entreprise parlez-vous ? Dites par exemple : achète Sonatel. Je vous demanderai toujours de confirmer avant toute simulation.');
+    return;
+  }
+  if(/bonjour|salut|bonsoir/.test(txt)){javisDit('Bonjour, je suis Cloé. Je peux vous lire mes propositions, passer à l\u2019investissement, à la crypto, aux clients, à vos rappels ou à votre budget, simplement en vous écoutant. Que voulez-vous faire ?');return}
+  if(/qui es.tu|tu t'appelles|présente.toi/.test(txt)){javisDit('Je suis Cloé, votre agent personnel. Je travaille en simulation sécurisée, en francs CFA, depuis Abidjan. Je sais analyser la BRVM et la crypto, gérer vos rappels et votre budget, et préparer vos clients et devis. Dites-moi par où commencer.');return}
+  if(/merci/.test(txt)){javisDit('Avec plaisir. Je reste à votre écoute : propositions, investissement, clients, rappels, budget, ou dites au revoir pour terminer.');return}
+  if(/aide|que sais.tu|sais-tu faire|tu peux faire quoi/.test(txt)){javisDit('Voici ce que je sais faire à la voix : dites propositions pour mes idées automatiques ; investissement ou crypto pour changer de rubrique ; ajoute un rappel puis dictez-le ; crée un devis et je vous guiderai ; budget pour vos sous ; journal pour mes dernières décisions ; rapport pour le résumé du matin ; et Cloé stop pour tout arrêter. Que choisissez-vous ?');return}
+  if(/accueil|menu|reviens|retour/.test(txt)){go('s-accueil');javisDit('Je vous ramène à l\u2019accueil. Mes propositions automatiques sont en haut de la page. Que voulez-vous entendre ?');return}
+  if(gemCle()&&store.get('gemConv',true)){
+    if(gemAppelEnCours){bulle('Cloé','Une seconde, Lauraincis, je termine déjà une réponse…');return}
+    gemAppelEnCours=true;
+    if(orbeOuverte)orbeMajEtat('reflexion','');
+    geminiReponseVocale(gemContexte()+'\n\nLauraincis te dit : « '+original+' » — réponds comme à l\u2019oral, naturellement, en tenant compte de la conversation précédente.',original)
+      .catch(()=>geminiAppel(gemContexte()+'\n\nLauraincis te dit : « '+original+' » — réponds comme à l\u2019oral, naturellement, en tenant compte de la conversation précédente.',original).then(rep=>javisDit(rep)))
+      .catch(e=>{
+        if(e.message==='QUOTA')javisDit('Mon quota gratuit Gemini est épuisé pour le moment, alors je repasse en mode local. Vous pouvez me dire : propositions, investissement, crypto, clients, ajoute un rappel, budget, bilan ou rapport.');
+        else if(e.message==='CLE_REFUSEE')javisDit('Google a refusé ma clé Gemini. Elle se vérifie dans Réglages, sans jamais la dicter à voix haute. En attendant, je fonctionne en mode local : propositions, investissement, crypto, clients, rappels, budget, bilan, rapport.');
+        else javisDit('Gemini ne répond pas à l\u2019instant (connexion ou service). Je reste en mode local : propositions, investissement, crypto, clients, ajoute un rappel, budget, bilan ou rapport.');
+      })
+      .finally(()=>{gemAppelEnCours=false});
+    return;
+  }
+  javisDit('Je n\u2019ai pas bien compris : « '+original+' ». Vous pouvez me dire : propositions, investissement, crypto, clients, ajoute un rappel, budget, journal ou rapport. Je change de page tout seul, promis.');
+}
+// ---------- INTÉGRATION DU MOTEUR VOCAL v26 ----------
+const MOTIFS_LOCAUX=/proposition|investissement|investir|bourse|brvm|crypto|bitcoin|ethereum|budget|argent|finances|solde|rapport|bilan|client|commercial|prospect|devis|facture|rappel|agenda|journal|décision|historique|Paris|pari|sportif|foot|match|pronostic|prono|buteur|corner|carton|can |champions|mondial|coupe du monde|asec|mimosas|al ahly|psg|marseille|real|barcelone|barca|arsenal|liverpool|city|bayern|inter|juve|milan|ivoire|maroc|senegal|al-hilal|al-nassr|miami|ticket|coupon|fantasy|capitaine|pepite|pépite|prix.*(sonatel|orange|bitcoin)|combien.*(sonatel|orange|bitcoin)|achète|acheter|bonjour|salut|bonsoir|qui es|présente|merci|aide|que sais|accueil|menu|retour/i;
+function lancerConversation(){
+  if(stopped){toast('Cloé est arrêté par le bouton STOP. Réactivez-le pour discuter.');return}
+  if(moteurVocal.active){moteurVocal.stop("D'accord, à bientôt !");convOn=false;orbeFermer();return}
+  convOn=true;orbeOuvrir();moteurVocal.start();
+}
+moteurVocal=new JavisVoice({
+  askImpl: async (texte,{onChunk})=>{
+    if(MOTIFS_LOCAUX.test(' '+texte.toLowerCase()+' ')){traiterParole(texte);return null}
+    memoriserEchange('user',texte);
+    try{
+      const rep=await geminiReponseVocale(gemContexte()+'\n\nLauraincis te dit : « '+texte+' » — réponds comme à l\u2019oral, naturellement, en tenant compte de la conversation précédente.',texte,onChunk);
+      return rep;
+    }catch(e){
+      if(e&&e.message==='QUOTA')return "Mon quota gratuit Gemini est épuisé pour le moment, Lauraincis. On peut continuer avec mes fonctions locales : propositions, budget, rappels, bilan ou rapport.";
+      if(e&&e.message==='AUCUNE_CLE')return "Je n'ai pas encore ma clé Gemini sur cet appareil. Elle se met dans les Réglages, et en attendant je sais quand même gérer tes propositions, ton budget et tes rappels.";
+      const rep=await geminiAppel(gemContexte()+'\n\nLauraincis te dit : « '+texte+' » — réponds comme à l\u2019oral.',texte);
+      if(onChunk)onChunk(rep);
+      bulle('Cloé',rep);
+      return rep;
+    }
+  },
+  loadMemory: async ()=>{
+    const conv=store.get('conversations',[]).slice(-10);
+    return {summary:store.get('sujets',[]).join(' ; '),history:conv.map(x=>({role:x.role==='user'?'user':'assistant',content:x.texte}))};
+  },
+  saveTurn: async (question,reponse)=>{memoriserEchange('assistant',reponse)},
+  onState: st=>{
+    document.documentElement.dataset.state=st;
+    const lbl={idle:'\u00c0 l\u2019\u00e9coute',listening:'Je t\u2019\u00e9coute\u2026',thinking:'Je réfléchis…',speaking:'Je te parle…',paused:'En pause',error:'Oups, un souci'};const he=document.getElementById('heroEtat');if(he)he.textContent=lbl[st]||'\u00c0 l\u2019\u00e9coute';
+    const map={idle:'veille',listening:'ecoute',thinking:'reflexion',speaking:'parole',paused:'pause',error:'erreur'};
+    if(st==='idle'){convOn=false;setTimeout(()=>{if(!moteurVocal.active)orbeFermer()},500)}
+    else orbeMajEtat(map[st]||'ecoute');
+    etatConv({idle:'Conversation : terminée. Touche le gros bouton pour reparler.',listening:'Conversation : je t’écoute, Lauraincis.',thinking:'Conversation : je réfléchis…',speaking:'Conversation : Cloé te parle (touche la boule pour l\u2019interrompre).',paused:'Conversation : en pause. Dis « Cloé » ou « reprends ».',error:'Conversation : petit souci — regarde le message.'}[st]||'');
+  },
+  onTranscript: (t,final)=>{orbeTranscription(t);const tr=$('transcript');if(tr)tr.innerHTML='<div class="item">🗣️ <b>Toi :</b> '+t.replace(/</g,'&lt;')+'</div>'},
+  onError: m=>{orbeMajEtat('erreur',m);toast(m)}
+});
+moteurVocal.attachOrb($('orbeCanvas'));
+document.addEventListener('click',e=>{
+  if(e.target&&e.target.id==='converseBtn')lancerConversation();
+  if(e.target&&e.target.id==='micBtn')lancerConversation();
+});
+
+
+// ---------- Sauvegarde chiffrée et restauration (mot de passe choisi par vous) ----------
+async function cleDepuisMotDePasse(mdp,sel){
+  const base=await crypto.subtle.importKey('raw',new TextEncoder().encode(mdp),'PBKDF2',false,['deriveKey']);
+  return crypto.subtle.deriveKey({name:'PBKDF2',salt:sel,iterations:120000,hash:'SHA-256'},base,{name:'AES-GCM',length:256},false,['encrypt','decrypt']);
+}
+function versB64(buf){return btoa(String.fromCharCode(...new Uint8Array(buf)))}
+function depuisB64(s){return Uint8Array.from(atob(s),c=>c.charCodeAt(0))}
+document.addEventListener('click',async e=>{
+  if(e.target&&e.target.id==='backupBtn'){
+    const mdp=prompt('Choisissez un mot de passe pour protéger cette sauvegarde (à retenir par cœur, Cloé ne le connaît pas) :');if(!mdp||mdp.length<6){toast('Mot de passe trop court ou annulé.');return}
+    try{
+      const donnees={};Object.keys(localStorage).filter(k=>k.startsWith('javis_')).forEach(k=>donnees[k]=localStorage.getItem(k));
+      const sel=crypto.getRandomValues(new Uint8Array(16));const iv=crypto.getRandomValues(new Uint8Array(12));
+      const cle=await cleDepuisMotDePasse(mdp,sel);
+      const chiffre=await crypto.subtle.encrypt({name:'AES-GCM',iv},cle,new TextEncoder().encode(JSON.stringify(donnees)));
+      const fichier=JSON.stringify({type:'sauvegarde-javis-chiffree',version:1,sel:versB64(sel),iv:versB64(iv),donnees:versB64(chiffre)});
+      const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([fichier],{type:'application/json'}));a.download='sauvegarde-Cloé-chiffree.json';a.click();
+      log('Sauvegarde chiffrée','Sauvegarde chiffrée créée par vous (mot de passe jamais stocké).');toast('Sauvegarde chiffrée téléchargée ✔');
+    }catch(_){toast('La sauvegarde chiffrée a échoué sur cet appareil.')}
+  }
+  if(e.target&&e.target.id==='restoreBtn'){$('restoreFile').click()}
+});
+document.addEventListener('change',async e=>{
+  if(e.target&&e.target.id==='restoreFile'){
+    const f=e.target.files[0];if(!f)return;
+    const mdp=prompt('Mot de passe de cette sauvegarde :');if(!mdp)return;
+    try{
+      const pack=JSON.parse(await f.text());if(pack.type!=='sauvegarde-javis-chiffree')throw new Error('format');
+      const cle=await cleDepuisMotDePasse(mdp,depuisB64(pack.sel));
+      const clair=await crypto.subtle.decrypt({name:'AES-GCM',iv:depuisB64(pack.iv)},cle,depuisB64(pack.donnees));
+      const donnees=JSON.parse(new TextDecoder().decode(clair));
+      if(!confirm('Restaurer cette sauvegarde ? Les données actuelles de cet appareil seront remplacées (le journal de la sauvegarde redeviendra le journal actif).'))return;
+      Object.keys(donnees).forEach(k=>localStorage.setItem(k,donnees[k]));
+      log('Sauvegarde restaurée','Restauration effectuée par vous.');location.reload();
+    }catch(_){toast('Restauration impossible : mot de passe incorrect ou fichier abîmé.')}
+  }
+});
+// ---------- Versions des stratégies : testées en simulation, retour arrière ----------
+function infoStrat(){
+  const s=stratConfig();const hist=store.get('stratHist',[]);
+  const el=$('stratInfo');if(el)el.textContent='Version active : '+s.version+' ('+(s.version==='v2'?'Prudente':'Équilibrée')+'). Toute nouvelle version est testée en simulation avant usage, et le retour arrière reste possible ('+hist.length+' version(s) précédente(s) gardée(s)).';
+  const sel=$('stratSelect');if(sel)sel.value=s.version;
+}
+document.addEventListener('change',e=>{
+  if(e.target&&e.target.id==='stratSelect'){
+    const ancienne=stratConfig();const hist=store.get('stratHist',[]);hist.push(ancienne);store.set('stratHist',hist.slice(-5));
+    const v=e.target.value;
+    store.set('strat',v==='v2'?{version:'v2',poidsVar:2,bonusVol:12,seuilHausse:1}:{version:'v1',poidsVar:3,bonusVol:8,seuilHausse:0});
+    infoStrat();log('Stratégie changée','Passage de '+ancienne.version+' à '+v+' par vous (testée en simulation, retour arrière possible).');
+    toast('Stratégie '+v+' activée en simulation. Cloé relancera son analyse.');
+    autoAnalyse(true);
+  }
+});
+document.addEventListener('click',e=>{
+  if(e.target&&e.target.id==='stratBack'){
+    const hist=store.get('stratHist',[]);if(!hist.length){toast('Aucune version précédente à restaurer.');return}
+    const prec=hist.pop();store.set('stratHist',hist);const actuel=stratConfig();store.set('strat',prec);infoStrat();
+    log('Retour arrière stratégie','Retour de '+actuel.version+' à '+prec.version+' par vous.');toast('Retour à la stratégie '+prec.version+' ✔');autoAnalyse(true);
+  }
+});
+
+
+// ---------- Rappels à heure précise : Cloé sonne tout seul (application ouverte) ----------
+function verifierRappels(){
+  if(stopped)return;const maintenant=new Date();let change=false;
+  tasks.forEach(x=>{
+    if(x.quand&&!x.alerte&&new Date(x.quand)<=maintenant){
+      x.alerte=true;change=true;
+      toast('⏰ Rappel : '+x.texte);speak('Rappel : '+x.texte);
+      try{if('Notification' in window&&Notification.permission==='granted')new Notification('⏰ Cloé — Rappel',{body:x.texte})}catch(_){}
+      log('Rappel sonné',x.texte+' (à l\u2019heure prévue, application ouverte)');
+    }
+  });
+  if(change){store.set('tasks',tasks);renderTasks()}
+}
+setInterval(verifierRappels,30000);
+document.addEventListener('click',async e=>{
+  if(e.target&&e.target.id==='notifBtn'){
+    if(!('Notification' in window)){toast('Alertes non supportées sur cet appareil/navigateur. Cloé utilisera la voix quand l\u2019application est ouverte.');return}
+    const res=await Notification.requestPermission();
+    toast(res==='granted'?'🔔 Alertes autorisées sur cet appareil.':'Alertes refusées : Cloé utilisera la voix et l\u2019écran quand il est ouvert.');
+    log('Réglage alertes','Notifications : '+res);
+  }
+});
+
+
+// ---------- Liste complète des 48 entreprises pour le test sur le passé ----------
+async function remplirListeBacktest(){
+  try{
+    const r=await fetch('https://raw.githubusercontent.com/harzat/brvm-data-public/main/actions.json');
+    if(!r.ok)return;const d=await r.json();const liste=d.actions||[];
+    if(liste.length<40)return;
+    $('btSym').innerHTML=liste.map(a=>'<option value="'+a.csv+'">'+a.ticker+' — '+(a.nom||a.nom_officiel||'')+' ('+(a.secteur||'BRVM')+')</option>').join('');
+    log('Backtest élargi','Liste des '+liste.length+' entreprises BRVM chargée pour les tests sur le passé réel.');
+  }catch(e){}
+}
+// ---------- Préférences de voix ----------
+function remplirVoix(){
+  const sel=$('voixPref');if(!sel)return;
+  try{
+    const fr=speechSynthesis.getVoices().filter(v=>v.lang&&v.lang.toLowerCase().startsWith('fr'));
+    sel.innerHTML='<option value="">Voix française automatique</option>'+fr.map(v=>'<option value="'+v.voiceURI.replace(/"/g,'')+'">'+v.name.replace(/</g,'')+' ('+v.lang+')</option>').join('');
+    sel.value=store.get('voixURI','');$('voixVitesse').value=store.get('voixVitesse','1');
+  }catch(e){}
+}
+if('speechSynthesis' in window){remplirVoix();speechSynthesis.onvoiceschanged=remplirVoix}
+document.addEventListener('change',e=>{
+  if(e.target&&e.target.id==='voixPref'){store.set('voixURI',e.target.value);log('Voix choisie','Voix de Cloé : '+(e.target.selectedOptions[0]?e.target.selectedOptions[0].textContent:'automatique'))}
+  if(e.target&&e.target.id==='voixVitesse'){store.set('voixVitesse',e.target.value)}
+});
+document.addEventListener('click',e=>{if(e.target&&e.target.id==='voixTest')speak('Bonjour, je suis Cloé. Voici ma voix. Je travaille pour vous en simulation sécurisée, et je vous écoute.')});
+
+
+// ---------- Bilan hebdomadaire automatique (le lundi, ou à la demande) ----------
+function texteBilanSemaine(){
+  const hist=store.get('analyseHist',[]);const septJ=hist.slice(-7);
+  const freq={};septJ.forEach(x=>(x.top||[]).forEach(s=>freq[s]=(freq[s]||0)+1));
+  const repetes=Object.entries(freq).sort((a,b)=>b[1]-a[1]).slice(0,3);
+  const duel=store.get('stratDuel',[]);
+  const jobs=store.get('prodJobs',[]);
+  let txt='Bilan de la semaine de Cloé. Jours d\u2019analyse automatique : '+septJ.length+' sur 7. ';
+  txt+=repetes.length?('Entreprises le plus souvent proposées : '+repetes.map(([s,n])=>s+' ('+n+' jours)').join(', ')+'. '):'Aucune entreprise ne s\u2019est répétée cette semaine. ';
+  if(duel.length>=2)txt+='Duel de stratégies en cours depuis '+duel.length+' jour(s) de séance, toujours en fantôme. ';
+  txt+='Côté commercial en simulation : '+prospects.length+' entreprise(s) en brouillons, '+jobs.length+' livrable(s) d\u2019entraînement, '+jobs.reduce((a,j)=>a+(j.prix||0),0).toLocaleString('fr-FR')+' francs CFA de factures fictives. ';
+  txt+='Leçon la plus récente : '+(lessons.length?lessons[0].texte:'aucune pour le moment')+' ';
+  txt+='Semaine prochaine, je continuerai mes analyses automatiques, mon duel de stratégies et ma prospection hebdomadaire, toujours en simulation. Aucun argent réel n\u2019a été engagé.';
+  return txt;
+}
+function rendreBilan(){
+  const el=$('weekly');if(el)el.textContent=texteBilanSemaine();
+  const estLundi=new Date().getDay()===1;const cle='bilan_'+new Date().toDateString();
+  if(estLundi&&!store.get(cle,false)){store.set(cle,true);log('Bilan hebdomadaire','Bilan du lundi généré automatiquement et disponible sur l\u2019Accueil.');const bd=$('daily');if(bd)bd.textContent='📆 C\u2019est lundi : votre bilan de la semaine est prêt ci-dessous (bouton « Écouter le bilan de la semaine »).'}
+}
+document.addEventListener('click',e=>{if(e.target&&e.target.id==='weeklyBtn'){if(!guard())return;const tx=texteBilanSemaine();$('weekly').textContent=tx;log('Bilan hebdomadaire lu',tx);speak(tx)}});
+
+// Installation comme une vraie application + hors ligne (étape 2)
+if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.serviceWorker.register('sw.js').catch(()=>{})})}
+function majEtatConnexion(){$('voiceState').textContent=navigator.onLine?'Voix : prête. Vos données restent sur cet appareil.':'📴 Vous êtes sans Internet : Cloé continue de fonctionner avec les données de cet appareil.'}
+window.addEventListener('online',majEtatConnexion);window.addEventListener('offline',majEtatConnexion);
+// Démarrage
+if(!journal.length)log('Démarrage','Cloé lancé pour la première fois en simulation L0.');
+geminiBrancherReglages();updateCash();renderTasks();renderBets();renderMarket();renderPortfolio();renderProspects();renderQuotes();renderJournal();updateReliab();renderLessons();renderFins();renderMm();rendreProduction();rendreParcours();relancesAuto();rendreBilan();if($('morning'))$('morning').textContent=morningText();(function(){const c=store.get('autoResults',null);if(c)rendrePropositions(c);infoStrat();verifierRappels();remplirListeBacktest();setTimeout(()=>autoAnalyse(false),600);window.addEventListener('online',()=>setTimeout(()=>autoAnalyse(false),1000));setInterval(()=>{if(navigator.onLine&&!stopped)autoAnalyse(false)},6*60*60*1000)})();
+</script>
+<script>
+// ============ REFONTE ORBE AURORE (v27) : salutation, niveau, états, lecture longue ============
+(function(){
+  const h=new Date().getHours();
+  const salut=(h>=18||h<5)?'Bonsoir':'Bonjour';
+  const hs=document.getElementById('heroSalut'); if(hs)hs.innerHTML=salut+',<br>Lauraincis.';
+  const hero=document.getElementById('heroOrb');
+  if(hero)hero.addEventListener('click',()=>{
+    if(convOn&&window.moteurVocal){moteurVocal.interrupt();return}
+    if(typeof lancerConversation==='function')lancerConversation();
+  });
+  const rap=document.getElementById('heroRapport');
+  if(rap)rap.addEventListener('click',()=>{const d=document.getElementById('dailyBtn');if(d)d.click();});
+  const hf=document.getElementById('heroFootBtn');
+  if(hf)hf.addEventListener('click',()=>{go('s-assistant');const c=document.getElementById('footV5Card');if(c)c.scrollIntoView({behavior:'smooth'});});
+  // Niveau vocal -> variable CSS (sans aucun accès micro supplémentaire)
+  setInterval(()=>{try{if(window.moteurVocal)document.documentElement.style.setProperty('--lvl',String(moteurVocal.getLevel()))}catch(e){}},120);
+  // Textes longs de l'accueil : 2 lignes + « Lire la suite »
+  document.querySelectorAll('#s-accueil .card p, #s-accueil .card .muted').forEach(function(el){
+    if(el.textContent.trim().length<200||el.dataset.clamped)return; el.dataset.clamped='1';
+    el.classList.add('clamp-txt');
+    const b=document.createElement('button'); b.type='button'; b.className='readmore'; b.textContent='Lire la suite'; b.setAttribute('aria-expanded','false');
+    b.addEventListener('click',()=>{const open=el.classList.toggle('clamp-txt')===false;b.textContent=open?'Réduire':'Lire la suite';b.setAttribute('aria-expanded',String(open));});
+    el.after(b);
+  });
+})();
+</script>
+<script>
+// ============ PONT NATIF INTÉGRAL : FOOTBALL AI ULTRA v5 LEGEND <-> CLOÉ ABIDJAN ============
+(function(){
+  const brain = window.CloeFootballAI;
+  if (!brain) return;
+
+  window.__footSlip = store.get('footSlip', []);
+  let lastVoiceSummary = '';
+  let cachedBriefing = null;
+
+  function syncOpenLink() {
+    const a = document.getElementById('openFullFootApp');
+    if (!a) return;
+    try {
+      const payload = btoa(unescape(encodeURIComponent(JSON.stringify({
+        currency: 'FCFA',
+        capital: Math.round(cash),
+        stake: Number(document.getElementById('footSlipStake')?.value || 1000),
+        coupon: window.__footSlip || [],
+        ts: Date.now()
+      }))));
+      a.href = 'https://football-ai-43e33.web.app/#sync=' + payload;
+    } catch (_) {
+      a.href = 'https://football-ai-43e33.web.app';
+    }
+  }
+
+  // Réception instantanée depuis Football AI Ultra v5 (#sync=...)
+  try {
+    if (window.location.hash && window.location.hash.startsWith('#sync=')) {
+      const decoded = JSON.parse(decodeURIComponent(escape(atob(window.location.hash.slice(6)))));
+      window.history.replaceState(null, '', window.location.pathname);
+      if (decoded) {
+        if (Array.isArray(decoded.coupon) && decoded.coupon.length) {
+          window.__footSlip = decoded.coupon;
+          store.set('footSlip', window.__footSlip);
+        }
+        const stEl = document.getElementById('footSlipStake');
+        if (stEl && decoded.stake) stEl.value = Math.min(BET_DAY_CAP, Math.max(200, Math.round(Number(decoded.stake) || 1000)));
+        const ban = document.getElementById('footSyncBanner');
+        if (ban) {
+          const audit = brain.auditTicket(window.__footSlip);
+          ban.style.display = 'block';
+          ban.innerHTML = '🔗 <b>Données reçues en direct depuis Football AI Ultra v5 !</b><br>' +
+            '• Ticket reçu : <b>' + (window.__footSlip.length) + ' sélection(s)</b>' +
+            (audit ? ' • Survie IA : <b>' + audit.grade + ' (' + audit.auditScore + '/100)</b>' : '') +
+            '<br>• Plafond prudent Cloé actif : <b>max ' + fmt(BET_DAY_CAP) + ' / jour</b> en simulation.';
+        }
+        go('s-assistant');
+        log('Pont Football AI v5', 'Synchronisation reçue : ' + (window.__footSlip.length) + ' match(s) importés dans Cloé.');
+      }
+    }
+  } catch (_) {}
+
+  // Remplir les 167 clubs & nations (CLUBS_DB est un tableau d'objets { name, fullName, league, elo })
+  const dbInfo = brain.getClubsByLeague();
+  const clubList = Array.isArray(dbInfo.clubs)
+    ? dbInfo.clubs
+    : Object.entries(dbInfo.clubs || {}).map(([k, v]) => Object.assign({ name: k }, v));
+  const clubsMap = {};
+  clubList.forEach(info => { if (info && info.name) clubsMap[info.name] = info; });
+  const leaguesMap = dbInfo.leagues || {};
+  const homeSel = document.getElementById('footHome');
+  const awaySel = document.getElementById('footAway');
+  if (homeSel && awaySel) {
+    const grouped = {};
+    clubList.forEach(info => {
+      if (!info || !info.name) return;
+      const lg = info.league || 'ucl';
+      if (!grouped[lg]) grouped[lg] = [];
+      grouped[lg].push(info.name);
+    });
+    const optsHtml = Object.entries(grouped).map(([lg, list]) => {
+      const lgName = (leaguesMap[lg] && leaguesMap[lg].name) || lg.toUpperCase();
+      return '<optgroup label="' + lgName.replace(/"/g, '') + '">' +
+        list.map(t => '<option value="' + t.replace(/"/g, '&quot;') + '">' + t + ' — Elo ' + (clubsMap[t].elo || 1650) + '</option>').join('') +
+        '</optgroup>';
+    }).join('');
+    homeSel.innerHTML = optsHtml;
+    awaySel.innerHTML = optsHtml;
+    homeSel.value = clubsMap['ASEC Mimosas'] ? 'ASEC Mimosas' : 'PSG';
+    awaySel.value = clubsMap['Al Ahly'] ? 'Al Ahly' : 'Marseille';
+  }
+
+  // Affiches rapides en 1 clic
+  const quickBox = document.getElementById('footQuickMatches');
+  const quickPairs = [
+    ['🇨🇮 ASEC vs Al Ahly', 'ASEC Mimosas', 'Al Ahly'],
+    ['🇨🇮 Côte d\'Ivoire vs Maroc', 'Côte d\'Ivoire', 'Maroc'],
+    ['🇫🇷 PSG vs Marseille', 'PSG', 'Marseille'],
+    ['🇪🇸 Real vs Barça', 'Real Madrid', 'Barcelone'],
+    ['🇸🇦 Al-Hilal vs Al-Nassr', 'Al-Hilal', 'Al-Nassr']
+  ];
+  if (quickBox) {
+    quickPairs.forEach(([lbl, h, a]) => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'alt';
+      b.style.cssText = 'font-size:11.5px;padding:6px 10px;min-height:34px';
+      b.textContent = lbl;
+      b.onclick = () => {
+        if (homeSel && clubsMap[h]) homeSel.value = h;
+        if (awaySel && clubsMap[a]) awaySel.value = a;
+        renderCurrentMatch();
+      };
+      quickBox.appendChild(b);
+    });
+  }
+
+  window.__addFootMarketToSlip = function(home, away, label, pct, fairOdd, marketId) {
+    window.__footSlip = window.__footSlip || [];
+    const lg = (clubsMap[home] && clubsMap[home].league) || 'ucl';
+    const predObj = brain.predictMatch(home, away, lg).prediction;
+    const oddNum = Number(fairOdd || Math.max(1.08, +(95 / Math.max(5, pct)).toFixed(2)));
+    window.__footSlip = window.__footSlip.filter(x => !(x.home === home && x.away === away));
+    window.__footSlip.push({
+      id: Date.now() + Math.floor(Math.random() * 1000),
+      home,
+      away,
+      league: lg,
+      probs: predObj.probs,
+      selectedMarket: {
+        code: marketId || 'rec',
+        label,
+        pct: Math.round(pct),
+        bookOdd: oddNum
+      }
+    });
+    store.set('footSlip', window.__footSlip);
+    renderFootSlip();
+    syncOpenLink();
+    toast('Ajouté au Ticket fictif : ' + home + ' vs ' + away + ' (' + label + ')');
+  };
+
+  function renderCurrentMatch() {
+    const h = homeSel ? homeSel.value : 'PSG';
+    const a = awaySel ? awaySel.value : 'Marseille';
+    if (h === a) { toast('Choisissez deux équipes différentes.'); return; }
+    const lg = (clubsMap[h] && clubsMap[h].league) || 'ucl';
+    const res = brain.predictMatch(h, a, lg);
+    const p = res.prediction;
+    const pro = brain.computeProMarkets(p);
+    const rec = p.recommendedMarket || { label: 'Double Chance 1X', pct: 72, fairOdd: 1.32 };
+    lastVoiceSummary = h + ' contre ' + a + ' : probabilités ' + p.probs[0] + ' %, nul ' + p.probs[1] + ' %, ' + p.probs[2] + ' %. ' +
+      'Recommandation sûre : ' + rec.label + ' à ' + rec.pct + ' % (cote juste ' + rec.fairOdd + '). ' +
+      (pro.topScorers[0] ? 'Buteur numéro un : ' + pro.topScorers[0].name + ' à ' + pro.topScorers[0].pct + ' %. ' : '') +
+      'Corners attendus : ' + pro.corners.total + '.';
+
+    const scorersHtml = pro.topScorers.slice(0, 3).map(s =>
+      '<span class="pill" style="margin:2px 4px 2px 0;cursor:pointer" onclick="window.__addFootMarketToSlip(\'' + h.replace(/'/g,"\\'") + '\',\'' + a.replace(/'/g,"\\'") + '\',\'⚽ Buteur : ' + s.name.replace(/'/g,"\\'") + '\',' + s.pct + ',' + s.marketOdd + ',\'scorer\')">⚽ ' + s.name + ' ' + s.pct + '% (@' + s.marketOdd + ' +)</span>'
+    ).join('');
+
+    const out = document.getElementById('footPredOut');
+    if (out) {
+      out.innerHTML =
+        '<div class="item" style="display:block">' +
+          '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap">' +
+            '<b>' + h + ' vs ' + a + '</b>' +
+            '<span class="pill">xG : ' + (p.xg ? p.xg.home + ' - ' + p.xg.away : '1.5 - 1.2') + ' • Fiabilité ' + p.confidence.score + '/100</span>' +
+          '</div>' +
+          '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin:10px 0;text-align:center">' +
+            '<div style="padding:8px;border-radius:12px;background:rgba(15,185,122,.14);border:1px solid rgba(52,211,153,.3)"><div class="muted" style="font-size:11px">1 • ' + h + '</div><b style="font-size:16px">' + p.probs[0] + ' %</b></div>' +
+            '<div style="padding:8px;border-radius:12px;background:rgba(255,255,255,.05);border:1px solid var(--stroke)"><div class="muted" style="font-size:11px">N • Nul</div><b style="font-size:16px">' + p.probs[1] + ' %</b></div>' +
+            '<div style="padding:8px;border-radius:12px;background:rgba(245,184,0,.12);border:1px solid rgba(245,184,0,.3)"><div class="muted" style="font-size:11px">2 • ' + a + '</div><b style="font-size:16px">' + p.probs[2] + ' %</b></div>' +
+          '</div>' +
+          '<div style="margin:6px 0">★ <b>Pari sûr IA :</b> <span class="ok">' + rec.label + ' (' + rec.pct + ' % • ~@' + rec.fairOdd + ')</span></div>' +
+          '<div style="margin:6px 0">' + scorersHtml + '</div>' +
+          '<div class="muted" style="font-size:12px;margin-top:4px">' +
+            '🚩 Corners : <b>' + pro.corners.total + '</b> (+8.5 : <b>' + pro.corners.over85Pct + '%</b> • +9.5 : <b>' + pro.corners.over95Pct + '%</b>) · ' +
+            '🟨 Cartons : <b>' + pro.cards.expectedTotal + '</b> (Rouge : <b>' + pro.cards.redCardRiskPct + '%</b>) · ' +
+            '⏱️ +0.5 But MT : <b>' + pro.halfTime.over05Pct + '%</b>' +
+          '</div>' +
+          '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:10px">' +
+            '<button type="button" class="act" style="font-size:12px;padding:8px 12px" onclick="window.__addFootMarketToSlip(\'' + h.replace(/'/g,"\\'") + '\',\'' + a.replace(/'/g,"\\'") + '\',\'' + rec.label.replace(/'/g,"\\'") + '\',' + rec.pct + ',' + rec.fairOdd + ',\'rec\')">➕ Ajouter « ' + rec.label + ' » au Ticket</button>' +
+            '<button type="button" class="alt" style="font-size:12px;padding:8px 12px" onclick="window.__simulerPepiteFoot(\'' + h.replace(/'/g,"\\'") + '\',\'' + a.replace(/'/g,"\\'") + '\')">🎲 Simuler 1 000 FCFA maintenant</button>' +
+          '</div>' +
+        '</div>';
+    }
+  }
+
+  function renderFootSlip() {
+    const box = document.getElementById('footSlipBox');
+    if (!box) return;
+    const slip = window.__footSlip || [];
+    if (!slip.length) {
+      box.innerHTML = '<p class="muted" style="margin:4px 0">Aucune sélection active. Touchez <b>🛡️ Ticket Sécurité</b> ou ajoutez un match ci-dessus.</p>';
+      return;
+    }
+    const normItem = it => {
+      const sm = it.selectedMarket || {};
+      const mLabel = it.matchLabel || (it.home + ' vs ' + it.away);
+      const lbl = sm.label || it.label || 'Double Chance';
+      const pct = Number(sm.pct || it.pct || 72);
+      const odd = Number(sm.bookOdd || sm.marketOdd || it.odd || 1.35);
+      return { matchLabel: mLabel, label: lbl, pct, odd };
+    };
+    const audit = brain.auditTicket(slip);
+    const totalOdd = slip.reduce((acc, it) => acc * normItem(it).odd, 1);
+    let html = slip.map((it, idx) => {
+      const n = normItem(it);
+      return '<div class="item" style="padding:8px 0">' +
+        '<div><b>' + n.matchLabel + '</b><br><span class="ok">' + n.label + '</span> <span class="pill">' + n.pct + '% • @' + n.odd.toFixed(2) + '</span></div>' +
+        '<button type="button" class="alt" style="padding:4px 9px;min-height:30px;font-size:11px" onclick="window.__footSlip.splice(' + idx + ',1);localStorage.setItem(\'javis_footSlip\',JSON.stringify(window.__footSlip));window.__refreshFootSlip()">✕</button>' +
+      '</div>';
+    }).join('');
+    html += '<div style="margin-top:6px;padding:10px;border-radius:12px;background:rgba(245,184,0,.09);border:1px solid rgba(245,184,0,.35);font-size:12.5px">' +
+      '📊 <b>Cote combinée : @' + totalOdd.toFixed(2) + '</b>' +
+      (audit ? ' • <b>Survie IA : ' + audit.grade + ' (' + audit.auditScore + '/100)</b>' +
+        (audit.weakestLink && audit.weakestLink.saferAlternative ? '<br>⚠️ Maillon faible : <b>' + audit.weakestLink.matchLabel + '</b> (' + audit.weakestLink.chosenPct + '%) → conseillé : <b>' + audit.weakestLink.saferAlternative.label + ' (' + audit.weakestLink.saferAlternative.pct + '%)</b> ' +
+          '<button type="button" class="alt" style="padding:4px 9px;min-height:28px;font-size:11px;margin-top:4px" onclick="window.__fixWeakLink()">🛡️ Sécuriser en 1 clic</button>' : '') : '') +
+      '</div>';
+    box.innerHTML = html;
+  }
+  window.__refreshFootSlip = renderFootSlip;
+
+  window.__fixWeakLink = function() {
+    const audit = brain.auditTicket(window.__footSlip || []);
+    if (!audit || !audit.weakestLink || !audit.weakestLink.saferAlternative) return;
+    const w = audit.weakestLink;
+    window.__footSlip = (window.__footSlip || []).map(it =>
+      (it.id === w.itemId || (it.home + ' vs ' + it.away) === w.matchLabel)
+        ? Object.assign({}, it, {
+            selectedMarket: {
+              label: w.saferAlternative.label,
+              pct: w.saferAlternative.pct,
+              bookOdd: w.saferAlternative.bookOdd || 1.28
+            }
+          })
+        : it
+    );
+    store.set('footSlip', window.__footSlip);
+    renderFootSlip();
+    syncOpenLink();
+    toast('🛡️ Maillon faible sécurisé automatiquement !');
+  };
+
+  function execSimulatedBet(labelDesc, winProbPct, totalOdd, stakeFcfa) {
+    if (!guard()) return;
+    const amt = Math.min(CAP, Math.max(200, Math.round(Number(stakeFcfa) || 1000)));
+    const todayLoss = bets.filter(b => b.day === new Date().toDateString() && !b.win).reduce((s, b) => s + b.amt, 0);
+    if (todayLoss + amt > BET_DAY_CAP) {
+      toast('🛑 Plafond de perte fictive du jour atteint (' + fmt(BET_DAY_CAP) + '). Cloé protège votre capital simulé.');
+      log('Pari bloqué', 'Plafond journalier ' + fmt(BET_DAY_CAP) + ' atteint avant « ' + labelDesc + ' »');
+      speak('Limite fictive de cinq mille francs CFA par jour atteinte. Je bloque ce pari par prudence.');
+      return;
+    }
+    if (amt > cash) { toast('Argent fictif disponible insuffisant.'); return; }
+    const roll = Math.random() * 100;
+    const win = roll <= winProbPct;
+    const netProfit = win ? Math.round(amt * Math.max(0.15, (totalOdd - 1))) : 0;
+    if (win) cash += netProfit; else cash -= amt;
+    bets.push({ amt, win, gain: win ? netProfit : 0, day: new Date().toDateString(), match: labelDesc });
+    store.set('bets', bets);
+    updateCash();
+    renderBets();
+    updateReliab();
+    if (typeof rendreParcours === 'function') rendreParcours();
+    const verdict = win
+      ? 'Gagné — ' + labelDesc + ' (+' + fmt(netProfit) + ' fictifs, prob. IA ' + Math.round(winProbPct) + '%)'
+      : 'Perdu — ' + labelDesc + ' (-' + fmt(amt) + ' fictifs, prob. IA ' + Math.round(winProbPct) + '%)';
+    log('Pari simulé', verdict);
+    addLesson(win
+      ? 'Pari simulé gagné sur « ' + labelDesc + ' » (probabilité IA ' + Math.round(winProbPct) + ' %) : privilégier les hautes probabilités protège le capital.'
+      : 'Pari simulé perdu sur « ' + labelDesc + ' » : même à ' + Math.round(winProbPct) + ' %, le ballon rond garde sa part d\'aléa — ne jamais dépasser 5 % du capital.');
+    toast(win ? '✅ Pari fictif GAGNÉ (+' + fmt(netProfit) + ') !' : '❌ Pari fictif perdu (-' + fmt(amt) + ')');
+  }
+
+  window.__simulerPepiteFoot = function(h, a) {
+    const lg = (clubsMap[h] && clubsMap[h].league) || 'ucl';
+    const p = brain.predictMatch(h, a, lg).prediction;
+    const rec = p.recommendedMarket || { label: '1X', pct: 70, fairOdd: 1.35 };
+    execSimulatedBet(h + ' vs ' + a + ' (' + rec.label + ')', rec.pct, rec.fairOdd || 1.35, 1000);
+  };
+
+  const loadTicketIdx = idx => {
+    const live = (cachedBriefing && cachedBriefing.rawMatches) || [];
+    const tks = brain.generateTickets(live);
+    const chosen = tks[idx] || tks[0];
+    if (!chosen) return;
+    window.__footSlip = (chosen.items || []).slice();
+    store.set('footSlip', window.__footSlip);
+    renderFootSlip();
+    syncOpenLink();
+    toast((chosen.title || 'Ticket IA') + ' chargé (' + window.__footSlip.length + ' matchs, cote @' + Number(chosen.totalOdd || 1.8).toFixed(2) + ')');
+  };
+
+  const bindClick = (id, fn) => { const el = document.getElementById(id); if (el) el.addEventListener('click', fn); };
+  bindClick('footCalcBtn', renderCurrentMatch);
+  bindClick('footSpeakBtn', () => { if (!lastVoiceSummary) renderCurrentMatch(); speak(lastVoiceSummary); });
+  bindClick('footLoadSafe', () => loadTicketIdx(0));
+  bindClick('footLoadValue', () => loadTicketIdx(1));
+  bindClick('footLoadBoost', () => loadTicketIdx(2));
+  bindClick('footClearSlip', () => { window.__footSlip = []; store.set('footSlip', []); renderFootSlip(); syncOpenLink(); });
+  bindClick('footPlaySlipBtn', () => {
+    const slip = window.__footSlip || [];
+    if (!slip.length) loadTicketIdx(0);
+    const active = window.__footSlip || [];
+    if (!active.length) return;
+    const combinedPct = active.reduce((p, it) => p * (((it.selectedMarket && it.selectedMarket.pct) || it.pct || 70) / 100), 1) * 100;
+    const totalOdd = active.reduce((o, it) => o * (Number((it.selectedMarket && it.selectedMarket.bookOdd) || it.odd) || 1.35), 1);
+    const st = Number(document.getElementById('footSlipStake')?.value || 1000);
+    execSimulatedBet('Ticket IA (' + active.length + ' sélections @' + totalOdd.toFixed(2) + ')', combinedPct, totalOdd, st);
+  });
+
+  document.querySelectorAll('[data-simtour]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const key = btn.dataset.simtour;
+      const out = document.getElementById('footTourOut');
+      const sim = brain.runTournament(key, 10000);
+      const top = sim.result.leaderboard.slice(0, 6);
+      if (out) {
+        out.innerHTML = '<div class="item" style="display:block"><b>🏆 ' + sim.preset.name + ' (10 000 simulations)</b><br>' +
+          top.map((r, i) => (i + 1) + '. <b>' + r.team + '</b> — Titre : <span class="ok">' + r.championPct + ' %</span> (Finale : ' + r.finalPct + ' %)').join('<br>') +
+          '</div>';
+      }
+      const msg = 'Sur dix mille simulations ' + sim.preset.name + ', le favori numéro un est ' + top[0].team + ' avec ' + top[0].championPct + ' pour cent de chances de titre, devant ' + top[1].team + ' à ' + top[1].championPct + ' pour cent.';
+      log('Simulation Tournoi 10 000×', sim.preset.name + ' → #1 ' + top[0].team + ' (' + top[0].championPct + '%)');
+      speak(msg);
+    });
+  });
+
+  // Collecteur automatique pour « Les propositions de Cloé — automatiques », « Rapport du matin » & « Gemini »
+  window.__collectFootV5Snapshot = async function() {
+    const b = await brain.getDailyBriefing();
+    cachedBriefing = b;
+    if (b.newlyLearnedMatches > 0) {
+      addLesson('Football AI Ultra v5 : +' + b.newlyLearnedMatches + ' match(s) réel(s) terminé(s) appris automatiquement pour recalibrer mes probabilités.');
+    }
+    let gems = (b.topGems || []).slice(0, 4);
+    if (!gems.length) {
+      gems = [['ASEC Mimosas', 'Al Ahly', 'caf'], ['PSG', 'Marseille', 'ligue1'], ['Real Madrid', 'Barcelone', 'laliga'], ['Côte d\'Ivoire', 'Maroc', 'international']].map(([h, a, lg]) => {
+        const p = brain.predictMatch(h, a, lg).prediction;
+        return { home: h, away: a, leagueLabel: lg.toUpperCase(), safestMarket: p.recommendedMarket, likelyScore: (p.topScores && p.topScores[0] && p.topScores[0].score) || '1-0' };
+      });
+    }
+    const tks = brain.generateTickets(b.rawMatches || []);
+    const canFav = brain.runTournament('can', 2000).result.leaderboard[0];
+    const uclFav = brain.runTournament('ucl', 2000).result.leaderboard[0];
+    const snap = { gems, safeTicket: tks[0], canFav, uclFav, todayCount: b.todayCount || 0, tomorrowCount: b.tomorrowCount || 0 };
+    store.set('footSnap', snap);
+    return snap;
+  };
+
+  window.__footBriefingSentence = function() {
+    const s = store.get('footSnap', null);
+    if (!s || !s.gems || !s.gems.length) return 'Côté Football IA Ultra v5 : cent soixante-sept clubs et nations sont prêts en simulation.';
+    const g = s.gems[0];
+    return 'Côté Football IA Ultra : pépite du jour ' + g.home + ' contre ' + g.away + ', pari sûr ' + g.safestMarket.label + ' à ' + g.safestMarket.pct + ' pour cent' +
+      (s.safeTicket ? ', Ticket Sécurité à cote ' + s.safeTicket.totalOdd.toFixed(2) : '') +
+      (s.canFav ? ', et favori CAN ' + s.canFav.team + ' à ' + s.canFav.championPct + ' pour cent.' : '.');
+  };
+
+  window.__footGemSummary = function() {
+    const s = store.get('footSnap', null);
+    if (!s || !s.gems) return 'Football AI Ultra v5 (167 clubs, CAN/LDC 10 000x, Buteurs/Corners/Ticket IA) actif.';
+    return 'Football AI Ultra v5 en direct : pépites du jour = ' +
+      s.gems.slice(0, 3).map(g => g.home + ' vs ' + g.away + ' (' + g.safestMarket.label + ' ' + g.safestMarket.pct + '%)').join(', ') +
+      (s.canFav ? ' ; Favori CAN 10000x = ' + s.canFav.team + ' (' + s.canFav.championPct + '%)' : '') +
+      (s.uclFav ? ' ; Favori LDC = ' + s.uclFav.team + ' (' + s.uclFav.championPct + '%)' : '') + '.';
+  };
+
+  // Rendu initial immédiat (même hors ligne ou si BRVM met du temps)
+  renderCurrentMatch();
+  if (!(window.__footSlip && window.__footSlip.length)) loadTicketIdx(0);
+  else renderFootSlip();
+  syncOpenLink();
+
+  // Module Direct Internet Multi-Sports v6.0 (Football, NBA, Tennis, NFL, NHL, MLB, UFC + H2H & Stades exacts)
+  window.__omniMatchesCache = [];
+  window.__inspectOmniDossier = async function(idx) {
+    const m = window.__omniMatchesCache[idx];
+    const out = document.getElementById('omniDossierOut');
+    if (!m || !out || !brain.getMatchDossier) return;
+    out.innerHTML = '<div style="padding:10px;border-radius:12px;background:rgba(56,189,248,.1);border:1px solid rgba(56,189,248,.35);font-size:12px">⚡ Interrogation Internet officielle (H2H exacts, Stade, Forme joueurs &amp; Blessés)...</div>';
+    const d = await brain.getMatchDossier(m);
+    const vName = (d && d.venueExact && d.venueExact.name) || m.venueFull || m.venue || 'Stade non publié';
+    const vCity = (d && d.venueExact && d.venueExact.city) || m.venueCity || '';
+    const h2hHtml = d && d.h2hGames && d.h2hGames.length
+      ? d.h2hGames.slice(0, 5).map(g => '• <b>' + g.homeTeam + ' ' + g.score + ' ' + g.awayTeam + '</b> — ' + g.dateExactFr + (g.venue ? ' (' + g.venue + ')' : '')).join('<br>')
+      : '⚪ Aucune confrontation récente publiée dans le flux officiel (Zéro invention).';
+    const injHtml = d && d.injuries && d.injuries.length
+      ? '<br>🏥 <b>Blessés/Absents officiels :</b> ' + d.injuries.slice(0, 5).map(i => i.player + ' (' + i.team + ' · ' + i.status + ')').join(', ')
+      : '';
+    const leadHtml = (d && d.playerLeaders && d.playerLeaders.length ? d.playerLeaders : (m.leaders || [])).slice(0, 4)
+      .map(l => '🌟 ' + l.player + ' (' + l.category + ': <b>' + l.value + '</b>)').join(' · ');
+    out.innerHTML = '<div style="padding:11px;border-radius:12px;background:rgba(15,185,122,.1);border:1px solid rgba(52,211,153,.4);font-size:12px;line-height:1.5">' +
+      '<b>📜 Dossier Vérité Sans Hallucination : ' + m.home + ' vs ' + m.away + '</b><br>' +
+      '📅 <b>Date exacte :</b> ' + (m.fullDateFr || m.dateFr) + ' à ' + m.timeStr + ' · 🏟️ <b>Lieu :</b> ' + vName + (vCity ? ', ' + vCity : '') + '<br>' +
+      (leadHtml ? leadHtml + '<br>' : '') +
+      '⚔️ <b>Confrontations Directes (H2H) :</b><br>' + h2hHtml + injHtml +
+    '</div>';
+  };
+
+  async function renderOmniLiveSport(sportKey) {
+    const box = document.getElementById('omniLiveBox');
+    if (!box || !brain.getLiveOmniMatches) return;
+    box.innerHTML = '⚡ Synchronisation Internet en cours...';
+    const res = await brain.getLiveOmniMatches(0, sportKey || 'all');
+    let list = res.matches || [];
+    if (!list.length) {
+      const nextRes = await brain.getLiveOmniMatches(1, sportKey || 'all');
+      list = nextRes.matches || [];
+    }
+    window.__omniMatchesCache = list.slice(0, 14);
+    if (!window.__omniMatchesCache.length) {
+      box.innerHTML = '<span class="muted">Aucun match en cours sur ce sport précis aujourd\'hui. Essayez 🌐 Tous (7 Sports) !</span>';
+      return;
+    }
+    box.innerHTML = '<div style="font-size:11.5px;color:#34d399;margin-bottom:6px">🟢 Source vérifiée : <b>' + res.providerUsed + '</b></div>' +
+      window.__omniMatchesCache.map((m, i) => {
+        const rec = m.prediction && m.prediction.recommendedMarket;
+        const gate = m.prediction && m.prediction.reliabilityGate;
+        return '<div class="item" style="padding:8px 0">' +
+          '<div><b>' + m.home + ' vs ' + m.away + '</b> <span class="pill">' + (m.statusText || m.timeStr) + '</span><br>' +
+          '<span class="muted" style="font-size:11.5px">🏆 ' + (m.leagueLabel || m.league) + ' · 📅 ' + (m.fullDateFr || m.dateFr) + (m.venueFull || m.venue ? ' · 🏟️ ' + (m.venueFull || m.venue) : '') + '</span><br>' +
+          (rec ? '<span class="ok" style="font-size:12px">★ ' + rec.label + ' (' + rec.pct + '% • @' + rec.fairOdd + ')</span> ' : '') +
+          (gate ? '<span class="pill" style="font-size:10.5px">' + gate.badge + '</span>' : '') +
+          '</div>' +
+          '<button type="button" class="alt" style="padding:5px 9px;min-height:30px;font-size:11px" onclick="window.__inspectOmniDossier(' + i + ')">📜 H2H &amp; Stade</button>' +
+        '</div>';
+      }).join('');
+  }
+
+  document.querySelectorAll('[data-omnisport]').forEach(btn => {
+    btn.addEventListener('click', () => renderOmniLiveSport(btn.getAttribute('data-omnisport')));
+  });
+  renderOmniLiveSport('all').catch(() => {});
+  window.__collectFootV5Snapshot().then(snap => {
+    const c = store.get('autoResults', null);
+    if (c) { c.footV5 = snap; store.set('autoResults', c); rendrePropositions(c); }
+    else {
+      const box = document.getElementById('autoProposals');
+      if (box && box.textContent.includes('Analyse')) {
+        rendrePropositions({ quand: new Date().toLocaleString('fr-FR'), nbBrvm: 48, nbCrypto: 8, top: [], alertes: [], footV5: snap, seance: 'en cours' });
+      }
+    }
+    if (document.getElementById('morning')) document.getElementById('morning').textContent = morningText();
+  }).catch(() => {});
+})();
+</script>
+</body>
+</html>

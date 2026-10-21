@@ -1,0 +1,1420 @@
+{
+  "engine": "Football AI Ultra v5.0 Legend",
+  "updatedAt": "2026-10-21T09:24:43.856Z",
+  "sourceAppUrl": "https://football-ai-43e33.web.app",
+  "cloeStandaloneUrl": "https://cloe-ia-ultra.web.app",
+  "bridgeScriptUrl": "https://football-ai-43e33.web.app/cloe-bridge.js",
+  "teamsCount": 167,
+  "leagues": {
+    "ligue1": {
+      "name": "Ligue 1 🇫🇷",
+      "shortName": "Ligue 1",
+      "flag": "🇫🇷",
+      "color": "#00a0e9",
+      "avgHomeGoals": 1.56,
+      "avgAwayGoals": 1.24,
+      "homeWinRate": 0.445,
+      "drawRate": 0.255,
+      "awayWinRate": 0.3,
+      "eloHomeAdv": 64,
+      "rho": -0.11,
+      "featuredMatches": [
+        [
+          "PSG",
+          "Marseille"
+        ],
+        [
+          "Monaco",
+          "Lyon"
+        ],
+        [
+          "Lille",
+          "Nice"
+        ],
+        [
+          "Lens",
+          "Rennes"
+        ]
+      ]
+    },
+    "premier": {
+      "name": "Premier League 🏴󠁧󠁢󠁥󠁮󠁧󠁿",
+      "shortName": "Premier League",
+      "flag": "🏴󠁧󠁢󠁥󠁮󠁧󠁿",
+      "color": "#8b5cf6",
+      "avgHomeGoals": 1.64,
+      "avgAwayGoals": 1.33,
+      "homeWinRate": 0.455,
+      "drawRate": 0.235,
+      "awayWinRate": 0.31,
+      "eloHomeAdv": 62,
+      "rho": -0.1,
+      "featuredMatches": [
+        [
+          "Liverpool",
+          "Arsenal"
+        ],
+        [
+          "Manchester City",
+          "Chelsea"
+        ],
+        [
+          "Newcastle",
+          "Aston Villa"
+        ],
+        [
+          "Tottenham",
+          "Manchester United"
+        ]
+      ]
+    },
+    "liga": {
+      "name": "La Liga 🇪🇸",
+      "shortName": "La Liga",
+      "flag": "🇪🇸",
+      "color": "#ee8707",
+      "avgHomeGoals": 1.49,
+      "avgAwayGoals": 1.14,
+      "homeWinRate": 0.46,
+      "drawRate": 0.265,
+      "awayWinRate": 0.275,
+      "eloHomeAdv": 66,
+      "rho": -0.12,
+      "featuredMatches": [
+        [
+          "Real Madrid",
+          "FC Barcelone"
+        ],
+        [
+          "Atlético Madrid",
+          "Athletic Bilbao"
+        ],
+        [
+          "Villarreal",
+          "Real Sociedad"
+        ],
+        [
+          "Real Betis",
+          "Séville"
+        ]
+      ]
+    },
+    "bundesliga": {
+      "name": "Bundesliga 🇩🇪",
+      "shortName": "Bundesliga",
+      "flag": "🇩🇪",
+      "color": "#ef4444",
+      "avgHomeGoals": 1.74,
+      "avgAwayGoals": 1.4,
+      "homeWinRate": 0.45,
+      "drawRate": 0.24,
+      "awayWinRate": 0.31,
+      "eloHomeAdv": 60,
+      "rho": -0.09,
+      "featuredMatches": [
+        [
+          "Bayern Munich",
+          "Bayer Leverkusen"
+        ],
+        [
+          "Borussia Dortmund",
+          "RB Leipzig"
+        ],
+        [
+          "Eintracht Francfort",
+          "Stuttgart"
+        ],
+        [
+          "Fribourg",
+          "Wolfsburg"
+        ]
+      ]
+    },
+    "seriea": {
+      "name": "Serie A 🇮🇹",
+      "shortName": "Serie A",
+      "flag": "🇮🇹",
+      "color": "#0ea5e9",
+      "avgHomeGoals": 1.48,
+      "avgAwayGoals": 1.18,
+      "homeWinRate": 0.44,
+      "drawRate": 0.27,
+      "awayWinRate": 0.29,
+      "eloHomeAdv": 63,
+      "rho": -0.12,
+      "featuredMatches": [
+        [
+          "Inter Milan",
+          "Naples"
+        ],
+        [
+          "Juventus",
+          "AC Milan"
+        ],
+        [
+          "Atalanta",
+          "AS Rome"
+        ],
+        [
+          "Lazio",
+          "Fiorentina"
+        ]
+      ]
+    },
+    "ucl": {
+      "name": "Champions League 🇪🇺",
+      "shortName": "Champions League",
+      "flag": "🇪🇺",
+      "color": "#38bdf8",
+      "avgHomeGoals": 1.66,
+      "avgAwayGoals": 1.34,
+      "homeWinRate": 0.46,
+      "drawRate": 0.225,
+      "awayWinRate": 0.315,
+      "eloHomeAdv": 58,
+      "rho": -0.09,
+      "featuredMatches": [
+        [
+          "Real Madrid",
+          "Manchester City"
+        ],
+        [
+          "PSG",
+          "Liverpool"
+        ],
+        [
+          "FC Barcelone",
+          "Bayern Munich"
+        ],
+        [
+          "Inter Milan",
+          "Arsenal"
+        ]
+      ]
+    },
+    "europa": {
+      "name": "Europa League 🟠",
+      "shortName": "Europa League",
+      "flag": "🟠",
+      "color": "#fb923c",
+      "avgHomeGoals": 1.61,
+      "avgAwayGoals": 1.28,
+      "homeWinRate": 0.455,
+      "drawRate": 0.24,
+      "awayWinRate": 0.305,
+      "eloHomeAdv": 60,
+      "rho": -0.1,
+      "featuredMatches": [
+        [
+          "Lyon",
+          "Manchester United"
+        ],
+        [
+          "Lazio",
+          "Athletic Bilbao"
+        ],
+        [
+          "Eintracht Francfort",
+          "Tottenham"
+        ],
+        [
+          "AS Rome",
+          "FC Porto"
+        ]
+      ]
+    },
+    "caf": {
+      "name": "Afrique / LDC CAF & Ligue 1 CI 🌍",
+      "shortName": "CAF / Afrique",
+      "flag": "🌍",
+      "color": "#f59e0b",
+      "avgHomeGoals": 1.48,
+      "avgAwayGoals": 0.96,
+      "homeWinRate": 0.51,
+      "drawRate": 0.28,
+      "awayWinRate": 0.21,
+      "eloHomeAdv": 78,
+      "rho": -0.13,
+      "featuredMatches": [
+        [
+          "ASEC Mimosas",
+          "Al Ahly"
+        ],
+        [
+          "Mamelodi Sundowns",
+          "Espérance Tunis"
+        ],
+        [
+          "Wydad Casablanca",
+          "Raja Casablanca"
+        ],
+        [
+          "ASEC Mimosas",
+          "Stade d'Abidjan"
+        ]
+      ]
+    },
+    "saudi": {
+      "name": "Saudi Pro League 🇸🇦",
+      "shortName": "Saudi Pro",
+      "flag": "🇸🇦",
+      "color": "#22c55e",
+      "avgHomeGoals": 1.72,
+      "avgAwayGoals": 1.38,
+      "homeWinRate": 0.45,
+      "drawRate": 0.23,
+      "awayWinRate": 0.32,
+      "eloHomeAdv": 58,
+      "rho": -0.09,
+      "featuredMatches": [
+        [
+          "Al-Hilal",
+          "Al-Nassr"
+        ],
+        [
+          "Al-Ittihad",
+          "Al-Ahli Saudi"
+        ],
+        [
+          "Al-Nassr",
+          "Al-Ittihad"
+        ],
+        [
+          "Al-Qadsiah",
+          "Al-Hilal"
+        ]
+      ]
+    },
+    "world": {
+      "name": "Amériques & Monde 🌎",
+      "shortName": "Monde",
+      "flag": "🌎",
+      "color": "#ec4899",
+      "avgHomeGoals": 1.63,
+      "avgAwayGoals": 1.25,
+      "homeWinRate": 0.465,
+      "drawRate": 0.25,
+      "awayWinRate": 0.285,
+      "eloHomeAdv": 64,
+      "rho": -0.1,
+      "featuredMatches": [
+        [
+          "Inter Miami",
+          "LAFC"
+        ],
+        [
+          "Flamengo",
+          "Palmeiras"
+        ],
+        [
+          "River Plate",
+          "Boca Juniors"
+        ],
+        [
+          "Fenerbahçe",
+          "Galatasaray"
+        ]
+      ]
+    },
+    "international": {
+      "name": "Sélections / CAN & Mondial 🌍",
+      "shortName": "International",
+      "flag": "🌍",
+      "color": "#10b981",
+      "avgHomeGoals": 1.44,
+      "avgAwayGoals": 1.1,
+      "homeWinRate": 0.45,
+      "drawRate": 0.275,
+      "awayWinRate": 0.275,
+      "eloHomeAdv": 52,
+      "rho": -0.12,
+      "featuredMatches": [
+        [
+          "Côte d'Ivoire",
+          "Maroc"
+        ],
+        [
+          "Sénégal",
+          "Nigeria"
+        ],
+        [
+          "France",
+          "Espagne"
+        ],
+        [
+          "Argentine",
+          "Brésil"
+        ]
+      ]
+    }
+  },
+  "featuredMatches": [
+    {
+      "home": "ASEC Mimosas",
+      "away": "Al Ahly",
+      "leagueId": "caf",
+      "probabilities1X2": [
+        38,
+        32,
+        30
+      ],
+      "expectedGoals": {
+        "home": 1.33,
+        "away": 1.09,
+        "total": 2.42
+      },
+      "recommendedMarket": {
+        "code": "O15",
+        "group": "Buts",
+        "label": "+1.5 Buts dans le match",
+        "prob": 0.7126463252369122,
+        "pct": 71,
+        "fairOdd": 1.4,
+        "marketOdd": 1.33
+      },
+      "confidence": {
+        "label": "Match piège",
+        "color": "#ff1744",
+        "stars": 1,
+        "score": 25
+      },
+      "topScorers": [
+        {
+          "id": "gen-fwd-asec mimosas",
+          "name": "Buteur n°9 (ASEC Mimosas)",
+          "team": "ASEC Mimosas",
+          "pos": "FWD",
+          "expectedGoals": 0.61,
+          "pct": 46,
+          "marketOdd": 2.02
+        },
+        {
+          "id": "gen-fwd-al ahly",
+          "name": "Buteur n°9 (Al Ahly)",
+          "team": "Al Ahly",
+          "pos": "FWD",
+          "expectedGoals": 0.5,
+          "pct": 39,
+          "marketOdd": 2.34
+        },
+        {
+          "id": "gen-mid-asec mimosas",
+          "name": "Meneur créatif (ASEC Mimosas)",
+          "team": "ASEC Mimosas",
+          "pos": "MID",
+          "expectedGoals": 0.3,
+          "pct": 26,
+          "marketOdd": 3.51
+        },
+        {
+          "id": "gen-mid-al ahly",
+          "name": "Meneur créatif (Al Ahly)",
+          "team": "Al Ahly",
+          "pos": "MID",
+          "expectedGoals": 0.25,
+          "pct": 22,
+          "marketOdd": 4.17
+        }
+      ],
+      "corners": {
+        "home": 5.4,
+        "away": 4.4,
+        "total": 9.8,
+        "over85Pct": 64,
+        "over85Odd": 1.47,
+        "over95Pct": 52,
+        "over95Odd": 1.81,
+        "over105Pct": 39,
+        "over105Odd": 2.41
+      },
+      "cards": {
+        "expectedTotal": 5,
+        "over35Pct": 73,
+        "over35Odd": 1.29,
+        "over45Pct": 56,
+        "over45Odd": 1.68,
+        "redCardRiskPct": 22
+      },
+      "halfTime": {
+        "over05Pct": 66,
+        "over05Odd": 1.42,
+        "over15Pct": 29,
+        "drawHtPct": 45,
+        "drawHtOdd": 2.09
+      }
+    },
+    {
+      "home": "PSG",
+      "away": "Marseille",
+      "leagueId": "ligue1",
+      "probabilities1X2": [
+        62,
+        23,
+        15
+      ],
+      "expectedGoals": {
+        "home": 2.09,
+        "away": 1.09,
+        "total": 3.18
+      },
+      "recommendedMarket": {
+        "code": "1",
+        "group": "1X2",
+        "label": "Victoire PSG",
+        "prob": 0.6254865040191507,
+        "pct": 62,
+        "fairOdd": 1.6,
+        "marketOdd": 1.52
+      },
+      "confidence": {
+        "label": "Élevée",
+        "color": "#76ff03",
+        "stars": 4,
+        "score": 44
+      },
+      "topScorers": [
+        {
+          "id": "mid-8",
+          "name": "Ousmane Dembélé",
+          "team": "PSG",
+          "pos": "MID",
+          "expectedGoals": 0.58,
+          "pct": 44,
+          "marketOdd": 2.1
+        },
+        {
+          "id": "mid-14",
+          "name": "Mason Greenwood",
+          "team": "Marseille",
+          "pos": "MID",
+          "expectedGoals": 0.53,
+          "pct": 41,
+          "marketOdd": 2.24
+        },
+        {
+          "id": "mid-9",
+          "name": "Bradley Barcola",
+          "team": "PSG",
+          "pos": "MID",
+          "expectedGoals": 0.5,
+          "pct": 40,
+          "marketOdd": 2.32
+        },
+        {
+          "id": "fwd-18",
+          "name": "Khvicha Kvaratskhelia",
+          "team": "PSG",
+          "pos": "FWD",
+          "expectedGoals": 0.48,
+          "pct": 38,
+          "marketOdd": 2.4
+        }
+      ],
+      "corners": {
+        "home": 6.5,
+        "away": 4.4,
+        "total": 10.9,
+        "over85Pct": 76,
+        "over85Odd": 1.24,
+        "over95Pct": 65,
+        "over95Odd": 1.45,
+        "over105Pct": 53,
+        "over105Odd": 1.77
+      },
+      "cards": {
+        "expectedTotal": 4.1,
+        "over35Pct": 59,
+        "over35Odd": 1.59,
+        "over45Pct": 39,
+        "over45Odd": 2.41,
+        "redCardRiskPct": 18
+      },
+      "halfTime": {
+        "over05Pct": 75,
+        "over05Odd": 1.25,
+        "over15Pct": 41,
+        "drawHtPct": 37,
+        "drawHtOdd": 2.54
+      }
+    },
+    {
+      "home": "Real Madrid",
+      "away": "Barcelone",
+      "leagueId": "laliga",
+      "probabilities1X2": [
+        46,
+        27,
+        27
+      ],
+      "expectedGoals": {
+        "home": 1.74,
+        "away": 1.35,
+        "total": 3.09
+      },
+      "recommendedMarket": {
+        "code": "O15",
+        "group": "Buts",
+        "label": "+1.5 Buts dans le match",
+        "prob": 0.825654256483708,
+        "pct": 83,
+        "fairOdd": 1.21,
+        "marketOdd": 1.15
+      },
+      "confidence": {
+        "label": "Prudente",
+        "color": "#ff9100",
+        "stars": 2,
+        "score": 32
+      },
+      "topScorers": [
+        {
+          "id": "fwd-1",
+          "name": "Kylian Mbappé",
+          "team": "Real Madrid",
+          "pos": "FWD",
+          "expectedGoals": 0.75,
+          "pct": 53,
+          "marketOdd": 1.74
+        },
+        {
+          "id": "fwd-4",
+          "name": "Robert Lewandowski",
+          "team": "FC Barcelone",
+          "pos": "FWD",
+          "expectedGoals": 0.53,
+          "pct": 41,
+          "marketOdd": 2.25
+        },
+        {
+          "id": "fwd-5",
+          "name": "Vinícius Júnior",
+          "team": "Real Madrid",
+          "pos": "FWD",
+          "expectedGoals": 0.49,
+          "pct": 39,
+          "marketOdd": 2.38
+        },
+        {
+          "id": "mid-5",
+          "name": "Jude Bellingham",
+          "team": "Real Madrid",
+          "pos": "MID",
+          "expectedGoals": 0.39,
+          "pct": 33,
+          "marketOdd": 2.83
+        }
+      ],
+      "corners": {
+        "home": 6,
+        "away": 4.7,
+        "total": 10.7,
+        "over85Pct": 74,
+        "over85Odd": 1.27,
+        "over95Pct": 63,
+        "over95Odd": 1.49,
+        "over105Pct": 50,
+        "over105Odd": 1.88
+      },
+      "cards": {
+        "expectedTotal": 4.3,
+        "over35Pct": 62,
+        "over35Odd": 1.52,
+        "over45Pct": 43,
+        "over45Odd": 2.19,
+        "redCardRiskPct": 19
+      },
+      "halfTime": {
+        "over05Pct": 74,
+        "over05Odd": 1.27,
+        "over15Pct": 39,
+        "drawHtPct": 39,
+        "drawHtOdd": 2.41
+      }
+    },
+    {
+      "home": "Liverpool",
+      "away": "Arsenal",
+      "leagueId": "premier",
+      "probabilities1X2": [
+        45,
+        27,
+        28
+      ],
+      "expectedGoals": {
+        "home": 1.64,
+        "away": 1.32,
+        "total": 2.96
+      },
+      "recommendedMarket": {
+        "code": "O15",
+        "group": "Buts",
+        "label": "+1.5 Buts dans le match",
+        "prob": 0.8060148471855575,
+        "pct": 81,
+        "fairOdd": 1.24,
+        "marketOdd": 1.18
+      },
+      "confidence": {
+        "label": "Prudente",
+        "color": "#ff9100",
+        "stars": 2,
+        "score": 31
+      },
+      "topScorers": [
+        {
+          "id": "mid-1",
+          "name": "Mohamed Salah",
+          "team": "Liverpool",
+          "pos": "MID",
+          "expectedGoals": 0.6,
+          "pct": 45,
+          "marketOdd": 2.05
+        },
+        {
+          "id": "mid-4",
+          "name": "Bukayo Saka",
+          "team": "Arsenal",
+          "pos": "MID",
+          "expectedGoals": 0.58,
+          "pct": 44,
+          "marketOdd": 2.09
+        },
+        {
+          "id": "fwd-8",
+          "name": "Alexander Isak",
+          "team": "Liverpool",
+          "pos": "FWD",
+          "expectedGoals": 0.57,
+          "pct": 43,
+          "marketOdd": 2.12
+        },
+        {
+          "id": "mid-7",
+          "name": "Florian Wirtz",
+          "team": "Liverpool",
+          "pos": "MID",
+          "expectedGoals": 0.36,
+          "pct": 30,
+          "marketOdd": 3.05
+        }
+      ],
+      "corners": {
+        "home": 5.9,
+        "away": 4.7,
+        "total": 10.6,
+        "over85Pct": 73,
+        "over85Odd": 1.29,
+        "over95Pct": 61,
+        "over95Odd": 1.54,
+        "over105Pct": 49,
+        "over105Odd": 1.92
+      },
+      "cards": {
+        "expectedTotal": 4.3,
+        "over35Pct": 62,
+        "over35Odd": 1.52,
+        "over45Pct": 43,
+        "over45Odd": 2.19,
+        "redCardRiskPct": 19
+      },
+      "halfTime": {
+        "over05Pct": 73,
+        "over05Odd": 1.29,
+        "over15Pct": 37,
+        "drawHtPct": 40,
+        "drawHtOdd": 2.35
+      }
+    },
+    {
+      "home": "Al-Hilal",
+      "away": "Al-Nassr",
+      "leagueId": "saudi",
+      "probabilities1X2": [
+        51,
+        24,
+        25
+      ],
+      "expectedGoals": {
+        "home": 2.14,
+        "away": 1.49,
+        "total": 3.63
+      },
+      "recommendedMarket": {
+        "code": "BTTS_Y",
+        "group": "BTTS",
+        "label": "Les 2 équipes marquent : Oui",
+        "prob": 0.6910981413522344,
+        "pct": 69,
+        "fairOdd": 1.45,
+        "marketOdd": 1.37
+      },
+      "confidence": {
+        "label": "Modérée",
+        "color": "#ffea00",
+        "stars": 3,
+        "score": 37
+      },
+      "topScorers": [
+        {
+          "id": "gen-fwd-al-hilal",
+          "name": "Buteur n°9 (Al-Hilal)",
+          "team": "Al-Hilal",
+          "pos": "FWD",
+          "expectedGoals": 0.98,
+          "pct": 62,
+          "marketOdd": 1.47
+        },
+        {
+          "id": "fwd-13",
+          "name": "Cristiano Ronaldo",
+          "team": "Al-Nassr",
+          "pos": "FWD",
+          "expectedGoals": 0.8,
+          "pct": 55,
+          "marketOdd": 1.66
+        },
+        {
+          "id": "gen-mid-al-hilal",
+          "name": "Meneur créatif (Al-Hilal)",
+          "team": "Al-Hilal",
+          "pos": "MID",
+          "expectedGoals": 0.49,
+          "pct": 39,
+          "marketOdd": 2.38
+        },
+        {
+          "id": "mid-13",
+          "name": "Sadio Mané",
+          "team": "Al-Nassr",
+          "pos": "MID",
+          "expectedGoals": 0.5,
+          "pct": 39,
+          "marketOdd": 2.35
+        }
+      ],
+      "corners": {
+        "home": 6.6,
+        "away": 4.9,
+        "total": 11.5,
+        "over85Pct": 81,
+        "over85Odd": 1.18,
+        "over95Pct": 71,
+        "over95Odd": 1.32,
+        "over105Pct": 60,
+        "over105Odd": 1.57
+      },
+      "cards": {
+        "expectedTotal": 4,
+        "over35Pct": 57,
+        "over35Odd": 1.65,
+        "over45Pct": 37,
+        "over45Odd": 2.54,
+        "redCardRiskPct": 18
+      },
+      "halfTime": {
+        "over05Pct": 80,
+        "over05Odd": 1.18,
+        "over15Pct": 47,
+        "drawHtPct": 35,
+        "drawHtOdd": 2.69
+      }
+    },
+    {
+      "home": "Côte d'Ivoire",
+      "away": "Maroc",
+      "leagueId": "international",
+      "probabilities1X2": [
+        38,
+        32,
+        30
+      ],
+      "expectedGoals": {
+        "home": 1.29,
+        "away": 1.09,
+        "total": 2.38
+      },
+      "recommendedMarket": {
+        "code": "O15",
+        "group": "Buts",
+        "label": "+1.5 Buts dans le match",
+        "prob": 0.702795292059515,
+        "pct": 70,
+        "fairOdd": 1.42,
+        "marketOdd": 1.35
+      },
+      "confidence": {
+        "label": "Match piège",
+        "color": "#ff1744",
+        "stars": 1,
+        "score": 27
+      },
+      "topScorers": [
+        {
+          "id": "gen-fwd-cote divoire",
+          "name": "Buteur n°9 (Côte d'Ivoire)",
+          "team": "Côte d'Ivoire",
+          "pos": "FWD",
+          "expectedGoals": 0.59,
+          "pct": 45,
+          "marketOdd": 2.07
+        },
+        {
+          "id": "gen-fwd-maroc",
+          "name": "Buteur n°9 (Maroc)",
+          "team": "Maroc",
+          "pos": "FWD",
+          "expectedGoals": 0.5,
+          "pct": 39,
+          "marketOdd": 2.34
+        },
+        {
+          "id": "gen-mid-cote divoire",
+          "name": "Meneur créatif (Côte d'Ivoire)",
+          "team": "Côte d'Ivoire",
+          "pos": "MID",
+          "expectedGoals": 0.29,
+          "pct": 26,
+          "marketOdd": 3.6
+        },
+        {
+          "id": "gen-mid-maroc",
+          "name": "Meneur créatif (Maroc)",
+          "team": "Maroc",
+          "pos": "MID",
+          "expectedGoals": 0.25,
+          "pct": 22,
+          "marketOdd": 4.17
+        }
+      ],
+      "corners": {
+        "home": 5.4,
+        "away": 4.4,
+        "total": 9.8,
+        "over85Pct": 64,
+        "over85Odd": 1.47,
+        "over95Pct": 52,
+        "over95Odd": 1.81,
+        "over105Pct": 39,
+        "over105Odd": 2.41
+      },
+      "cards": {
+        "expectedTotal": 4.3,
+        "over35Pct": 62,
+        "over35Odd": 1.52,
+        "over45Pct": 43,
+        "over45Odd": 2.19,
+        "redCardRiskPct": 19
+      },
+      "halfTime": {
+        "over05Pct": 65,
+        "over05Odd": 1.45,
+        "over15Pct": 28,
+        "drawHtPct": 45,
+        "drawHtOdd": 2.09
+      }
+    }
+  ],
+  "dailyTickets": [
+    {
+      "id": "safe",
+      "badge": "🛡️ SÉCURITÉ IA",
+      "title": "Ticket Bouclier Haute Fiabilité",
+      "subtitle": "Sélections verrouillées à forte probabilité mathématique",
+      "recommendedBankrollPct": 4,
+      "accent": "#00e676",
+      "items": [
+        {
+          "id": 1792574683908,
+          "home": "Arsenal",
+          "away": "Liverpool",
+          "league": "premier",
+          "probs": [
+            44,
+            27,
+            29
+          ],
+          "selectedMarket": {
+            "code": "O15",
+            "group": "Buts",
+            "label": "+1.5 Buts dans le match",
+            "prob": 0.8060309110498811,
+            "pct": 81,
+            "fairOdd": 1.24,
+            "marketOdd": 1.18,
+            "bookOdd": 1.18
+          }
+        },
+        {
+          "id": 1792574683969,
+          "home": "Real Madrid",
+          "away": "FC Barcelone",
+          "league": "liga",
+          "probs": [
+            46,
+            28,
+            26
+          ],
+          "selectedMarket": {
+            "code": "O15",
+            "group": "Buts",
+            "label": "+1.5 Buts dans le match",
+            "prob": 0.7990006173197048,
+            "pct": 80,
+            "fairOdd": 1.25,
+            "marketOdd": 1.19,
+            "bookOdd": 1.19
+          }
+        },
+        {
+          "id": 1792574683903,
+          "home": "Inter Milan",
+          "away": "Naples",
+          "league": "seriea",
+          "probs": [
+            50,
+            28,
+            22
+          ],
+          "selectedMarket": {
+            "code": "1X",
+            "group": "Double Chance",
+            "label": "Inter Milan ou Nul (1X)",
+            "prob": 0.7818436393725621,
+            "pct": 78,
+            "fairOdd": 1.28,
+            "marketOdd": 1.22,
+            "bookOdd": 1.22
+          }
+        }
+      ],
+      "totalOdd": 1.71,
+      "winProbPct": 50.5
+    },
+    {
+      "id": "value",
+      "badge": "⚖️ VALUE BET PRO",
+      "title": "Ticket Équilibré Smart Money",
+      "subtitle": "Meilleur ratio Probabilité IA × Cote du marché",
+      "recommendedBankrollPct": 2.5,
+      "accent": "#00e5ff",
+      "items": [
+        {
+          "id": 1792574683898,
+          "home": "PSG",
+          "away": "Marseille",
+          "league": "ligue1",
+          "probs": [
+            62,
+            23,
+            15
+          ],
+          "selectedMarket": {
+            "code": "O25",
+            "group": "Buts",
+            "label": "+2.5 Buts dans le match",
+            "prob": 0.6159065721698201,
+            "pct": 62,
+            "fairOdd": 1.62,
+            "marketOdd": 1.54,
+            "bookOdd": 1.54
+          }
+        },
+        {
+          "id": 1792574683939,
+          "home": "Côte d'Ivoire",
+          "away": "Maroc",
+          "league": "international",
+          "probs": [
+            38,
+            32,
+            30
+          ],
+          "selectedMarket": {
+            "code": "X2",
+            "group": "Double Chance",
+            "label": "Nul ou Maroc (X2)",
+            "prob": 0.6151369437016246,
+            "pct": 62,
+            "fairOdd": 1.63,
+            "marketOdd": 1.54,
+            "bookOdd": 1.54
+          }
+        },
+        {
+          "id": 1792574683935,
+          "home": "Arsenal",
+          "away": "Liverpool",
+          "league": "premier",
+          "probs": [
+            44,
+            27,
+            29
+          ],
+          "selectedMarket": {
+            "code": "O25",
+            "group": "Buts",
+            "label": "+2.5 Buts dans le match",
+            "prob": 0.5677887756457286,
+            "pct": 57,
+            "fairOdd": 1.76,
+            "marketOdd": 1.67,
+            "bookOdd": 1.67
+          }
+        },
+        {
+          "id": 1792574684004,
+          "home": "Real Madrid",
+          "away": "FC Barcelone",
+          "league": "liga",
+          "probs": [
+            46,
+            28,
+            26
+          ],
+          "selectedMarket": {
+            "code": "BTTS_Y",
+            "group": "BTTS",
+            "label": "Les 2 équipes marquent : Oui",
+            "prob": 0.5890911975555291,
+            "pct": 59,
+            "fairOdd": 1.7,
+            "marketOdd": 1.61,
+            "bookOdd": 1.61
+          }
+        }
+      ],
+      "totalOdd": 6.38,
+      "winProbPct": 12.9
+    },
+    {
+      "id": "jackpot",
+      "badge": "🚀 COTE BOOST / FUN",
+      "title": "Ticket Multi-Cote Haute Performance",
+      "subtitle": "Mise prudente pour viser un gros multiplicateur",
+      "recommendedBankrollPct": 1,
+      "accent": "#d500f9",
+      "items": [
+        {
+          "id": 1792574683868,
+          "home": "Arsenal",
+          "away": "Liverpool",
+          "league": "premier",
+          "probs": [
+            44,
+            27,
+            29
+          ],
+          "selectedMarket": {
+            "code": "1",
+            "group": "1X2",
+            "label": "Victoire Arsenal",
+            "prob": 0.43559450866137467,
+            "pct": 44,
+            "fairOdd": 2.3,
+            "marketOdd": 2.18,
+            "bookOdd": 2.18
+          }
+        },
+        {
+          "id": 1792574683946,
+          "home": "Côte d'Ivoire",
+          "away": "Maroc",
+          "league": "international",
+          "probs": [
+            38,
+            32,
+            30
+          ],
+          "selectedMarket": {
+            "code": "O25",
+            "group": "Buts",
+            "label": "+2.5 Buts dans le match",
+            "prob": 0.4250573023902452,
+            "pct": 43,
+            "fairOdd": 2.35,
+            "marketOdd": 2.23,
+            "bookOdd": 2.23
+          }
+        },
+        {
+          "id": 1792574683950,
+          "home": "Inter Milan",
+          "away": "Naples",
+          "league": "seriea",
+          "probs": [
+            50,
+            28,
+            22
+          ],
+          "selectedMarket": {
+            "code": "BTTS_N",
+            "group": "BTTS",
+            "label": "Les 2 équipes marquent : Non",
+            "prob": 0.4654411424647956,
+            "pct": 47,
+            "fairOdd": 2.15,
+            "marketOdd": 2.04,
+            "bookOdd": 2.04
+          }
+        },
+        {
+          "id": 1792574683954,
+          "home": "Real Madrid",
+          "away": "FC Barcelone",
+          "league": "liga",
+          "probs": [
+            46,
+            28,
+            26
+          ],
+          "selectedMarket": {
+            "code": "1",
+            "group": "1X2",
+            "label": "Victoire Real Madrid",
+            "prob": 0.45586461248514176,
+            "pct": 46,
+            "fairOdd": 2.19,
+            "marketOdd": 2.08,
+            "bookOdd": 2.08
+          }
+        },
+        {
+          "id": 1792574683943,
+          "home": "PSG",
+          "away": "Marseille",
+          "league": "ligue1",
+          "probs": [
+            62,
+            23,
+            15
+          ],
+          "selectedMarket": {
+            "code": "BTTS_N",
+            "group": "BTTS",
+            "label": "Les 2 équipes marquent : Non",
+            "prob": 0.40789698350054526,
+            "pct": 41,
+            "fairOdd": 2.45,
+            "marketOdd": 2.33,
+            "bookOdd": 2.33
+          }
+        }
+      ],
+      "totalOdd": 48.06,
+      "winProbPct": 1.7
+    }
+  ],
+  "tournaments": {
+    "can": {
+      "name": "CAN",
+      "simulations": 5000,
+      "topFavorites": [
+        {
+          "team": "Maroc",
+          "qfPct": 61.4,
+          "sfPct": 35.1,
+          "finalPct": 19.8,
+          "championPct": 11.8,
+          "fairOutrightOdd": 8.5
+        },
+        {
+          "team": "Sénégal",
+          "qfPct": 62.3,
+          "sfPct": 34.5,
+          "finalPct": 18.5,
+          "championPct": 10.7,
+          "fairOutrightOdd": 9.35
+        },
+        {
+          "team": "Côte d'Ivoire",
+          "qfPct": 57.4,
+          "sfPct": 30.6,
+          "finalPct": 15.9,
+          "championPct": 9.1,
+          "fairOutrightOdd": 10.96
+        },
+        {
+          "team": "Nigeria",
+          "qfPct": 55.9,
+          "sfPct": 27.2,
+          "finalPct": 13.6,
+          "championPct": 8.5,
+          "fairOutrightOdd": 11.74
+        },
+        {
+          "team": "Égypte",
+          "qfPct": 54.7,
+          "sfPct": 28.8,
+          "finalPct": 16.9,
+          "championPct": 7.9,
+          "fairOutrightOdd": 12.63
+        },
+        {
+          "team": "Algérie",
+          "qfPct": 55.3,
+          "sfPct": 27.8,
+          "finalPct": 15.4,
+          "championPct": 7.3,
+          "fairOutrightOdd": 13.7
+        },
+        {
+          "team": "Tunisie",
+          "qfPct": 53.2,
+          "sfPct": 27.9,
+          "finalPct": 12.8,
+          "championPct": 5.4,
+          "fairOutrightOdd": 18.45
+        },
+        {
+          "team": "RD Congo",
+          "qfPct": 45.3,
+          "sfPct": 22.4,
+          "finalPct": 12.2,
+          "championPct": 5.3,
+          "fairOutrightOdd": 18.73
+        }
+      ]
+    },
+    "ucl": {
+      "name": "UCL",
+      "simulations": 5000,
+      "topFavorites": [
+        {
+          "team": "Arsenal",
+          "qfPct": 65.6,
+          "sfPct": 34.8,
+          "finalPct": 22.2,
+          "championPct": 11,
+          "fairOutrightOdd": 9.12
+        },
+        {
+          "team": "FC Barcelone",
+          "qfPct": 63.9,
+          "sfPct": 32.4,
+          "finalPct": 17,
+          "championPct": 9.6,
+          "fairOutrightOdd": 10.44
+        },
+        {
+          "team": "Liverpool",
+          "qfPct": 52.6,
+          "sfPct": 29.3,
+          "finalPct": 16,
+          "championPct": 9.5,
+          "fairOutrightOdd": 10.55
+        },
+        {
+          "team": "Real Madrid",
+          "qfPct": 59.1,
+          "sfPct": 30.4,
+          "finalPct": 16.2,
+          "championPct": 9.2,
+          "fairOutrightOdd": 10.85
+        },
+        {
+          "team": "Manchester City",
+          "qfPct": 55.4,
+          "sfPct": 29.8,
+          "finalPct": 18.5,
+          "championPct": 9.1,
+          "fairOutrightOdd": 11.04
+        },
+        {
+          "team": "Bayern Munich",
+          "qfPct": 51.3,
+          "sfPct": 26.9,
+          "finalPct": 13.6,
+          "championPct": 8.3,
+          "fairOutrightOdd": 12.08
+        },
+        {
+          "team": "Inter Milan",
+          "qfPct": 47.4,
+          "sfPct": 25.4,
+          "finalPct": 13.2,
+          "championPct": 8,
+          "fairOutrightOdd": 12.53
+        },
+        {
+          "team": "PSG",
+          "qfPct": 48.7,
+          "sfPct": 24.6,
+          "finalPct": 12.1,
+          "championPct": 6.7,
+          "fairOutrightOdd": 14.84
+        }
+      ]
+    },
+    "worldcup": {
+      "name": "WORLDCUP",
+      "simulations": 5000,
+      "topFavorites": [
+        {
+          "team": "Espagne",
+          "qfPct": 60.5,
+          "sfPct": 35.2,
+          "finalPct": 20.3,
+          "championPct": 12.3,
+          "fairOutrightOdd": 8.12
+        },
+        {
+          "team": "Argentine",
+          "qfPct": 60.6,
+          "sfPct": 35.9,
+          "finalPct": 19,
+          "championPct": 11.4,
+          "fairOutrightOdd": 8.76
+        },
+        {
+          "team": "France",
+          "qfPct": 61.7,
+          "sfPct": 31.8,
+          "finalPct": 17.7,
+          "championPct": 10.1,
+          "fairOutrightOdd": 9.86
+        },
+        {
+          "team": "Angleterre",
+          "qfPct": 53.4,
+          "sfPct": 30.2,
+          "finalPct": 17.6,
+          "championPct": 8.8,
+          "fairOutrightOdd": 11.31
+        },
+        {
+          "team": "Portugal",
+          "qfPct": 57.4,
+          "sfPct": 29.1,
+          "finalPct": 16.7,
+          "championPct": 7.9,
+          "fairOutrightOdd": 12.63
+        },
+        {
+          "team": "Allemagne",
+          "qfPct": 54.2,
+          "sfPct": 31.6,
+          "finalPct": 15.1,
+          "championPct": 7.2,
+          "fairOutrightOdd": 13.97
+        },
+        {
+          "team": "Pays-Bas",
+          "qfPct": 46.6,
+          "sfPct": 23.3,
+          "finalPct": 12.6,
+          "championPct": 6,
+          "fairOutrightOdd": 16.72
+        },
+        {
+          "team": "Brésil",
+          "qfPct": 51.6,
+          "sfPct": 23.8,
+          "finalPct": 11.2,
+          "championPct": 5.8,
+          "fairOutrightOdd": 17.3
+        }
+      ]
+    }
+  },
+  "voiceSummaryFr": "Point Football AI Ultra v5 : 167 clubs et nations actifs. Favori numéro 1 CAN sur 5 000 simulations : Maroc (11.8%). Favori Champions League : Arsenal (11%). Ticket Sécurité IA du jour prêt à cote totale 1.71."
+}

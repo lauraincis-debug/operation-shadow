@@ -1,0 +1,20 @@
+{
+  "name": "Cloé — Votre agent personnel",
+  "short_name": "Cloé",
+  "description": "Agent personnel : assistant, investisseur et commercial — simulation sécurisée en FCFA.",
+  "lang": "fr",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#031a14",
+  "theme_color": "#031a14",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

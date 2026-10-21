@@ -1,0 +1,8 @@
+{
+  "cloeAgentAbidjanLiveUrl": "https://cloe-agent-abidjan.web.app",
+  "footballAiLiveUrl": "https://football-ai-43e33.web.app",
+  "cloeIaUltraLiveUrl": "https://cloe-ia-ultra.web.app",
+  "jarvisLv2DirectDeploy": false,
+  "jarvisLv2Note": " [1m[31mError:[39m[22m Failed to get Firebase project jarvis-lv2. Please make sure the project exists and your account has permission to access it. ",
+  "updatedAt": "2026-10-21T02:13:50Z"
+}
