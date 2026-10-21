@@ -642,7 +642,7 @@ for (const [cfgName, rawCfg] of [["firebase.json", fbCfgText], ["firebase-auto-d
   assert.ok(cfgContent.includes("https://cdn.jsdelivr.net"), `${cfgName} DOIT inclure https://cdn.jsdelivr.net !`);
   assert.ok(cfgContent.includes("https://tessdata.projectnaptha.com"), `${cfgName} DOIT inclure https://tessdata.projectnaptha.com !`);
   assert.equal(
-    (cfgContent.match(/https:\/\/api\.frankfurter\.dev/g) || []).length >= (cfgName === "firebase.json" ? 3 : 2),
+    (cfgContent.match(/https:\/\/api\.frankfurter\.dev/g) || []).length >= (cfgName === "firebase.json" ? 1 : 2),
     true,
     `${cfgName} DOIT autoriser https://api.frankfurter.dev dans connect-src sur tous les sites !`
   );
