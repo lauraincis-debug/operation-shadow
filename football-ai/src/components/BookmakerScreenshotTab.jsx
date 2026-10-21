@@ -47,6 +47,13 @@ export default function BookmakerScreenshotTab({
   const [newKind, setNewKind] = useState("OVER");
   const [newLine, setNewLine] = useState("2.5");
   const [newOdd, setNewOdd] = useState("1.75");
+  const [personalGeminiKey, setPersonalGeminiKey] = useState(() => {
+    try {
+      return localStorage.getItem("fai_user_gemini_vision_key") || "";
+    } catch {
+      return "";
+    }
+  });
 
   const processScreenshotFile = useCallback(
     async (file) => {
@@ -69,7 +76,8 @@ export default function BookmakerScreenshotTab({
           (pct, msg) => {
             setProgress(pct);
             if (msg) setStatusMsg(msg);
-          }
+          },
+          { geminiKey: personalGeminiKey.trim() }
         );
 
         setEngineUsed(res.engineUsed);
@@ -100,7 +108,7 @@ export default function BookmakerScreenshotTab({
       }
       setBusy(false);
     },
-    [liveMatches, previewUrl]
+    [liveMatches, previewUrl, personalGeminiKey]
   );
 
   // Support du collage direct Ctrl+V / Cmd+V d'une capture d'écran !
@@ -264,8 +272,30 @@ export default function BookmakerScreenshotTab({
             </button>
           </div>
           <div style={{ fontSize: 11.5, color: "#64748b", marginTop: 8 }}>
-            Astuce : sur PC ou Mac, faites une capture d&apos;écran Betclic puis appuyez simplement sur <strong>Ctrl+V</strong> ici !
+            🔓 <strong>100 % gratuit &amp; illimité sans clé API</strong> (moteur OCR WASM FRA+ENG intégré sur téléphone &amp; PC — sur ordinateur, faites aussi <strong>Ctrl+V</strong> directement).
           </div>
+          <details style={{ marginTop: 8, textAlign: "left", maxWidth: 520, marginInline: "auto" }}>
+            <summary style={{ cursor: "pointer", fontSize: 11.5, color: "#38bdf8", textAlign: "center" }}>
+              ⚡ Optionnel : activer aussi Gemini Vision IA (clé AI Studio personnelle gratuite)
+            </summary>
+            <div style={{ display: "flex", gap: 8, marginTop: 6 }}>
+              <input
+                type="password"
+                className="fai-select"
+                placeholder="Coller votre clé AIza... (optionnel — conservée uniquement sur votre appareil)"
+                value={personalGeminiKey}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setPersonalGeminiKey(val);
+                  try {
+                    localStorage.setItem("fai_user_gemini_vision_key", val);
+                  } catch {
+                    // ignore
+                  }
+                }}
+              />
+            </div>
+          </details>
         </div>
 
         {busy && (

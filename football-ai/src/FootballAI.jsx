@@ -817,11 +817,57 @@ export default function FootballAI() {
     return () => window.removeEventListener("beforeinstallprompt", onBeforeInstall);
   }, []);
 
+  const isStandalonePWA =
+    typeof window !== "undefined" &&
+    (window.matchMedia?.("(display-mode: standalone)")?.matches ||
+      window.navigator?.standalone === true);
+
   const handleInstallPWA = async () => {
-    if (!installPromptEvent) return;
-    installPromptEvent.prompt();
-    await installPromptEvent.userChoice.catch(() => {});
-    setInstallPromptEvent(null);
+    if (installPromptEvent) {
+      installPromptEvent.prompt();
+      await installPromptEvent.userChoice.catch(() => {});
+      setInstallPromptEvent(null);
+      return;
+    }
+    const ua = typeof navigator !== "undefined" ? navigator.userAgent || "" : "";
+    if (/iphone|ipad|ipod/i.test(ua)) {
+      triggerToast(
+        "📱 Sur iPhone/iPad : touchez « Partager ⬆️ » dans Safari puis « Sur l'écran d'accueil ➕ » !"
+      );
+    } else {
+      triggerToast(
+        "📲 Menu navigateur (⋮) → « Installer l'application » ou « Ajouter à l'écran d'accueil » !"
+      );
+    }
+  };
+
+  const handleShareAppToFriends = async () => {
+    const appUrl = "https://football-ai-43e33.web.app";
+    const inviteText =
+      "⚡ Teste l'application Omni-Sport & Football AI Ultra v6.4 (100 % gratuite, sans inscription ni aucune restriction) :\n" +
+      "• 🌐 7 Sports en direct (Football, NBA, Tennis, NFL, NHL, MLB, UFC)\n" +
+      "• 📸 Scanner de captures Betclic / 1xBet / Sportcash / Winamax ➔ 1 seul Pari Définitif optimal\n" +
+      "• 🔴 Vidéos & flux Live des matchs EN COURS + Simulations 10 000× & Coupon FCFA / €\n" +
+      `👉 Ouvre directement ici : ${appUrl}`;
+    try {
+      if (navigator.share) {
+        await navigator.share({
+          title: "⚡ Omni-Sport & Football AI Ultra v6.4",
+          text: inviteText,
+          url: appUrl,
+        });
+        return;
+      }
+      await navigator.clipboard.writeText(inviteText);
+      triggerToast("📋 Invitation + lien copiés ! Colle directement dans WhatsApp, Telegram ou SMS.");
+    } catch {
+      try {
+        await navigator.clipboard.writeText(appUrl);
+        triggerToast("📋 Lien https://football-ai-43e33.web.app copié !");
+      } catch {
+        // ignore
+      }
+    }
   };
 
   useEffect(() => {
@@ -1335,10 +1381,37 @@ export default function FootballAI() {
     triggerToast("🗑️ Mémoire IA réinitialisée.");
   };
 
+  const buildCouponShareLink = () => {
+    try {
+      const payload = {
+        currency: normalizeCurrency(currency),
+        stake,
+        coupon: coupon.slice(0, 12).map((c) => ({
+          sport: c.sport || "soccer",
+          home: c.home,
+          away: c.away,
+          league: c.league || "ucl",
+          probs: c.probs,
+          selectedMarket: {
+            code: c.selectedMarket?.code || "rec",
+            label: c.selectedMarket?.label || "Sélection IA",
+            pct: c.selectedMarket?.pct || 70,
+            bookOdd: Number(c.selectedMarket?.bookOdd || 1.5),
+          },
+        })),
+      };
+      const b64 = btoa(unescape(encodeURIComponent(JSON.stringify(payload))));
+      return `https://football-ai-43e33.web.app/#sync=${b64}`;
+    } catch {
+      return "https://football-ai-43e33.web.app";
+    }
+  };
+
   const handleShareCoupon = async () => {
     if (coupon.length === 0 || !couponSummary) return;
+    const shareUrl = buildCouponShareLink();
     const lines = [
-      `⚡ COUPON FOOTBALL AI ULTRA (${coupon.length} match${coupon.length > 1 ? "s" : ""})`,
+      `⚡ COUPON OMNI-SPORT & FOOTBALL AI ULTRA v6.4 (${coupon.length} match${coupon.length > 1 ? "s" : ""})`,
       "────────────────────────",
       ...coupon.map(
         (c, idx) =>
@@ -1347,15 +1420,16 @@ export default function FootballAI() {
       "────────────────────────",
       `📊 Cote totale : ${couponSummary.combinedBookOdd.toFixed(2)} | Probabilité IA : ${couponSummary.combinedProbPct}%`,
       `💰 Mise : ${formatMoney(stake, currency)} → Gain potentiel : ${formatMoney(couponSummary.potentialPayout, currency)}`,
+      `🔗 Charger ce coupon en 1 clic dans l'app : ${shareUrl}`,
     ];
     const text = lines.join("\n");
     try {
       if (navigator.share) {
-        await navigator.share({ title: "Mon Coupon Football AI Ultra", text });
+        await navigator.share({ title: "Mon Coupon Football AI Ultra v6.4", text });
         return;
       }
       await navigator.clipboard.writeText(text);
-      triggerToast("📋 Coupon copié dans le presse-papiers (prêt pour WhatsApp / Telegram) !");
+      triggerToast("📋 Coupon + lien interactif copiés (prêts pour WhatsApp / Telegram) !");
     } catch {
       triggerToast("📋 Résumé prêt à être partagé.");
     }
@@ -1544,11 +1618,20 @@ export default function FootballAI() {
             </div>
 
             <div className="fai-header-kpis">
-              {installPromptEvent && (
+              <button
+                type="button"
+                className="fai-btn-secondary"
+                onClick={handleShareAppToFriends}
+                title="Envoyer l'application à vos amis sur WhatsApp, Telegram ou SMS"
+              >
+                📤 Partager aux Amis
+              </button>
+              {!isStandalonePWA && (
                 <button
                   type="button"
                   className="fai-btn-secondary"
                   onClick={handleInstallPWA}
+                  title="Installer l'application sur l'écran d'accueil Android, iPhone ou PC"
                 >
                   📲 Installer l&apos;App
                 </button>
@@ -1630,6 +1713,9 @@ export default function FootballAI() {
             </div>
             <div>
               • <strong>4. Vidéos EN COURS uniquement &amp; Buteurs :</strong> l&apos;onglet <strong>🔴 Vidéo Live</strong> récupère les flux et vidéos en ligne <strong>strictement pour les matchs EN COURS</strong> (jamais après le coup de sifflet final) afin de parier en direct, et les paris Buteurs ne doivent être validés qu&apos;à <strong>H-60 min</strong> (compositions officielles).
+            </div>
+            <div style={{ color: "#86efac" }}>
+              • <strong>🔓 Accès 100 % Libre &amp; Illimité (sans inscription ni quota) :</strong> tous les modules (7 Sports en direct, Scanner Betclic WASM, Vidéos Live, Simulations 10 000×, Fantasy 100 M€, Bankroll FCFA / €) sont débloqués sans aucune restriction. Chaque appareil conserve son propre portefeuille privé, et vous pouvez échanger un coupon complet entre amis en 1 clic via <strong>📤 Partager le Coupon</strong> !
             </div>
           </div>
         </details>
