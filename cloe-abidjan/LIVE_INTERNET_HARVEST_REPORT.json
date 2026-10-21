@@ -1,10 +1,10 @@
 {
   "status": "LIVE_INTERNET_HARVEST_V6_2_LIVE_CERTIFIED_OK",
   "version": "6.2.0-live-certified",
-  "harvestedAt": "2026-10-21T13:23:12.751Z",
-  "sha256Integrity": "0ca9ec32b6d595cdbd1a27bc",
+  "harvestedAt": "2026-10-21T13:26:44.701Z",
+  "sha256Integrity": "0bc36c44b7bee010e7b53de6",
   "totalMatchesAcross4Days": 883,
-  "currentlyLiveOngoingMatchesCount": 10,
+  "currentlyLiveOngoingMatchesCount": 8,
   "countsBySport": {
     "soccer": 105,
     "basketball": 29,
@@ -18,13 +18,6 @@
   "sampleCurrentlyLiveMatches": [
     {
       "sport": "tennis",
-      "competition": "Tennis ATP Tour 🎾 • BNP Paribas Fortis European Open (Men's Singles)",
-      "match": "Mariano Navone vs Tallon Griekspoor",
-      "score": "0-2",
-      "liveStatus": "🔴 DIRECT 2nd"
-    },
-    {
-      "sport": "tennis",
       "competition": "Tennis ATP Tour 🎾 • Grand Prix Auvergne-Rhône-Alpes (Men's Singles)",
       "match": "Stan Wawrinka vs Martin Landaluce",
       "score": "1-0",
@@ -50,13 +43,6 @@
       "match": "Ekaterina Alexandrova vs Marta Kostyuk",
       "score": "0-0",
       "liveStatus": "🔴 DIRECT 1st"
-    },
-    {
-      "sport": "tennis",
-      "competition": "Tennis ATP Tour 🎾 • BNP Paribas Fortis European Open (Men's Singles)",
-      "match": "Mariano Navone vs Tallon Griekspoor",
-      "score": "0-2",
-      "liveStatus": "🔴 DIRECT 2nd"
     },
     {
       "sport": "tennis",
