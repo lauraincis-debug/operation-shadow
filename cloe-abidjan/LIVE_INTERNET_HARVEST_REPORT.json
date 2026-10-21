@@ -1,12 +1,90 @@
 {
-  "status": "OFFLINE_SANDBOX_BUILD",
+  "status": "LIVE_INTERNET_HARVEST_V6_2_LIVE_CERTIFIED_OK",
   "version": "6.2.0-live-certified",
-  "harvestedAt": "2026-10-21T13:22:42.144Z",
-  "sha256Integrity": "3f0aa9ed245e5c3323e530c2",
-  "totalMatchesAcross4Days": 0,
-  "currentlyLiveOngoingMatchesCount": 0,
-  "countsBySport": {},
-  "deepDossiersPreloaded": 0,
+  "harvestedAt": "2026-10-21T13:23:12.751Z",
+  "sha256Integrity": "0ca9ec32b6d595cdbd1a27bc",
+  "totalMatchesAcross4Days": 883,
+  "currentlyLiveOngoingMatchesCount": 10,
+  "countsBySport": {
+    "soccer": 105,
+    "basketball": 29,
+    "tennis": 708,
+    "football": 13,
+    "hockey": 27,
+    "baseball": 1
+  },
+  "deepDossiersPreloaded": 40,
   "verifiedLiveOngoingVideosCount": 0,
-  "sampleCurrentlyLiveMatches": []
+  "sampleCurrentlyLiveMatches": [
+    {
+      "sport": "tennis",
+      "competition": "Tennis ATP Tour 🎾 • BNP Paribas Fortis European Open (Men's Singles)",
+      "match": "Mariano Navone vs Tallon Griekspoor",
+      "score": "0-2",
+      "liveStatus": "🔴 DIRECT 2nd"
+    },
+    {
+      "sport": "tennis",
+      "competition": "Tennis ATP Tour 🎾 • Grand Prix Auvergne-Rhône-Alpes (Men's Singles)",
+      "match": "Stan Wawrinka vs Martin Landaluce",
+      "score": "1-0",
+      "liveStatus": "🔴 DIRECT 2nd"
+    },
+    {
+      "sport": "tennis",
+      "competition": "Tennis WTA Tour 🎾 • BNB Ningbo Open (Women's Singles)",
+      "match": "Ekaterina Alexandrova vs Marta Kostyuk",
+      "score": "0-0",
+      "liveStatus": "🔴 DIRECT 1st"
+    },
+    {
+      "sport": "tennis",
+      "competition": "Tennis ATP Tour 🎾 • Grand Prix Auvergne-Rhône-Alpes (Men's Singles)",
+      "match": "Stan Wawrinka vs Martin Landaluce",
+      "score": "1-0",
+      "liveStatus": "🔴 DIRECT 2nd"
+    },
+    {
+      "sport": "tennis",
+      "competition": "Tennis WTA Tour 🎾 • BNB Ningbo Open (Women's Singles)",
+      "match": "Ekaterina Alexandrova vs Marta Kostyuk",
+      "score": "0-0",
+      "liveStatus": "🔴 DIRECT 1st"
+    },
+    {
+      "sport": "tennis",
+      "competition": "Tennis ATP Tour 🎾 • BNP Paribas Fortis European Open (Men's Singles)",
+      "match": "Mariano Navone vs Tallon Griekspoor",
+      "score": "0-2",
+      "liveStatus": "🔴 DIRECT 2nd"
+    },
+    {
+      "sport": "tennis",
+      "competition": "Tennis ATP Tour 🎾 • Grand Prix Auvergne-Rhône-Alpes (Men's Singles)",
+      "match": "Stan Wawrinka vs Martin Landaluce",
+      "score": "1-0",
+      "liveStatus": "🔴 DIRECT 2nd"
+    },
+    {
+      "sport": "tennis",
+      "competition": "Tennis WTA Tour 🎾 • BNB Ningbo Open (Women's Singles)",
+      "match": "Ekaterina Alexandrova vs Marta Kostyuk",
+      "score": "0-0",
+      "liveStatus": "🔴 DIRECT 1st"
+    },
+    {
+      "sport": "tennis",
+      "competition": "Tennis ATP Tour 🎾 • Grand Prix Auvergne-Rhône-Alpes (Men's Singles)",
+      "match": "Stan Wawrinka vs Martin Landaluce",
+      "score": "1-0",
+      "liveStatus": "🔴 DIRECT 2nd"
+    },
+    {
+      "sport": "tennis",
+      "competition": "Tennis WTA Tour 🎾 • BNB Ningbo Open (Women's Singles)",
+      "match": "Ekaterina Alexandrova vs Marta Kostyuk",
+      "score": "0-0",
+      "liveStatus": "🔴 DIRECT 1st"
+    }
+  ]
 }
