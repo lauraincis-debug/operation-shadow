@@ -1,14 +1,14 @@
 {
   "status": "LIVE_INTERNET_HARVEST_V6_2_LIVE_CERTIFIED_OK",
   "version": "6.2.0-live-certified",
-  "harvestedAt": "2026-10-21T13:47:27.296Z",
-  "sha256Integrity": "effb966a422ccdc5cdc36f32",
-  "totalMatchesAcross4Days": 883,
-  "currentlyLiveOngoingMatchesCount": 12,
+  "harvestedAt": "2026-10-21T13:50:57.724Z",
+  "sha256Integrity": "4b18fea371efdc080a2504dc",
+  "totalMatchesAcross4Days": 887,
+  "currentlyLiveOngoingMatchesCount": 8,
   "countsBySport": {
     "soccer": 105,
     "basketball": 29,
-    "tennis": 708,
+    "tennis": 712,
     "football": 13,
     "hockey": 27,
     "baseball": 1
@@ -28,14 +28,7 @@
       "competition": "Tennis ATP Tour 🎾 • Grand Prix Auvergne-Rhône-Alpes (Men's Singles)",
       "match": "Stan Wawrinka vs Martin Landaluce",
       "score": "1-1",
-      "liveStatus": "🔴 DIRECT 2nd"
-    },
-    {
-      "sport": "tennis",
-      "competition": "Tennis WTA Tour 🎾 • BNB Ningbo Open (Women's Singles)",
-      "match": "Ekaterina Alexandrova vs Marta Kostyuk",
-      "score": "1-0",
-      "liveStatus": "🔴 DIRECT 1st"
+      "liveStatus": "🔴 DIRECT 3rd"
     },
     {
       "sport": "tennis",
@@ -49,14 +42,7 @@
       "competition": "Tennis ATP Tour 🎾 • Grand Prix Auvergne-Rhône-Alpes (Men's Singles)",
       "match": "Stan Wawrinka vs Martin Landaluce",
       "score": "1-1",
-      "liveStatus": "🔴 DIRECT 2nd"
-    },
-    {
-      "sport": "tennis",
-      "competition": "Tennis WTA Tour 🎾 • BNB Ningbo Open (Women's Singles)",
-      "match": "Ekaterina Alexandrova vs Marta Kostyuk",
-      "score": "1-0",
-      "liveStatus": "🔴 DIRECT 1st"
+      "liveStatus": "🔴 DIRECT 3rd"
     },
     {
       "sport": "tennis",
@@ -70,14 +56,7 @@
       "competition": "Tennis ATP Tour 🎾 • Grand Prix Auvergne-Rhône-Alpes (Men's Singles)",
       "match": "Stan Wawrinka vs Martin Landaluce",
       "score": "1-1",
-      "liveStatus": "🔴 DIRECT 2nd"
-    },
-    {
-      "sport": "tennis",
-      "competition": "Tennis WTA Tour 🎾 • BNB Ningbo Open (Women's Singles)",
-      "match": "Ekaterina Alexandrova vs Marta Kostyuk",
-      "score": "1-0",
-      "liveStatus": "🔴 DIRECT 1st"
+      "liveStatus": "🔴 DIRECT 3rd"
     },
     {
       "sport": "tennis",
@@ -85,6 +64,13 @@
       "match": "Clement Chidekh vs Jacob Fearnley",
       "score": "0-0",
       "liveStatus": "🔴 DIRECT 1st"
+    },
+    {
+      "sport": "tennis",
+      "competition": "Tennis ATP Tour 🎾 • Grand Prix Auvergne-Rhône-Alpes (Men's Singles)",
+      "match": "Stan Wawrinka vs Martin Landaluce",
+      "score": "1-1",
+      "liveStatus": "🔴 DIRECT 3rd"
     }
   ]
 }
