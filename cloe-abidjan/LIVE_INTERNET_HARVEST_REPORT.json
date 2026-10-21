@@ -1,14 +1,14 @@
 {
   "status": "LIVE_INTERNET_HARVEST_V6_4_CERTIFIED_OK",
   "version": "6.4.0-certified-integral",
-  "harvestedAt": "2026-10-21T14:57:52.746Z",
-  "sha256Integrity": "a301c322590703bef7f953ad",
-  "totalMatchesAcross4Days": 887,
-  "currentlyLiveOngoingMatchesCount": 12,
+  "harvestedAt": "2026-10-21T15:04:26.357Z",
+  "sha256Integrity": "06d9913caf91f5b5cba1ea14",
+  "totalMatchesAcross4Days": 891,
+  "currentlyLiveOngoingMatchesCount": 8,
   "countsBySport": {
     "soccer": 105,
     "basketball": 29,
-    "tennis": 712,
+    "tennis": 716,
     "football": 13,
     "hockey": 27,
     "baseball": 1
@@ -32,10 +32,17 @@
     },
     {
       "sport": "tennis",
-      "competition": "Tennis ATP Tour 🎾 • Grand Prix Auvergne-Rhône-Alpes (Men's Singles)",
-      "match": "Stan Wawrinka vs Martin Landaluce",
-      "score": "1-1",
-      "liveStatus": "🔴 DIRECT 3rd"
+      "competition": "Tennis ATP Tour 🎾 • BNP Paribas Fortis European Open (Men's Singles)",
+      "match": "Clement Chidekh vs Jacob Fearnley",
+      "score": "1-0",
+      "liveStatus": "🔴 DIRECT 2nd"
+    },
+    {
+      "sport": "tennis",
+      "competition": "Tennis ATP Tour 🎾 • Almaty Open (Men's Singles)",
+      "match": "Stefanos Tsitsipas vs Mikhail Kukushkin",
+      "score": "0-0",
+      "liveStatus": "🔴 DIRECT 1st"
     },
     {
       "sport": "tennis",
@@ -53,13 +60,6 @@
     },
     {
       "sport": "tennis",
-      "competition": "Tennis ATP Tour 🎾 • Grand Prix Auvergne-Rhône-Alpes (Men's Singles)",
-      "match": "Stan Wawrinka vs Martin Landaluce",
-      "score": "1-1",
-      "liveStatus": "🔴 DIRECT 3rd"
-    },
-    {
-      "sport": "tennis",
       "competition": "Tennis ATP Tour 🎾 • BNP Paribas Fortis European Open (Men's Singles)",
       "match": "Clement Chidekh vs Jacob Fearnley",
       "score": "1-0",
@@ -71,20 +71,6 @@
       "match": "Stefanos Tsitsipas vs Mikhail Kukushkin",
       "score": "0-0",
       "liveStatus": "🔴 DIRECT 1st"
-    },
-    {
-      "sport": "tennis",
-      "competition": "Tennis ATP Tour 🎾 • Grand Prix Auvergne-Rhône-Alpes (Men's Singles)",
-      "match": "Stan Wawrinka vs Martin Landaluce",
-      "score": "1-1",
-      "liveStatus": "🔴 DIRECT 3rd"
-    },
-    {
-      "sport": "tennis",
-      "competition": "Tennis ATP Tour 🎾 • BNP Paribas Fortis European Open (Men's Singles)",
-      "match": "Clement Chidekh vs Jacob Fearnley",
-      "score": "1-0",
-      "liveStatus": "🔴 DIRECT 2nd"
     }
   ]
 }
