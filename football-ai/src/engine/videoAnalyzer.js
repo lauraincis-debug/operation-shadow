@@ -20,21 +20,54 @@ function clamp(v, min, max) {
 
 const MAX_DATE_DIFF_HOURS = 36;
 
-function teamsMatchStrictly(candidateA, candidateB, targetHome, targetAway) {
-  const c1 = normalizeKey(canonicalTeamName(candidateA || ""));
-  const c2 = normalizeKey(canonicalTeamName(candidateB || ""));
-  const tH = normalizeKey(canonicalTeamName(targetHome || ""));
-  const tA = normalizeKey(canonicalTeamName(targetAway || ""));
-  if (!c1 || !c2 || !tH || !tA) return false;
+function teamVariantsMatch(candRaw, targetCanon, targetRaw = "") {
+  const clean = (s) =>
+    normalizeKey(String(s || ""))
+      .replace(/^(fc|sc|ac|as|cf|fk|sk|rb|sv|ud|cd|rcd|real|club|sporting)/, "")
+      .trim() || normalizeKey(String(s || ""));
 
-  const sameToken = (x, y) => x === y || (x.length >= 4 && y.length >= 4 && (x.includes(y) || y.includes(x)));
-  return (sameToken(c1, tH) && sameToken(c2, tA)) || (sameToken(c1, tA) && sameToken(c2, tH));
+  const cKeys = [normalizeKey(canonicalTeamName(candRaw || "")), normalizeKey(candRaw || ""), clean(candRaw)].filter(Boolean);
+  const tKeys = [
+    normalizeKey(canonicalTeamName(targetCanon || "")),
+    normalizeKey(targetCanon || ""),
+    normalizeKey(targetRaw || ""),
+    clean(targetCanon),
+    clean(targetRaw),
+  ].filter(Boolean);
+
+  for (const x of cKeys) {
+    for (const y of tKeys) {
+      if (x === y) return true;
+      if (x.length >= 4 && y.length >= 4 && (x.includes(y) || y.includes(x))) return true;
+    }
+  }
+  // Vérifier aussi les mots significatifs >= 5 lettres (ex: "S Bratislava" <-> "Slovan Bratislava")
+  const words = (s) =>
+    String(s || "")
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase()
+      .split(/[^a-z0-9]+/)
+      .filter((w) => w.length >= 5 && !["united", "city", "sport", "athletic", "atletico", "dynamo", "olympique"].includes(w));
+  const cw = words(candRaw);
+  const tw = [...words(targetCanon), ...words(targetRaw)];
+  return cw.some((w) => tw.includes(w));
+}
+
+function teamsMatchStrictly(candidateA, candidateB, targetHome, targetAway, targetHomeRaw = "", targetAwayRaw = "") {
+  if (!candidateA || !candidateB || !targetHome || !targetAway) return false;
+  return (
+    (teamVariantsMatch(candidateA, targetHome, targetHomeRaw) &&
+      teamVariantsMatch(candidateB, targetAway, targetAwayRaw)) ||
+    (teamVariantsMatch(candidateA, targetAway, targetAwayRaw) &&
+      teamVariantsMatch(candidateB, targetHome, targetHomeRaw))
+  );
 }
 
 /**
  * Vérifie mathématiquement que la vidéo candidate correspond :
  * 1) EXACTEMENT aux 2 bonnes équipes du match demandé
- * 2) EXACTEMENT à la bonne date officielle (écart <= 36h)
+ * 2) EXACTEMENT à la bonne date officielle (écart <= 36h après le coup d'envoi)
  */
 export function verifyOfficialVideoCandidate(candidate, targetMatch) {
   const reasons = [];
@@ -44,7 +77,9 @@ export function verifyOfficialVideoCandidate(candidate, targetMatch) {
       candidate.homeTeam,
       candidate.awayTeam,
       targetMatch.home,
-      targetMatch.away
+      targetMatch.away,
+      targetMatch.homeRaw,
+      targetMatch.awayRaw
     );
 
   if (!teamsOk) {

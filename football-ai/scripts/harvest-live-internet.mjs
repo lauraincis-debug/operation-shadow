@@ -148,12 +148,13 @@ const allMatches = Object.values(days).flat();
 const dossiers = {};
 const verifiedVideos = [];
 
-// Prioriser les matchs en direct ("in") et tout juste terminés ("post") pour les vidéos officielles !
+// Prioriser les sports collectifs filmés en direct ("in") et tout juste terminés ("post") : Football, NBA, NHL, NFL, MLB !
+const teamSportsFirst = allMatches.filter((m) => m.sport !== "tennis");
 const liveAndRecentFirst = [
-  ...allMatches.filter((m) => m.state === "in"),
-  ...allMatches.filter((m) => m.state === "post"),
-  ...allMatches.filter((m) => m.state !== "in" && m.state !== "post"),
-].slice(0, 26);
+  ...teamSportsFirst.filter((m) => m.state === "in"),
+  ...teamSportsFirst.filter((m) => m.state === "post"),
+  ...teamSportsFirst.filter((m) => m.state !== "in" && m.state !== "post"),
+].slice(0, 40);
 
 await Promise.all(
   liveAndRecentFirst.map(async (m) => {
