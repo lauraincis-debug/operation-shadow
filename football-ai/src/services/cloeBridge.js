@@ -160,15 +160,20 @@ export function createCloeFootballBrain(initialConfig = {}) {
 
   function enrichMatches(rawMatches, model) {
     return rawMatches.map((m) => {
-      const pred = computeFullPrediction(m.home, m.away, m.league || "ucl", model, m.liveOdds);
+      const isSoccer = !m.sport || m.sport === "soccer";
+      const pred = isSoccer
+        ? computeFullPrediction(m.home, m.away, m.league || "ucl", model, m.liveOdds)
+        : predictOmniSportMatch(m);
       return {
         ...m,
         prediction: pred,
         probs: pred.probs,
         xg: pred.xg,
-        likelyScore: pred.topScores?.[0]?.score || "1-1",
+        likelyScore: isSoccer
+          ? pred.topScores?.[0]?.score || "1-1"
+          : pred.projectedScoreLabel || `${Math.round((pred.projectedTotal || 6) * 0.54)}-${Math.round((pred.projectedTotal || 6) * 0.46)}`,
         safestMarket: pred.recommendedMarket,
-        confidenceScore: pred.confidence?.score || pred.recommendedMarket?.pct || 70,
+        confidenceScore: pred.confidence?.score || pred.recommendedMarket?.pct || 68,
       };
     });
   }
@@ -198,11 +203,13 @@ export function createCloeFootballBrain(initialConfig = {}) {
       tmMatches = tmFeed.matches || [];
     }
 
-    // Auto-apprentissage continu sur les matchs terminés
+    // Auto-apprentissage continu Dixon-Coles STRICTEMENT réservé aux vrais matchs de Football (!m.sport || m.sport === "soccer")
+    // (ne jamais injecter un score NBA 118-112 ou NHL 6-4 dans la matrice Poisson Football !)
     let newlyLearned = 0;
     const known = new Set(state.learnedExternalIds);
     for (const m of [...yMatches, ...tMatches]) {
-      if (m.completed && typeof m.scoreHome === "number" && typeof m.scoreAway === "number") {
+      const isSoccer = !m.sport || m.sport === "soccer";
+      if (isSoccer && m.completed && typeof m.scoreHome === "number" && typeof m.scoreAway === "number") {
         if (!known.has(m.externalId)) {
           known.add(m.externalId);
           const curModel = getModelState();

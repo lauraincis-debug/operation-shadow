@@ -522,6 +522,28 @@ assert.equal(validateE2eePassphrase("salon1234", "salon1234").valid, false, "Int
 assert.equal(validateE2eePassphrase("salon1234", "court").valid, false, "Interdiction passphrase < 8 caractères");
 assert.equal(validateE2eePassphrase("salon1234", "SecretUltra#2026!").valid, true, "Validation vraie clé secrète E2EE");
 
+// 14f. Étanchéité totale Multi-Sports dans getDailyBriefing() (zéro pollution NBA 118-112 / NHL dans Dixon-Coles Football)
+const { createCloeFootballBrain } = await import("../src/services/cloeBridge.js");
+const testBrain = createCloeFootballBrain();
+const mixedBriefing = await testBrain.getDailyBriefing({
+  forceRefresh: true,
+  externalFixtures: {
+    yesterday: [
+      { externalId: "nba-test-1", sport: "basketball", home: "Celtics", away: "Lakers", completed: true, scoreHome: 118, scoreAway: 112 },
+      { externalId: "soc-test-1", sport: "soccer", home: "PSG", away: "Lyon", league: "ligue1", completed: true, scoreHome: 2, scoreAway: 1 },
+    ],
+    today: [
+      { externalId: "nhl-test-1", sport: "hockey", home: "Senators", away: "Sharks", state: "pre", completed: false },
+    ],
+    tomorrow: [],
+  },
+});
+assert.equal(mixedBriefing.newlyLearnedMatches, 1, "Seuls les vrais matchs de Football doivent alimenter Dixon-Coles (jamais NBA 118-112 !)");
+assert.ok(
+  !String(mixedBriefing.todayMatches[0]?.safestMarket?.label || "").includes("Les 2 équipes marquent"),
+  "Un match NHL/NBA/Tennis ne doit JAMAIS recevoir un intitulé Football BTTS !"
+);
+
 console.log(
   `✓ Audit Complet v6.2 LIVE CERTIFIÉE validé à 100% : Vidéo EN COURS uniquement (Match en cours ✅ + Pari Live immédiat "${certifiedClipInsight.liveBetRecommendation.label}" | Match Terminé ⛔ | PoC Audit #2 Devils/ASEC ⛔ | Féminines/U19 ⛔), Scanner Betclic ➔ Pari Définitif Unique ("${evalBetclic.definitiveBet.rawLabel || evalBetclic.definitiveBet.canonicalLabel}" @${evalBetclic.definitiveBet.bookmakerOdd}, EV +${evalBetclic.definitiveBet.evPct}% | Crushed Odds ➔ NO-BET ✅) & E2EE AES-256-GCM strict ✅ !`
 );
