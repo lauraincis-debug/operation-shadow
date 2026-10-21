@@ -1,17 +1,21 @@
 {
-  "status": "LIVE_INTERNET_HARVEST_OK",
-  "harvestedAt": "2026-10-21T09:25:08.700Z",
-  "sha256Integrity": "e0405938f3e01a9143df629f",
-  "totalMatchesAcross4Days": 867,
+  "status": "LIVE_INTERNET_HARVEST_V6_1_CERTIFIED_OK",
+  "version": "6.1.0-certified",
+  "harvestedAt": "2026-10-21T10:29:10.438Z",
+  "sha256Integrity": "84a4523be11ea4b5a923e931",
+  "totalMatchesAcross4Days": 871,
   "countsBySport": {
     "soccer": 105,
     "basketball": 29,
-    "tennis": 692,
+    "tennis": 696,
     "football": 13,
     "hockey": 27,
     "baseball": 1
   },
-  "deepDossiersPreloaded": 18,
+  "deepDossiersPreloaded": 0,
+  "verifiedOfficialVideosCount": 0,
+  "unmatchedOrWrongDateVideosBlocked": 50,
+  "sampleCertifiedOfficialVideos": [],
   "sampleVerifiedRealMatches": [
     {
       "sport": "soccer",
