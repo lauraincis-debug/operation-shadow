@@ -78,6 +78,59 @@ jobs:
             })();
           '
 
+      - name: Setup Google Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: football-ai-43e33
+
+      - name: Deploy FastAPI data service to Cloud Run
+        working-directory: football-ai
+        shell: bash
+        run: |
+          set -euo pipefail
+          PROJECT_ID="football-ai-43e33"
+          REGION="europe-west1"
+          SERVICE="football-ai-api"
+          gcloud services enable run.googleapis.com cloudbuild.googleapis.com artifactregistry.googleapis.com --project "$PROJECT_ID"
+
+          SECRET_MAPPINGS=()
+          if gcloud secrets describe FOOTBALL_AI_DATABASE_URL --project "$PROJECT_ID" >/dev/null 2>&1; then
+            SECRET_MAPPINGS+=("DATABASE_URL=FOOTBALL_AI_DATABASE_URL:latest")
+          elif gcloud secrets describe DATABASE_URL --project "$PROJECT_ID" >/dev/null 2>&1; then
+            SECRET_MAPPINGS+=("DATABASE_URL=DATABASE_URL:latest")
+          else
+            echo "::warning title=PostgreSQL non configuré::Aucun secret FOOTBALL_AI_DATABASE_URL/DATABASE_URL trouvé; le service démarrera avec son cache mémoire de repli."
+          fi
+          for SECRET_NAME in FOOTBALL_DATA_API_KEY API_FOOTBALL_KEY; do
+            if gcloud secrets describe "$SECRET_NAME" --project "$PROJECT_ID" >/dev/null 2>&1; then
+              SECRET_MAPPINGS+=("${SECRET_NAME}=${SECRET_NAME}:latest")
+            fi
+          done
+
+          DEPLOY_ARGS=(
+            run deploy "$SERVICE"
+            --source backend
+            --project "$PROJECT_ID"
+            --region "$REGION"
+            --platform managed
+            --allow-unauthenticated
+            --port 8080
+            --memory 512Mi
+            --cpu 1
+            --min-instances 0
+            --max-instances 3
+            --timeout 60
+            --set-env-vars UPSTREAM_TIMEOUT_SECONDS=8,FOOTBALL_FIXTURES_TTL_SECONDS=60,FOOTBALL_RESULTS_TTL_SECONDS=900,FOOTBALL_STANDINGS_TTL_SECONDS=21600,PLAYER_STATS_TTL_SECONDS=3600,STALE_IF_ERROR_SECONDS=86400
+          )
+          if ((${#SECRET_MAPPINGS[@]})); then
+            SECRET_LIST=$(IFS=,; echo "${SECRET_MAPPINGS[*]}")
+            DEPLOY_ARGS+=(--set-secrets "$SECRET_LIST")
+          fi
+          gcloud "${DEPLOY_ARGS[@]}"
+
+          SERVICE_URL=$(gcloud run services describe "$SERVICE" --project "$PROJECT_ID" --region "$REGION" --format='value(status.url)')
+          curl --fail --silent --show-error "$SERVICE_URL/api/health"
+
       - name: Deploy Omni-Sport & Football AI Ultra v6.4 Certifiée Intégrale (https://football-ai-43e33.web.app)
         working-directory: football-ai
         run: |
