@@ -91,7 +91,26 @@ jobs:
           PROJECT_ID="football-ai-43e33"
           REGION="europe-west1"
           SERVICE="football-ai-api"
-          gcloud services enable run.googleapis.com cloudbuild.googleapis.com artifactregistry.googleapis.com --project "$PROJECT_ID"
+
+          run_checked() {
+            local label="$1"
+            shift
+            local output status summary
+            if output=$("$@" 2>&1); then
+              printf '%s' "$output"
+              echo
+            else
+              status=$?
+              printf '%s' "$output" >&2
+              printf '\n' >&2
+              summary=$(printf '%s' "$output" | tail -n 1 | tr -d '\r')
+              summary=${summary//'%'/'%25'}
+              echo "::error title=${label}::${summary}"
+              exit "$status"
+            fi
+          }
+
+          run_checked "Activation des API Google Cloud" gcloud services enable run.googleapis.com cloudbuild.googleapis.com artifactregistry.googleapis.com --project "$PROJECT_ID"
 
           SECRET_MAPPINGS=()
           if gcloud secrets describe FOOTBALL_AI_DATABASE_URL --project "$PROJECT_ID" >/dev/null 2>&1; then
@@ -126,10 +145,10 @@ jobs:
             SECRET_LIST=$(IFS=,; echo "${SECRET_MAPPINGS[*]}")
             DEPLOY_ARGS+=(--set-secrets "$SECRET_LIST")
           fi
-          gcloud "${DEPLOY_ARGS[@]}"
+          run_checked "Déploiement Cloud Run" gcloud "${DEPLOY_ARGS[@]}"
 
-          SERVICE_URL=$(gcloud run services describe "$SERVICE" --project "$PROJECT_ID" --region "$REGION" --format='value(status.url)')
-          curl --fail --silent --show-error "$SERVICE_URL/api/health"
+          SERVICE_URL=$(run_checked "Récupération de l'URL Cloud Run" gcloud run services describe "$SERVICE" --project "$PROJECT_ID" --region "$REGION" --format='value(status.url)')
+          run_checked "Vérification de santé FastAPI" curl --fail --silent --show-error "$SERVICE_URL/api/health"
 
       - name: Deploy Omni-Sport & Football AI Ultra v6.4 Certifiée Intégrale (https://football-ai-43e33.web.app)
         working-directory: football-ai
