@@ -110,7 +110,9 @@ jobs:
             fi
           }
 
-          run_checked "Activation des API Google Cloud" gcloud services enable run.googleapis.com cloudbuild.googleapis.com artifactregistry.googleapis.com --project "$PROJECT_ID"
+          if ! gcloud services enable run.googleapis.com cloudbuild.googleapis.com artifactregistry.googleapis.com --project "$PROJECT_ID"; then
+            echo "::warning title=Activation API non autorisée::Le compte de déploiement ne peut pas activer les API. Tentative de poursuivre avec les API déjà activées; si elles manquent, un administrateur du projet devra les activer."
+          fi
 
           SECRET_MAPPINGS=()
           if gcloud secrets describe FOOTBALL_AI_DATABASE_URL --project "$PROJECT_ID" >/dev/null 2>&1; then
