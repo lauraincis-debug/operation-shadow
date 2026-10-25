@@ -3,13 +3,7 @@ import { createCloeFootballBrain } from "../services/cloeBridge.js";
 
 const CLOE_MEM_KEY = "cloe_ultra_personal_memory_v4";
 
-function loadCloeMemory() {
-  try {
-    const raw = localStorage.getItem(CLOE_MEM_KEY);
-    if (raw) return JSON.parse(raw);
-  } catch {
-    // ignore
-  }
+function defaultCloeMemory() {
   return {
     userName: "Boss",
     iqScore: 128,
@@ -21,10 +15,38 @@ function loadCloeMemory() {
       "Toujours privilégier la sécurité Double Chance / +1.5 Buts quand l'écart Elo est inférieur à 55 pts.",
       "Adapter les montants en FCFA et appliquer le Critère de Kelly ¼ pour protéger le capital.",
     ],
-    llmProvider: "gemini", // gemini | groq | openai
+    llmProvider: "gemini",
     llmApiKey: "",
     favoriteClubs: ["PSG", "Real Madrid", "Arsenal", "Côte d'Ivoire"],
   };
+}
+
+function clearLegacyProviderKeys() {
+  try {
+    localStorage.removeItem("cloe_standalone_memory_v5");
+    localStorage.removeItem("javis_gemKey");
+    localStorage.removeItem("fai_user_gemini_vision_key");
+  } catch {
+    // ignore storage indisponible
+  }
+}
+
+function loadCloeMemory() {
+  clearLegacyProviderKeys();
+  try {
+    const raw = localStorage.getItem(CLOE_MEM_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      const safeMemory = parsed && typeof parsed === "object" ? { ...parsed } : {};
+      // Les anciennes versions conservaient les clés fournisseur dans le stockage local.
+      delete safeMemory.llmApiKey;
+      localStorage.setItem(CLOE_MEM_KEY, JSON.stringify(safeMemory));
+      return { ...defaultCloeMemory(), ...safeMemory, llmApiKey: "" };
+    }
+  } catch {
+    // ignore les données locales invalides
+  }
+  return defaultCloeMemory();
 }
 
 export default function CloeApp() {
@@ -64,7 +86,9 @@ export default function CloeApp() {
     setMem((prev) => {
       const next = typeof patch === "function" ? patch(prev) : { ...prev, ...patch };
       try {
-        localStorage.setItem(CLOE_MEM_KEY, JSON.stringify(next));
+        const persisted = { ...next };
+        delete persisted.llmApiKey;
+        localStorage.setItem(CLOE_MEM_KEY, JSON.stringify(persisted));
       } catch {
         // ignore
       }
@@ -1006,7 +1030,7 @@ export default function CloeApp() {
 
             <div>
               <label style={{ fontSize: 12, color: "#94a3b8" }}>
-                Fournisseur IA Conversationnelle (optionnel — sans clé, Cloé fonctionne déjà à 100 % en autonomie !)
+                Fournisseur IA externe (optionnel; quotas et éventuels frais selon le fournisseur — le mode local fonctionne sans clé)
               </label>
               <select
                 value={mem.llmProvider}
@@ -1021,14 +1045,14 @@ export default function CloeApp() {
                   color: "#fff",
                 }}
               >
-                <option value="gemini">Google Gemini 2.0 Flash (Clé AI Studio gratuite)</option>
-                <option value="groq">Groq Llama 3.3 70B Ultra-Rapide (Clé Groq gratuite)</option>
+                <option value="gemini">Google Gemini Flash</option>
+                <option value="groq">Groq Llama 3.3 70B</option>
                 <option value="openai">OpenAI GPT-4o-mini</option>
               </select>
             </div>
 
             <div>
-              <label style={{ fontSize: 12, color: "#94a3b8" }}>Clé API IA (stockée uniquement sur ton appareil)</label>
+              <label style={{ fontSize: 12, color: "#94a3b8" }}>Clé API IA temporaire (non enregistrée; envoyée au fournisseur sélectionné)</label>
               <input
                 type="password"
                 value={mem.llmApiKey}

@@ -340,3 +340,42 @@ def test_missing_provider_key_is_reported_without_leaking_configuration():
             await upstream.aclose()
 
     asyncio.run(run())
+
+
+def test_rate_limit_is_per_client_window_and_health_is_exempt():
+    async def run():
+        settings = Settings(
+            football_data_api_key=TOKEN_FD,
+            api_football_key=TOKEN_AF,
+            rate_limit_per_minute=3,
+        )
+        app, upstream = make_app(lambda request: httpx.Response(200, json={}), settings=settings)
+        try:
+            async with (
+                httpx.AsyncClient(
+                    transport=httpx.ASGITransport(app=app, client=("198.51.100.11", 1234)),
+                    base_url="http://test",
+                ) as first_ip,
+                httpx.AsyncClient(
+                    transport=httpx.ASGITransport(app=app, client=("198.51.100.12", 1234)),
+                    base_url="http://test",
+                ) as second_ip,
+            ):
+                responses = [await first_ip.get("/api/unknown") for _ in range(4)]
+                assert [response.status_code for response in responses] == [404, 404, 404, 429]
+                limited = responses[-1]
+                assert limited.headers["retry-after"] == "60"
+                assert limited.headers["cache-control"] == "no-store"
+                cors_limited = await first_ip.get(
+                    "/api/unknown",
+                    headers={"origin": "https://football-ai-43e33.web.app"},
+                )
+                assert cors_limited.status_code == 429
+                assert cors_limited.headers["access-control-allow-origin"] == "https://football-ai-43e33.web.app"
+                health = await first_ip.get("/api/health")
+                assert health.status_code == 200
+                assert (await second_ip.get("/api/unknown")).status_code == 404, "chaque adresse a sa propre fenêtre"
+        finally:
+            await upstream.aclose()
+
+    asyncio.run(run())

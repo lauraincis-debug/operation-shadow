@@ -263,7 +263,7 @@ const briefing = await window.CloeFootballAI.getDailyBriefing();
           </div>
         </div>
         <div style={{ color: "#94a3b8", fontSize: 10.5, marginTop: 8 }}>
-          {summary.performanceStatus} · Échantillon : {summary.performanceSampleSize}/{summary.performanceMinimumSample} pronostics pré-match officiellement évalués. Les résultats d'apprentissage et les jeux de calibration sont exclus de cette mesure.
+          {summary.performanceStatus} · 1X2 : {summary.performanceSampleSize}/{summary.performanceMinimumSample} pronostics pré-match officiels; marchés : {summary.marketPerformanceSampleSize ?? 0}/{summary.marketPerformanceMinimumSample ?? 30} résultats vérifiables. Les résultats d'apprentissage et les jeux de calibration sont exclus de la mesure prospective.
         </div>
       </div>
 

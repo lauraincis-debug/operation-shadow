@@ -553,12 +553,12 @@ export default function VideoAnalysisTab({
                         label: liveRec.marketLabel,
                         pct: liveRec.liveProbPct,
                         fairOdd: liveRec.fairLiveOdd,
-                        bookOdd: liveRec.minAcceptableBookOdd,
+                        minAcceptableOdd: liveRec.minAcceptableBookOdd,
                       },
                     })
                   }
                 >
-                  ⚡ Envoyer ce Pari EN DIRECT au Coupon ({liveRec.liveProbPct}%)
+                  ⚡ Pari Live estimé — cote réelle requise avant ajout ({liveRec.liveProbPct}%)
                 </button>
               )}
             </div>

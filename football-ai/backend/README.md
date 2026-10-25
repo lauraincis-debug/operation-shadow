@@ -32,7 +32,11 @@ Variables serveur :
 - `API_FOOTBALL_KEY` — optionnelle; statistiques de joueurs API-Football;
 - `DATABASE_URL` — URL PostgreSQL (`postgresql://…` ou `postgresql+asyncpg://…`).
 
-Options supplémentaires : `UPSTREAM_TIMEOUT_SECONDS`, `FOOTBALL_FIXTURES_TTL_SECONDS`, `FOOTBALL_RESULTS_TTL_SECONDS`, `FOOTBALL_STANDINGS_TTL_SECONDS`, `PLAYER_STATS_TTL_SECONDS`, `STALE_IF_ERROR_SECONDS` et `CORS_ALLOW_ORIGINS`.
+Options supplémentaires : `UPSTREAM_TIMEOUT_SECONDS`, `FOOTBALL_FIXTURES_TTL_SECONDS`, `FOOTBALL_RESULTS_TTL_SECONDS`, `FOOTBALL_STANDINGS_TTL_SECONDS`, `PLAYER_STATS_TTL_SECONDS`, `STALE_IF_ERROR_SECONDS`, `RATE_LIMIT_PER_MINUTE` (240 par défaut) et `CORS_ALLOW_ORIGINS`.
+
+## Limitation de débit
+
+Les routes `/api/*`, sauf `/api/health`, utilisent une fenêtre glissante par adresse cliente et renvoient `429` avec `Retry-After`. Cette limite est conservée en mémoire par processus : elle réduit les rafales sur une instance, mais **n'est ni partagée entre workers/instances ni une protection globale**. L'identité repose sur l'adresse interprétée par Uvicorn derrière le proxy. Le `Dockerfile` fait confiance aux en-têtes proxy pour Cloud Run (`--forwarded-allow-ips='*'`) : cette configuration suppose que le processus n'est pas exposé derrière un proxy non fiable; les en-têtes transférés peuvent être falsifiés si cette hypothèse ne tient pas. Aucun limiteur distribué ni service payant n'a été ajouté; ne pas présenter cette mesure comme un quota global, une protection DDoS ou une garantie contre l'épuisement des quotas fournisseurs.
 
 `.env.example` est un exemple; le service ne charge pas de `.env`. Préférer les variables d'environnement locales ou Secret Manager en production. Ne jamais ajouter un vrai secret au dépôt.
 
@@ -48,4 +52,4 @@ Les cache hits n'ont jamais `isLiveNetwork=true`. Après une panne amont, une en
 pytest -q
 ```
 
-Les tests utilisent un transport HTTP simulé et le cache mémoire. Ils vérifient l'absence de secret dans le navigateur/réponse, les routes et l'invalidation d'un statut Live en cache. Une base PostgreSQL réelle reste nécessaire pour un test d'intégration du schéma et du cache partagé.
+Les tests utilisent un transport HTTP simulé et le cache mémoire. Ils vérifient l'absence de secret dans la réponse, les routes, l'invalidation d'un statut Live en cache et le `429` de la limite locale. Une base PostgreSQL réelle reste nécessaire pour tester le schéma et le cache partagé. Aucun test PostgreSQL réel n'est revendiqué par cette suite.

@@ -1,7 +1,7 @@
 {
   "engine": "Omni-Sport & Football AI Ultra v6.4 Certifiée Intégrale",
   "version": "6.4.0",
-  "updatedAt": "2026-10-25T09:05:46.373Z",
+  "updatedAt": "2026-10-25T15:02:07.274Z",
   "sourceAppUrl": "https://football-ai-43e33.web.app",
   "cloeAbidjanUrl": "https://cloe-agent-abidjan.web.app",
   "cloeStandaloneUrl": "https://cloe-ia-ultra.web.app",
@@ -921,40 +921,40 @@
       "id": "safe",
       "badge": "⛔ NO-BET",
       "title": "Ticket sécurité indisponible",
-      "subtitle": "Aucune paire de matchs à venir, fraîchement vérifiés et autorisés par le portail de fiabilité.",
+      "subtitle": "Aucune paire de matchs à venir ne dispose de cotes réelles, fraîches et vérifiables.",
       "recommendedBankrollPct": 0,
       "accent": "#ff1744",
       "items": [],
       "totalOdd": null,
       "winProbPct": null,
       "noBet": true,
-      "noBetReason": "Aucune paire de matchs à venir, fraîchement vérifiés et autorisés par le portail de fiabilité."
+      "noBetReason": "Aucune paire de matchs à venir ne dispose de cotes réelles, fraîches et vérifiables."
     },
     {
       "id": "value",
       "badge": "⛔ NO-BET",
       "title": "Ticket value indisponible",
-      "subtitle": "Aucune paire de matchs à venir, fraîchement vérifiés et autorisés par le portail de fiabilité.",
+      "subtitle": "Aucune paire de matchs à venir ne dispose de cotes réelles, fraîches et vérifiables.",
       "recommendedBankrollPct": 0,
       "accent": "#ff1744",
       "items": [],
       "totalOdd": null,
       "winProbPct": null,
       "noBet": true,
-      "noBetReason": "Aucune paire de matchs à venir, fraîchement vérifiés et autorisés par le portail de fiabilité."
+      "noBetReason": "Aucune paire de matchs à venir ne dispose de cotes réelles, fraîches et vérifiables."
     },
     {
       "id": "jackpot",
       "badge": "⛔ NO-BET",
       "title": "Ticket cote boost indisponible",
-      "subtitle": "Aucune paire de matchs à venir, fraîchement vérifiés et autorisés par le portail de fiabilité.",
+      "subtitle": "Aucune paire de matchs à venir ne dispose de cotes réelles, fraîches et vérifiables.",
       "recommendedBankrollPct": 0,
       "accent": "#ff1744",
       "items": [],
       "totalOdd": null,
       "winProbPct": null,
       "noBet": true,
-      "noBetReason": "Aucune paire de matchs à venir, fraîchement vérifiés et autorisés par le portail de fiabilité."
+      "noBetReason": "Aucune paire de matchs à venir ne dispose de cotes réelles, fraîches et vérifiables."
     }
   ],
   "tournaments": {
@@ -964,67 +964,67 @@
       "topFavorites": [
         {
           "team": "Maroc",
-          "qfPct": 62.1,
-          "sfPct": 35.7,
-          "finalPct": 20,
-          "championPct": 12.1,
-          "fairOutrightOdd": 8.29
+          "qfPct": 61,
+          "sfPct": 35.1,
+          "finalPct": 20.5,
+          "championPct": 12.6,
+          "fairOutrightOdd": 7.96
         },
         {
           "team": "Sénégal",
-          "qfPct": 60.6,
-          "sfPct": 33.8,
+          "qfPct": 61.6,
+          "sfPct": 33.5,
           "finalPct": 17.8,
-          "championPct": 10.9,
-          "fairOutrightOdd": 9.21
+          "championPct": 10.8,
+          "fairOutrightOdd": 9.24
         },
         {
           "team": "Côte d'Ivoire",
           "qfPct": 57.4,
-          "sfPct": 29.3,
+          "sfPct": 29.7,
           "finalPct": 15.3,
-          "championPct": 9,
-          "fairOutrightOdd": 11.09
+          "championPct": 9.2,
+          "fairOutrightOdd": 10.92
         },
         {
           "team": "Nigeria",
-          "qfPct": 56.3,
-          "sfPct": 27.7,
-          "finalPct": 13.9,
-          "championPct": 7.8,
-          "fairOutrightOdd": 12.79
-        },
-        {
-          "team": "Algérie",
-          "qfPct": 56.2,
-          "sfPct": 29.4,
-          "finalPct": 15.3,
-          "championPct": 7.3,
-          "fairOutrightOdd": 13.77
+          "qfPct": 54.5,
+          "sfPct": 26.3,
+          "finalPct": 13.3,
+          "championPct": 7.7,
+          "fairOutrightOdd": 12.99
         },
         {
           "team": "Égypte",
-          "qfPct": 54.3,
-          "sfPct": 28.4,
-          "finalPct": 15.4,
+          "qfPct": 54.6,
+          "sfPct": 29.1,
+          "finalPct": 16.2,
+          "championPct": 7.7,
+          "fairOutrightOdd": 12.99
+        },
+        {
+          "team": "Algérie",
+          "qfPct": 54,
+          "sfPct": 27,
+          "finalPct": 14.8,
           "championPct": 7,
-          "fairOutrightOdd": 14.25
+          "fairOutrightOdd": 14.29
         },
         {
           "team": "Tunisie",
-          "qfPct": 53.4,
+          "qfPct": 53.3,
           "sfPct": 28.9,
-          "finalPct": 14.4,
-          "championPct": 6.1,
-          "fairOutrightOdd": 16.39
+          "finalPct": 14.1,
+          "championPct": 6,
+          "fairOutrightOdd": 16.56
         },
         {
-          "team": "Ghana",
-          "qfPct": 54.4,
-          "sfPct": 26.6,
-          "finalPct": 12.7,
-          "championPct": 5.3,
-          "fairOutrightOdd": 18.8
+          "team": "RD Congo",
+          "qfPct": 45.4,
+          "sfPct": 22.3,
+          "finalPct": 11.9,
+          "championPct": 5.2,
+          "fairOutrightOdd": 19.08
         }
       ]
     },
@@ -1034,67 +1034,67 @@
       "topFavorites": [
         {
           "team": "Arsenal",
-          "qfPct": 65.5,
-          "sfPct": 35.6,
-          "finalPct": 23.2,
-          "championPct": 12.4,
-          "fairOutrightOdd": 8.09
+          "qfPct": 66.4,
+          "sfPct": 36.9,
+          "finalPct": 23.7,
+          "championPct": 12.5,
+          "fairOutrightOdd": 8.03
         },
         {
           "team": "Real Madrid",
-          "qfPct": 59.5,
-          "sfPct": 30.8,
-          "finalPct": 16.5,
-          "championPct": 9.5,
-          "fairOutrightOdd": 10.5
-        },
-        {
-          "team": "Manchester City",
-          "qfPct": 54.9,
-          "sfPct": 29.7,
-          "finalPct": 17.9,
-          "championPct": 9.2,
-          "fairOutrightOdd": 10.92
-        },
-        {
-          "team": "FC Barcelone",
-          "qfPct": 61.8,
-          "sfPct": 31.8,
+          "qfPct": 59.2,
+          "sfPct": 31.4,
           "finalPct": 16.7,
-          "championPct": 9.1,
-          "fairOutrightOdd": 10.99
+          "championPct": 9.7,
+          "fairOutrightOdd": 10.31
         },
         {
           "team": "Liverpool",
-          "qfPct": 51.4,
+          "qfPct": 53.5,
+          "sfPct": 29.8,
+          "finalPct": 15.8,
+          "championPct": 9.3,
+          "fairOutrightOdd": 10.8
+        },
+        {
+          "team": "FC Barcelone",
+          "qfPct": 61.6,
+          "sfPct": 30.7,
+          "finalPct": 15.5,
+          "championPct": 8.8,
+          "fairOutrightOdd": 11.39
+        },
+        {
+          "team": "Manchester City",
+          "qfPct": 55.3,
           "sfPct": 28.7,
-          "finalPct": 15.2,
+          "finalPct": 17.9,
           "championPct": 8.8,
           "fairOutrightOdd": 11.36
         },
         {
           "team": "Bayern Munich",
-          "qfPct": 53.2,
-          "sfPct": 28.1,
-          "finalPct": 14.6,
-          "championPct": 8.6,
-          "fairOutrightOdd": 11.63
+          "qfPct": 52.2,
+          "sfPct": 26.9,
+          "finalPct": 14,
+          "championPct": 8.1,
+          "fairOutrightOdd": 12.38
         },
         {
           "team": "Inter Milan",
-          "qfPct": 48.6,
-          "sfPct": 25.6,
-          "finalPct": 12.8,
-          "championPct": 7.3,
-          "fairOutrightOdd": 13.7
+          "qfPct": 46.5,
+          "sfPct": 25.4,
+          "finalPct": 12.7,
+          "championPct": 7,
+          "fairOutrightOdd": 14.25
         },
         {
           "team": "PSG",
-          "qfPct": 46.8,
-          "sfPct": 24.2,
-          "finalPct": 11.9,
-          "championPct": 7,
-          "fairOutrightOdd": 14.29
+          "qfPct": 47.8,
+          "sfPct": 24.4,
+          "finalPct": 12.2,
+          "championPct": 6.7,
+          "fairOutrightOdd": 14.88
         }
       ]
     },
@@ -1104,70 +1104,70 @@
       "topFavorites": [
         {
           "team": "Espagne",
-          "qfPct": 61.9,
-          "sfPct": 35.1,
-          "finalPct": 21,
-          "championPct": 13.3,
-          "fairOutrightOdd": 7.52
+          "qfPct": 63.4,
+          "sfPct": 36.3,
+          "finalPct": 20.8,
+          "championPct": 12.5,
+          "fairOutrightOdd": 8
         },
         {
           "team": "Argentine",
-          "qfPct": 61.3,
-          "sfPct": 36.2,
-          "finalPct": 19.3,
-          "championPct": 11.8,
-          "fairOutrightOdd": 8.46
+          "qfPct": 61.9,
+          "sfPct": 36.7,
+          "finalPct": 19.7,
+          "championPct": 11.7,
+          "fairOutrightOdd": 8.52
         },
         {
           "team": "France",
-          "qfPct": 60,
-          "sfPct": 30.6,
-          "finalPct": 16.4,
-          "championPct": 9.4,
-          "fairOutrightOdd": 10.68
+          "qfPct": 61.2,
+          "sfPct": 31.1,
+          "finalPct": 16.3,
+          "championPct": 9.3,
+          "fairOutrightOdd": 10.71
         },
         {
           "team": "Angleterre",
-          "qfPct": 54.4,
-          "sfPct": 30.4,
-          "finalPct": 17.7,
-          "championPct": 8.8,
-          "fairOutrightOdd": 11.34
+          "qfPct": 53.4,
+          "sfPct": 30,
+          "finalPct": 17.2,
+          "championPct": 8.3,
+          "fairOutrightOdd": 12.08
         },
         {
           "team": "Portugal",
-          "qfPct": 56.9,
-          "sfPct": 28.6,
-          "finalPct": 17,
-          "championPct": 8.4,
-          "fairOutrightOdd": 11.9
+          "qfPct": 57.7,
+          "sfPct": 28.7,
+          "finalPct": 16.5,
+          "championPct": 8.3,
+          "fairOutrightOdd": 11.99
         },
         {
           "team": "Allemagne",
-          "qfPct": 55,
-          "sfPct": 32.1,
-          "finalPct": 15.3,
-          "championPct": 7.4,
-          "fairOutrightOdd": 13.55
+          "qfPct": 55.2,
+          "sfPct": 32.8,
+          "finalPct": 16.2,
+          "championPct": 7.2,
+          "fairOutrightOdd": 13.81
         },
         {
           "team": "Brésil",
-          "qfPct": 52.4,
-          "sfPct": 24.2,
-          "finalPct": 11.3,
-          "championPct": 5.8,
-          "fairOutrightOdd": 17.12
+          "qfPct": 53,
+          "sfPct": 24.3,
+          "finalPct": 12,
+          "championPct": 6.7,
+          "fairOutrightOdd": 14.93
         },
         {
           "team": "Pays-Bas",
-          "qfPct": 45.6,
-          "sfPct": 23.5,
-          "finalPct": 13.1,
-          "championPct": 5.1,
-          "fairOutrightOdd": 19.69
+          "qfPct": 46.6,
+          "sfPct": 22.9,
+          "finalPct": 12.5,
+          "championPct": 5.7,
+          "fairOutrightOdd": 17.67
         }
       ]
     }
   },
-  "voiceSummaryFr": "Point Omni-Sport & Football AI Ultra v6.4 Certifiée Intégrale : 167 clubs et nations actifs. Favori numéro 1 CAN sur 5 000 simulations : Maroc (12.1%). Favori Champions League : Arsenal (12.4%). Aucun ticket automatique proposé sans événements futurs, récents et vérifiés."
+  "voiceSummaryFr": "Point Omni-Sport & Football AI Ultra v6.4 Certifiée Intégrale : 167 clubs et nations actifs. Favori numéro 1 CAN sur 5 000 simulations : Maroc (12.6%). Favori Champions League : Arsenal (12.5%). Aucun ticket automatique proposé sans événements futurs, récents et vérifiés."
 }

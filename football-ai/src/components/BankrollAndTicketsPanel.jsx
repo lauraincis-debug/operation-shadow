@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { generateThreeDailyTickets, exportCouponAsPngImage } from "../engine/ticketGenerator.js";
 import { auditCouponSlip, parseExternalTicketText } from "../engine/ticketAuditor.js";
+import { hasRealOdd, isRealOdd } from "../engine/oddsPolicy.js";
 
 const BANKROLL_KEY = "football_ai_bankroll_v4";
 const EUR_TO_XOF_RATE = 655.957;
@@ -49,6 +50,9 @@ export default function BankrollAndTicketsPanel({
   const [externalText, setExternalText] = useState("");
   const [showExternalImporter, setShowExternalImporter] = useState(false);
   const [realBookmakerTotalOdd, setRealBookmakerTotalOdd] = useState("");
+  const allCouponOddsVerified = coupon.length > 0 && coupon.every((item) => hasRealOdd(item.selectedMarket));
+  const manualTotalOdd = parseFloat(String(realBookmakerTotalOdd).replace(",", "."));
+  const hasManualTotalOdd = isRealOdd(manualTotalOdd);
 
   const ticketAudit = useMemo(
     () => auditCouponSlip(coupon, modelState),
@@ -108,11 +112,14 @@ export default function BankrollAndTicketsPanel({
   // Calculateur de mise optimale Kelly fractionnaire (1/4 Kelly STRICT — 0 FCFA si EV <= 0 !)
   const kellyStakeInfo = useMemo(() => {
     if (!couponSummary || coupon.length === 0) return null;
-    const customOdd = parseFloat(realBookmakerTotalOdd);
-    const effectiveOdd =
-      Number.isFinite(customOdd) && customOdd > 1.01
-        ? customOdd
-        : couponSummary.combinedBookOdd;
+    const effectiveOdd = hasManualTotalOdd
+      ? manualTotalOdd
+      : allCouponOddsVerified
+        ? couponSummary.combinedBookOdd
+        : null;
+    if (!Number.isFinite(effectiveOdd) || effectiveOdd <= 1.01) {
+      return { needsVerifiedOdd: true, pct: 0, amount: 0 };
+    }
     const b = Math.max(0.02, effectiveOdd - 1);
     const p = Math.min(0.95, Math.max(0.02, couponSummary.combinedProbPct / 100));
     const q = 1 - p;
@@ -147,7 +154,9 @@ export default function BankrollAndTicketsPanel({
     coupon.length,
     bankroll.currentCapital,
     currency,
-    realBookmakerTotalOdd,
+    allCouponOddsVerified,
+    manualTotalOdd,
+    hasManualTotalOdd,
   ]);
 
   const recordBetOutcome = (won) => {
@@ -155,11 +164,17 @@ export default function BankrollAndTicketsPanel({
       if (showToast) showToast("Ajoutez ou générez d'abord un ticket pour enregistrer son résultat.");
       return;
     }
-    const customOdd = parseFloat(realBookmakerTotalOdd);
-    const effectiveOdd =
-      Number.isFinite(customOdd) && customOdd > 1.01
-        ? customOdd
-        : couponSummary.combinedBookOdd;
+    const effectiveOdd = hasManualTotalOdd
+      ? manualTotalOdd
+      : allCouponOddsVerified
+        ? couponSummary.combinedBookOdd
+        : null;
+    if (!Number.isFinite(effectiveOdd) || effectiveOdd <= 1.01) {
+      if (showToast) {
+        showToast("⛔ Saisissez la cote totale réelle du bookmaker ou vérifiez chaque cote avant le règlement.");
+      }
+      return;
+    }
 
     // Correctif Audit #2 [AUDIT2-FIN-02] : Verrou d'idempotence contre tout double-clic sur le même ticket !
     const fingerprint = `${coupon.map((c) => `${c.id}:${c.selectedMarket?.label || ""}`).join("|")}::${stake}::${effectiveOdd}`;
@@ -519,7 +534,11 @@ export default function BankrollAndTicketsPanel({
               type="number"
               step="0.01"
               min="1.02"
-              placeholder={couponSummary?.combinedBookOdd?.toFixed(2) || "Ex: 1.85"}
+              placeholder={
+                allCouponOddsVerified && Number.isFinite(couponSummary?.combinedBookOdd)
+                  ? couponSummary.combinedBookOdd.toFixed(2)
+                  : "Saisir la cote réelle"
+              }
               value={realBookmakerTotalOdd}
               onChange={(e) => setRealBookmakerTotalOdd(e.target.value)}
               className="fai-input"
@@ -530,12 +549,14 @@ export default function BankrollAndTicketsPanel({
                 style={{
                   fontSize: 12,
                   fontWeight: 800,
-                  color: kellyStakeInfo.isNegativeEv ? "#ff5252" : "#00e676",
+                  color: kellyStakeInfo.needsVerifiedOdd || kellyStakeInfo.isNegativeEv ? "#ff5252" : "#ffb74d",
                 }}
               >
-                {kellyStakeInfo.isNegativeEv
-                  ? `🛑 ESPÉRANCE NÉGATIVE (${kellyStakeInfo.evPct}%) — NE PAS PARIER À CETTE COTE (0 ${currency})`
-                  : `✅ VALUE BET CONFIRMÉ (+${kellyStakeInfo.evPct}% EV) — Kelly ¼ : ${fmtMoney(kellyStakeInfo.amount)}`}
+                {kellyStakeInfo.needsVerifiedOdd
+                  ? "⛔ Cotes non vérifiées : saisissez la cote totale réelle du bookmaker avant tout calcul de mise."
+                  : kellyStakeInfo.isNegativeEv
+                    ? `🛑 ESPÉRANCE ESTIMÉE NÉGATIVE (${kellyStakeInfo.evPct}%) — mise conseillée : 0 ${currency}`
+                    : `⚠️ Estimation IA conditionnelle (+${kellyStakeInfo.evPct}% EV) — Kelly ¼ : ${fmtMoney(kellyStakeInfo.amount)}`}
               </span>
             )}
           </div>

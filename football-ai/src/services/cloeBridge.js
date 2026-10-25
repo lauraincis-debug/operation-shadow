@@ -279,7 +279,7 @@ export function createCloeFootballBrain(initialConfig = {}) {
               rawProbs: p.rawProbs,
               fairOdds: p.fairOdds,
               xg: p.xg,
-              selectedMarket: { ...p.recommendedMarket, bookOdd: p.recommendedMarket.marketOdd },
+              selectedMarket: { ...p.recommendedMarket },
               date: m.dateFr || new Date().toLocaleDateString("fr-FR"),
               result: outcome,
               scoreHome: m.scoreHome,
@@ -354,6 +354,8 @@ export function createCloeFootballBrain(initialConfig = {}) {
         accuracyPct: model.metrics?.accuracyPct ?? null,
         marketAccuracy: model.metrics?.marketAccuracyPct ?? null,
         marketAccuracyPct: model.metrics?.marketAccuracyPct ?? null,
+        marketPerformanceSampleSize: model.metrics?.marketSampleSize ?? 0,
+        marketPerformanceMinimumSample: model.metrics?.marketMinimumSample ?? 30,
         brierScore: model.metrics?.brierScore ?? null,
         performanceSampleSize: model.metrics?.sampleSize ?? 0,
         performanceMinimumSample: model.metrics?.minimumSample ?? 30,
@@ -418,6 +420,8 @@ export function createCloeFootballBrain(initialConfig = {}) {
       accuracyPct: acc1x2,
       marketAccuracy: mktAcc,
       marketAccuracyPct: mktAcc,
+      marketPerformanceSampleSize: model.metrics?.marketSampleSize ?? 0,
+      marketPerformanceMinimumSample: model.metrics?.marketMinimumSample ?? 30,
       brierScore: model.metrics?.brierScore ?? null,
       performanceSampleSize: model.metrics?.sampleSize ?? 0,
       performanceMinimumSample: model.metrics?.minimumSample ?? 30,
@@ -457,8 +461,8 @@ export function createCloeFootballBrain(initialConfig = {}) {
       const gen = evo.evolvedHyper?.generation || 1;
       const performance = model.metrics || {};
       const performanceLine = performance.accuracyPct === null || performance.accuracyPct === undefined
-        ? `• Performance 1X2 pré-match vérifiée : — (${performance.sampleSize || 0}/${performance.minimumSample || 30} pronostics officiels requis)\n• Marchés/Brier prospectifs : —`
-        : `• Performance 1X2 pré-match vérifiée : ${performance.accuracyPct}% (${performance.correct}/${performance.sampleSize}) | marchés : ${performance.marketAccuracyPct ?? "—"}% | Brier : ${performance.brierScore?.toFixed(3) ?? "—"}`;
+        ? `• Performance 1X2 pré-match vérifiée : — (${performance.sampleSize || 0}/${performance.minimumSample || 30} pronostics officiels requis)\n• Marchés prospectifs : ${performance.marketSampleSize || 0}/${performance.marketMinimumSample || 30} observations vérifiables; score masqué sous le seuil. Brier : —`
+        : `• Performance 1X2 pré-match vérifiée : ${performance.accuracyPct}% (${performance.correct}/${performance.sampleSize}) | marchés : ${performance.marketAccuracyPct ?? "—"}% (${performance.marketCorrect ?? 0}/${performance.marketSampleSize ?? 0}, minimum ${performance.marketMinimumSample ?? 30}) | Brier : ${performance.brierScore?.toFixed(3) ?? "—"}`;
       const replayLine = typeof evo.afterBrier === "number"
         ? `• Brier du rejeu historique d'apprentissage (non prospectif) : ${evo.afterBrier.toFixed(3)}`
         : "• Rejeu historique d'apprentissage : non disponible";
@@ -790,6 +794,8 @@ export function createCloeFootballBrain(initialConfig = {}) {
         accuracyPct: m.metrics?.accuracyPct ?? null,
         marketAccuracy: m.metrics?.marketAccuracyPct ?? null,
         marketAccuracyPct: m.metrics?.marketAccuracyPct ?? null,
+        marketPerformanceSampleSize: m.metrics?.marketSampleSize ?? 0,
+        marketPerformanceMinimumSample: m.metrics?.marketMinimumSample ?? 30,
         brierScore: m.metrics?.brierScore ?? null,
         performanceSampleSize: m.metrics?.sampleSize ?? 0,
         performanceMinimumSample: m.metrics?.minimumSample ?? 30,

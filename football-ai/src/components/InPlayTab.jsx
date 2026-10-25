@@ -447,7 +447,7 @@ export default function InPlayTab({
                 {item.pct}%
               </div>
               <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: "#cbd5e1" }}>
-                <span>Juste cote : @{item.odd.toFixed(2)}</span>
+                <span>Cote estimée : @{item.odd.toFixed(2)}</span>
                 <span style={{ color: item.delta >= 0 ? "#00e676" : "#ff5252", fontWeight: 800 }}>
                   {item.delta >= 0 ? `+${item.delta}%` : `${item.delta}%`} vs 0&apos;
                 </span>
@@ -469,12 +469,12 @@ export default function InPlayTab({
                         label: `[LIVE ${minute}'] ${item.label}`,
                         prob: Math.min(0.98, Math.max(0.03, item.pct / 100)),
                         pct: item.pct,
-                        bookOdd: item.odd,
+                        marketOdd: item.odd,
                       },
                     })
                   }
                 >
-                  + Ajouter au Coupon (@{item.odd.toFixed(2)})
+                  + Ajouter — cote bookmaker réelle requise
                 </button>
               )}
             </div>

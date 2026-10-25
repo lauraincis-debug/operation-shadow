@@ -2,14 +2,12 @@ import { computeFullPrediction } from "./predictor.js";
 import { predictOmniSportMatch } from "./omniSportEngine.js";
 import { resolveClub } from "../data/clubs.js";
 import { isMatchFeedFresh } from "../services/liveMatchesApi.js";
+import { hasRealOdd, realOddDetailsOf, legEdgePct } from "./oddsPolicy.js";
 
 /**
- * 🎰 GÉNÉRATEUR AUTOMATIQUE DES 3 TICKETS IA DU JOUR + SMART MONEY EDGE + EXPORT PNG HD (v6.4 Certifiée Intégrale)
- * 1) 🛡️ Ticket Sécurité IA (Cote ~1.80 - 2.40, très haute probabilité)
- * 2) ⚖️ Ticket Value Équilibré (Cote ~3.20 - 5.50, meilleur ratio Probabilité × Value)
- * 3) 🚀 Ticket Cote 10+ / Fun (Cote >= 8.50+, grosses opportunités ciblées)
+ * Générateur des trois tickets du jour. Une cote calculée par le modèle n'est jamais une cote bookmaker.
+ * Les tickets automatiques ne retiennent que les marchés 1X2 à cote réelle vérifiée; sinon, NO-BET.
  */
-
 export function isEligibleTicketFixture(fixture, now = Date.now()) {
   if (
     !fixture ||
@@ -25,174 +23,234 @@ export function isEligibleTicketFixture(fixture, now = Date.now()) {
 }
 
 export function scanSmartMoneyOpportunities(fixtures = [], modelState) {
-  const sourceList = Array.isArray(fixtures)
-    ? fixtures.filter((fixture) => isEligibleTicketFixture(fixture))
-    : [];
+  const candidates = Array.isArray(fixtures) ? fixtures : [];
+  const seen = new Set();
+  const sourceList = candidates.filter((fixture) => {
+    if (!isEligibleTicketFixture(fixture)) return false;
+    const id = String(fixture.externalId);
+    if (seen.has(id)) return false;
+    seen.add(id);
+    return true;
+  });
   const schemaCounts = {};
 
-  const analyzed = sourceList.map((fx) => {
-    const sport = fx.sport || fx.prediction?.sport || "soccer";
-    const isSoccer = sport === "soccer";
-    const resolvedLeague =
-      fx.league || resolveClub(fx.home)?.leagues?.[0] || "ucl";
-    const pred =
-      fx.prediction ||
-      (isSoccer
-        ? computeFullPrediction(fx.home, fx.away, resolvedLeague, modelState, fx.liveOdds || null, {
-            neutralVenue: fx.neutralSite,
-            liveIntel: fx,
-            schemaCounts,
-          })
-        : predictOmniSportMatch({ ...fx, sport }));
-    if (pred?.recommendedMarket?.code) {
-      schemaCounts[pred.recommendedMarket.code] =
-        (schemaCounts[pred.recommendedMarket.code] || 0) + 1;
+  const analyzed = sourceList.map((fixture) => {
+    const sport = fixture.sport || fixture.prediction?.sport || "soccer";
+    const resolvedLeague = fixture.league || resolveClub(fixture.home)?.leagues?.[0] || "ucl";
+    const prediction =
+      fixture.prediction ||
+      (sport === "soccer"
+        ? computeFullPrediction(
+            fixture.home,
+            fixture.away,
+            resolvedLeague,
+            modelState,
+            fixture.liveOdds || null,
+            {
+              neutralVenue: fixture.neutralSite,
+              liveIntel: fixture,
+              schemaCounts,
+            }
+          )
+        : predictOmniSportMatch({ ...fixture, sport }));
+
+    if (prediction?.recommendedMarket?.code) {
+      const code = prediction.recommendedMarket.code;
+      schemaCounts[code] = (schemaCounts[code] || 0) + 1;
     }
 
-    // Extraire les candidats marchés pour chaque profil de ticket
-    const safeCandidates = (pred.markets || []).filter(
-      (m) => m.pct >= 72 && (m.marketOdd || m.bookOdd || 1.2) >= 1.16
-    );
-    const balancedCandidates = (pred.markets || []).filter(
-      (m) => m.pct >= 56 && m.pct <= 78 && (m.marketOdd || m.bookOdd || 1.4) >= 1.38
-    );
-    const highOddCandidates = (pred.markets || []).filter(
-      (m) => m.pct >= 38 && (m.marketOdd || m.bookOdd || 2.0) >= 1.95
-    );
+    // realOddDetailsOf vérifie l'origine (flux/mise saisie) et refuse fairOdd/marketOdd.
+    const realMarkets = (prediction?.markets || [])
+      .map((market) => {
+        const details = realOddDetailsOf(prediction, market);
+        return details
+          ? {
+              ...market,
+              bookOdd: Number(details.bookOdd),
+              oddSource: details.oddSource,
+            }
+          : null;
+      })
+      .filter((market) => hasRealOdd(market));
 
-    const bestSafe =
-      safeCandidates.sort((a, b) => b.pct - a.pct)[0] || pred.recommendedMarket;
+    const safeCandidates = realMarkets.filter((market) => market.pct >= 72 && market.bookOdd >= 1.16);
+    const balancedCandidates = realMarkets.filter(
+      (market) => market.pct >= 56 && market.pct <= 78 && market.bookOdd >= 1.38
+    );
+    const highOddCandidates = realMarkets.filter((market) => market.pct >= 38 && market.bookOdd >= 1.95);
+
+    const bestSafe = [...safeCandidates].sort((a, b) => b.pct - a.pct)[0] || null;
     const bestBalanced =
-      balancedCandidates.sort(
-        (a, b) =>
-          b.pct * (b.marketOdd || b.bookOdd || 1.5) -
-          a.pct * (a.marketOdd || a.bookOdd || 1.5)
-      )[0] || pred.recommendedMarket;
+      [...balancedCandidates].sort((a, b) => b.pct * b.bookOdd - a.pct * a.bookOdd)[0] || null;
     const bestHigh =
-      highOddCandidates.sort(
-        (a, b) =>
-          b.pct * Math.sqrt(b.marketOdd || b.bookOdd || 2.0) -
-          a.pct * Math.sqrt(a.marketOdd || a.bookOdd || 2.0)
-      )[0] ||
-      pred.markets?.[0] ||
-      pred.recommendedMarket;
-
-    // Calcul du Smart Money Edge (écart entre probabilité IA et cote bookmaker réelle si disponible)
-    const valBest = pred.valueAnalysis?.bestValue || null;
-    const refOdd = Number(bestBalanced.marketOdd || bestBalanced.bookOdd || 1.5);
-    const impliedPct = Math.round((100 / Math.max(1.05, refOdd)) * 10) / 10;
-    const edgePct = valBest?.evPct ?? valBest?.edgePct ?? Math.round((bestBalanced.pct - impliedPct) * 10) / 10;
+      [...highOddCandidates].sort(
+        (a, b) => b.pct * Math.sqrt(b.bookOdd) - a.pct * Math.sqrt(a.bookOdd)
+      )[0] || null;
+    const edgePct = bestBalanced ? legEdgePct(prediction, bestBalanced) : null;
 
     return {
-      fixture: { ...fx, sport, league: resolvedLeague },
-      pred,
+      fixture: { ...fixture, sport, league: resolvedLeague },
+      pred: prediction,
+      hasRealOdds: realMarkets.length > 0,
       bestSafe,
       bestBalanced,
       bestHigh,
       edgePct,
-      isSmartValue: edgePct >= 4.5,
+      isSmartValue: edgePct !== null && edgePct >= 4.5,
     };
   });
 
-  return analyzed.filter((entry) => entry.pred?.reliabilityGate?.allowAutoTicket === true);
+  return analyzed.filter(
+    (entry) => entry.hasRealOdds && entry.pred?.reliabilityGate?.allowAutoTicket === true
+  );
 }
 
 function buildCouponItemsFromPicks(picks) {
   let combinedOdd = 1;
   let combinedProb = 1;
-  const items = picks.map((entry, idx) => {
-    const mkt = entry.chosenMarket;
-    const odd = Number(mkt.bookOdd || mkt.marketOdd || 1.45);
-    const prob = Math.min(0.98, Math.max(0.03, mkt.prob ?? (mkt.pct || 65) / 100));
-    combinedOdd *= odd;
-    combinedProb *= prob;
-    return {
-      id: Date.now() + idx * 17 + Math.floor(Math.random() * 100),
-      sport: entry.fixture.sport || entry.pred.sport || "soccer",
-      home: entry.pred.home,
-      away: entry.pred.away,
-      league: entry.fixture.league || "ucl",
-      probs: entry.pred.probs,
-      rawProbs: entry.pred.rawProbs || entry.pred.probs.map((x) => x / 100),
-      selectedMarket: {
-        ...mkt,
-        prob,
-        pct: Math.round(prob * 100),
-        bookOdd: odd,
-      },
-    };
-  });
+  const items = picks
+    .filter((entry) => hasRealOdd(entry.chosenMarket))
+    .map((entry, idx) => {
+      const market = entry.chosenMarket;
+      const odd = Number(market.bookOdd);
+      const prob = Math.min(0.98, Math.max(0.03, market.prob ?? (market.pct || 65) / 100));
+      combinedOdd *= odd;
+      combinedProb *= prob;
+      const probs = Array.isArray(entry.pred.probs) ? entry.pred.probs : [33, 34, 33];
+      return {
+        id: Date.now() + idx * 17 + Math.floor(Math.random() * 100),
+        sport: entry.fixture.sport || entry.pred.sport || "soccer",
+        home: entry.pred.home,
+        away: entry.pred.away,
+        league: entry.fixture.league || "ucl",
+        probs,
+        rawProbs: Array.isArray(entry.pred.rawProbs)
+          ? entry.pred.rawProbs
+          : probs.map((value) => Number(value) / 100),
+        selectedMarket: {
+          ...market,
+          prob,
+          pct: Math.round(prob * 100),
+          bookOdd: odd,
+          oddSource: market.oddSource,
+        },
+      };
+    });
 
   return {
     items,
-    totalOdd: Math.round(combinedOdd * 100) / 100,
-    winProbPct: Math.max(1, Math.round(combinedProb * 1000) / 10),
+    totalOdd: items.length ? Math.round(combinedOdd * 100) / 100 : null,
+    winProbPct: items.length ? Math.max(1, Math.round(combinedProb * 1000) / 10) : null,
   };
+}
+
+function buildTicket(meta, built) {
+  if (built.items.length < 2) {
+    const reason =
+      "Moins de deux sélections disposent d'une cote réelle pour ce profil : aucun combiné n'est généré.";
+    return {
+      id: meta.id,
+      badge: "⛔ NO-BET",
+      title: `${meta.title} indisponible`,
+      subtitle: reason,
+      recommendedBankrollPct: 0,
+      accent: "#ff1744",
+      items: [],
+      totalOdd: null,
+      winProbPct: null,
+      noBet: true,
+      noBetReason: reason,
+    };
+  }
+  return { ...meta, ...built, noBet: false };
+}
+
+function noBetTickets(reason) {
+  return [
+    { id: "safe", title: "Ticket sécurité indisponible", reason },
+    { id: "value", title: "Ticket value indisponible", reason },
+    { id: "jackpot", title: "Ticket cote boost indisponible", reason },
+  ].map(({ id, title, reason: noBetReason }) => ({
+    id,
+    badge: "⛔ NO-BET",
+    title,
+    subtitle: noBetReason,
+    recommendedBankrollPct: 0,
+    accent: "#ff1744",
+    items: [],
+    totalOdd: null,
+    winProbPct: null,
+    noBet: true,
+    noBetReason,
+  }));
 }
 
 export function generateThreeDailyTickets(fixtures = [], modelState) {
   const pool = scanSmartMoneyOpportunities(fixtures, modelState);
   if (pool.length < 2) {
     const reason = pool.length === 1
-      ? "Une seule affiche répond aux critères stricts; aucun combiné n'est généré."
-      : "Aucune paire de matchs à venir, fraîchement vérifiés et autorisés par le portail de fiabilité.";
-    return [
-      { id: "safe", badge: "⛔ NO-BET", title: "Ticket sécurité indisponible", subtitle: reason, recommendedBankrollPct: 0, accent: "#ff1744", items: [], totalOdd: null, winProbPct: null, noBet: true, noBetReason: reason },
-      { id: "value", badge: "⛔ NO-BET", title: "Ticket value indisponible", subtitle: reason, recommendedBankrollPct: 0, accent: "#ff1744", items: [], totalOdd: null, winProbPct: null, noBet: true, noBetReason: reason },
-      { id: "jackpot", badge: "⛔ NO-BET", title: "Ticket cote boost indisponible", subtitle: reason, recommendedBankrollPct: 0, accent: "#ff1744", items: [], totalOdd: null, winProbPct: null, noBet: true, noBetReason: reason },
-    ];
+      ? "Une seule affiche répond aux critères stricts (cote réelle, fraîche et autorisée); aucun combiné n'est généré."
+      : "Aucune paire de matchs à venir ne dispose de cotes réelles, fraîches et vérifiables.";
+    return noBetTickets(reason);
   }
 
-  // 1. 🛡️ Ticket Sécurité IA (2 à 3 sélections très hautes probabilités)
-  const safeSorted = [...pool]
-    .sort((a, b) => (b.bestSafe?.pct || 0) - (a.bestSafe?.pct || 0))
-    .slice(0, Math.min(3, pool.length))
-    .map((x) => ({ ...x, chosenMarket: x.bestSafe }));
-
-  // 2. ⚖️ Ticket Value Équilibré (3 à 4 sélections meilleur EV)
-  const balSorted = [...pool]
-    .sort((a, b) => b.edgePct - a.edgePct || (b.bestBalanced?.pct || 0) - (a.bestBalanced?.pct || 0))
-    .slice(0, Math.min(4, pool.length))
-    .map((x) => ({ ...x, chosenMarket: x.bestBalanced }));
-
-  // 3. 🚀 Ticket Cote 10+ / Jackpot (4 à 5 sélections ambitieuses maîtrisées)
-  const highSorted = [...pool]
-    .sort((a, b) => (b.bestHigh?.marketOdd || 1) * (b.bestHigh?.pct || 40) - (a.bestHigh?.marketOdd || 1) * (a.bestHigh?.pct || 40))
-    .slice(0, Math.min(5, pool.length))
-    .map((x) => ({ ...x, chosenMarket: x.bestHigh }));
-
-  const safeTicket = buildCouponItemsFromPicks(safeSorted);
-  const valueTicket = buildCouponItemsFromPicks(balSorted);
-  const jackpotTicket = buildCouponItemsFromPicks(highSorted);
+  const safeSorted = pool
+    .filter((entry) => entry.bestSafe)
+    .sort((a, b) => b.bestSafe.pct - a.bestSafe.pct)
+    .slice(0, 3)
+    .map((entry) => ({ ...entry, chosenMarket: entry.bestSafe }));
+  const balancedSorted = pool
+    .filter((entry) => entry.bestBalanced)
+    .sort(
+      (a, b) =>
+        (b.edgePct ?? -Infinity) - (a.edgePct ?? -Infinity) ||
+        b.bestBalanced.pct - a.bestBalanced.pct
+    )
+    .slice(0, 4)
+    .map((entry) => ({ ...entry, chosenMarket: entry.bestBalanced }));
+  const highSorted = pool
+    .filter((entry) => entry.bestHigh)
+    .sort(
+      (a, b) =>
+        b.bestHigh.bookOdd * b.bestHigh.pct - a.bestHigh.bookOdd * a.bestHigh.pct
+    )
+    .slice(0, 5)
+    .map((entry) => ({ ...entry, chosenMarket: entry.bestHigh }));
 
   return [
-    {
-      id: "safe",
-      badge: "🛡️ SÉCURITÉ IA",
-      title: "Ticket Bouclier Haute Fiabilité",
-      subtitle: "Sélections verrouillées à forte probabilité mathématique",
-      recommendedBankrollPct: 4.0,
-      accent: "#00e676",
-      ...safeTicket,
-    },
-    {
-      id: "value",
-      badge: "⚖️ VALUE BET PRO",
-      title: "Ticket Équilibré Smart Money",
-      subtitle: "Meilleur ratio Probabilité IA × Cote du marché",
-      recommendedBankrollPct: 2.5,
-      accent: "#00e5ff",
-      ...valueTicket,
-    },
-    {
-      id: "jackpot",
-      badge: "🚀 COTE BOOST / FUN",
-      title: "Ticket Multi-Cote Haute Performance",
-      subtitle: "Mise prudente pour viser un gros multiplicateur",
-      recommendedBankrollPct: 1.0,
-      accent: "#d500f9",
-      ...jackpotTicket,
-    },
+    buildTicket(
+      {
+        id: "safe",
+        badge: "🛡️ SÉCURITÉ IA",
+        title: "Ticket Bouclier Haute Fiabilité",
+        subtitle: "Sélections à forte probabilité, cotes bookmaker réelles uniquement",
+        recommendedBankrollPct: 4.0,
+        accent: "#00e676",
+      },
+      buildCouponItemsFromPicks(safeSorted)
+    ),
+    buildTicket(
+      {
+        id: "value",
+        badge: "⚖️ VALUE BET PRO",
+        title: "Ticket Équilibré Smart Money",
+        subtitle: "Écart de valeur mesuré exclusivement sur des cotes réelles",
+        recommendedBankrollPct: 2.5,
+        accent: "#00e5ff",
+      },
+      buildCouponItemsFromPicks(balancedSorted)
+    ),
+    buildTicket(
+      {
+        id: "jackpot",
+        badge: "🚀 COTE BOOST / FUN",
+        title: "Ticket Multi-Cote Haute Performance",
+        subtitle: "Sélections ambitieuses, cotes bookmaker réelles uniquement",
+        recommendedBankrollPct: 1.0,
+        accent: "#d500f9",
+      },
+      buildCouponItemsFromPicks(highSorted)
+    ),
   ];
 }
 
@@ -202,6 +260,7 @@ export function generateThreeDailyTickets(fixtures = [], modelState) {
 export function exportCouponAsPngImage({ coupon, stake, currency, totalOdd, winProbPct, potentialGain }) {
   if (typeof document === "undefined" || !Array.isArray(coupon) || coupon.length === 0) return false;
 
+  const allOddsVerified = coupon.every((item) => hasRealOdd(item.selectedMarket));
   const width = 920;
   const rowHeight = 96;
   const height = 340 + coupon.length * rowHeight;
@@ -228,12 +287,18 @@ export function exportCouponAsPngImage({ coupon, stake, currency, totalOdd, winP
   // En-tête
   ctx.fillStyle = "#00e5ff";
   ctx.font = "bold 34px system-ui, -apple-system, sans-serif";
-  ctx.fillText("⚡ OMNI-SPORT & FOOTBALL AI ULTRA v6.4 • TICKET OFFICIEL", 48, 78);
+  ctx.fillText(
+    allOddsVerified
+      ? "⚡ OMNI-SPORT & FOOTBALL AI ULTRA v6.4 • COTES VÉRIFIÉES"
+      : "⚡ OMNI-SPORT & FOOTBALL AI ULTRA v6.4 • COTES À VÉRIFIER",
+    48,
+    78
+  );
 
   ctx.fillStyle = "#94a3b8";
   ctx.font = "600 20px system-ui, -apple-system, sans-serif";
   ctx.fillText(
-    `Généré le ${new Date().toLocaleDateString("fr-FR")} • ${coupon.length} sélection(s) calibrée(s) IA`,
+    `Généré le ${new Date().toLocaleDateString("fr-FR")} • ${coupon.length} sélection(s) • probabilités estimées`,
     48,
     114
   );
@@ -252,10 +317,12 @@ export function exportCouponAsPngImage({ coupon, stake, currency, totalOdd, winP
     ctx.font = "bold 21px system-ui, -apple-system, sans-serif";
     ctx.fillText(`🎯 ${item.selectedMarket?.label || "Choix IA"} (${item.selectedMarket?.pct || 70}% IA)`, 68, y + 66);
 
-    ctx.fillStyle = "#fbbf24";
-    ctx.font = "bold 28px system-ui, -apple-system, sans-serif";
-    const oddTxt = `@${Number(item.selectedMarket?.bookOdd || 1.5).toFixed(2)}`;
-    ctx.fillText(oddTxt, width - 175, y + 52);
+  ctx.fillStyle = "#fbbf24";
+  ctx.font = "bold 22px system-ui, -apple-system, sans-serif";
+  const oddTxt = hasRealOdd(item.selectedMarket)
+    ? `@${Number(item.selectedMarket.bookOdd).toFixed(2)}`
+    : "COTE À VÉRIFIER";
+  ctx.fillText(oddTxt, width - 220, y + 52);
   });
 
   // Pied de ticket récapitulatif
@@ -263,18 +330,25 @@ export function exportCouponAsPngImage({ coupon, stake, currency, totalOdd, winP
   ctx.fillStyle = "rgba(0, 229, 255, 0.12)";
   ctx.fillRect(48, footerY, width - 96, 125);
 
-  const fmt = (val) =>
-    currency === "EUR"
+  const fmt = (val) => {
+    if (val === null || val === undefined || !Number.isFinite(Number(val))) return "—";
+    return currency === "EUR"
       ? `${Number(val).toFixed(2)} €`
       : `${Math.round(Number(val)).toLocaleString("fr-FR")} FCFA`;
+  };
+  const displayedTotal =
+    allOddsVerified && totalOdd !== null && totalOdd !== undefined && Number.isFinite(Number(totalOdd))
+      ? Number(totalOdd).toFixed(2)
+    : "COTES À VÉRIFIER";
 
   ctx.fillStyle = "#e2e8f0";
   ctx.font = "bold 24px system-ui, -apple-system, sans-serif";
-  ctx.fillText(`Cote Totale : ${totalOdd.toFixed(2)}   |   Fiabilité IA : ${winProbPct}%`, 68, footerY + 46);
+  ctx.fillText(`Cote Totale : ${displayedTotal}   |   Probabilité estimée : ${winProbPct ?? "—"}%`, 68, footerY + 46);
 
   ctx.fillStyle = "#00e676";
   ctx.font = "bold 32px system-ui, -apple-system, sans-serif";
-  ctx.fillText(`Mise ${fmt(stake)}  ➔  Gain Potentiel : ${fmt(potentialGain)}`, 68, footerY + 94);
+  const payoutLabel = allOddsVerified ? fmt(potentialGain) : "non calculé";
+  ctx.fillText(`Mise ${fmt(stake)}  ➔  Gain Potentiel : ${payoutLabel}`, 68, footerY + 94);
 
   const link = document.createElement("a");
   link.download = `ticket-football-ai-${Date.now()}.png`;

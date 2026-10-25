@@ -69,7 +69,12 @@ export function isValidated(pred) {
 }
 
 function isLearningEligible(pred) {
-  return isValidated(pred) && pred.isCalibrationFixture !== true && pred.trainingOnly !== true;
+  return (
+    isValidated(pred) &&
+    pred.isCalibrationFixture !== true &&
+    pred.predictionOrigin !== "historical-test-fixture" &&
+    pred.trainingOnly !== true
+  );
 }
 
 export function isPerformanceEligible(pred) {
@@ -78,6 +83,7 @@ export function isPerformanceEligible(pred) {
     pred.performanceEligible !== true ||
     pred.autoLearned === true ||
     pred.isCalibrationFixture === true ||
+    pred.predictionOrigin === "historical-test-fixture" ||
     pred.trainingOnly === true ||
     pred.predictionPhase !== "pre-match" ||
     pred.resultSource !== "official-feed" ||
@@ -145,6 +151,7 @@ export function computeForecastPerformance(predictions = [], minSample = MIN_PER
   }
   let correct = 0;
   let marketCorrect = 0;
+  let marketSampleSize = 0;
   let brierSum = 0;
   let logLossSum = 0;
   const buckets = {
@@ -157,7 +164,11 @@ export function computeForecastPerformance(predictions = [], minSample = MIN_PER
     const predictedOutcome = probabilityVector.indexOf(Math.max(...probabilityVector));
     const isHit = predictedOutcome === prediction.result;
     if (isHit) correct += 1;
-    if (checkPickResult(prediction) === true) marketCorrect += 1;
+    const marketHit = checkPickResult(prediction);
+    if (marketHit !== null) {
+      marketSampleSize += 1;
+      if (marketHit) marketCorrect += 1;
+    }
     const confidenceBucket = Math.max(...probabilityVector) >= 0.58
       ? buckets.high
       : Math.max(...probabilityVector) >= 0.46
@@ -174,6 +185,7 @@ export function computeForecastPerformance(predictions = [], minSample = MIN_PER
 
   const total = evaluated.length;
   const enoughData = total >= minSample;
+  const marketEnoughData = marketSampleSize >= minSample;
   return {
     total,
     sampleSize: total,
@@ -183,8 +195,12 @@ export function computeForecastPerformance(predictions = [], minSample = MIN_PER
     correct,
     errors: total - correct,
     marketCorrect,
+    marketSampleSize,
+    marketMinimumSample: minSample,
     accuracyPct: enoughData ? Math.round((correct / total) * 100) : null,
-    marketAccuracyPct: enoughData ? Math.round((marketCorrect / total) * 100) : null,
+    marketAccuracyPct: marketEnoughData
+      ? Math.round((marketCorrect / marketSampleSize) * 100)
+      : null,
     brierScore: enoughData ? Math.round((brierSum / total) * 1000) / 1000 : null,
     logLoss: enoughData ? Math.round((logLossSum / total) * 1000) / 1000 : null,
     buckets,
@@ -217,16 +233,26 @@ function clamp(val, min, max) {
 }
 
 export function roundProbabilitiesTo100(probs) {
-  const sum = probs.reduce((acc, v) => acc + v, 0) || 1;
-  const scaled = probs.map((v) => clamp((v / sum) * 100, 0, 100));
-  const floors = scaled.map((v) => Math.floor(v));
-  const remainder = 100 - floors.reduce((a, b) => a + b, 0);
+  const values = Array.isArray(probs) ? probs.map(Number) : [];
+  if (values.length === 0) return [];
 
+  const sum = values.reduce((acc, value) => acc + value, 0);
+  if (!values.every(Number.isFinite) || !Number.isFinite(sum) || sum <= 0) {
+    // Entrée invalide : répartition uniforme plutôt qu'un NaN affiché à l'écran.
+    const base = Math.floor(100 / values.length);
+    const uniform = Array.from({ length: values.length }, () => base);
+    uniform[0] += 100 - base * values.length;
+    return uniform;
+  }
+
+  const scaled = values.map((value) => clamp((value / sum) * 100, 0, 100));
+  const floors = scaled.map((value) => Math.floor(value));
+  const remainder = 100 - floors.reduce((a, b) => a + b, 0);
   const order = scaled
-    .map((v, idx) => ({ idx, frac: v - floors[idx] }))
+    .map((value, idx) => ({ idx, frac: value - floors[idx] }))
     .sort((a, b) => b.frac - a.frac);
 
-  for (let i = 0; i < remainder; i++) {
+  for (let i = 0; i < remainder; i += 1) {
     floors[order[i % order.length].idx] += 1;
   }
   return floors;
@@ -451,11 +477,13 @@ export function rebuildModelState(predictions = [], extraConfig = {}) {
 
   let correctCount = 0;
   let marketCorrectCount = 0;
+  let marketMetricCount = 0;
   let brierSum = 0;
   let dynamicModelBrierSum = 0;
   let logLossSum = 0;
 
   const errorJournal = [];
+  const stepBriers = [];
   const errorBreakdown = {
     HOME_TRAP: 0,
     DRAW_BLINDSPOT: 0,
@@ -543,7 +571,11 @@ export function rebuildModelState(predictions = [], extraConfig = {}) {
       correctCount += 1;
       rollingHits += 1;
     }
-    if (checkPickResult(match)) marketCorrectCount += 1;
+    const marketHit = checkPickResult(match);
+    if (marketHit !== null) {
+      marketMetricCount += 1;
+      if (marketHit) marketCorrectCount += 1;
+    }
 
     if (maxProb >= 0.58) {
       buckets.high.total += 1;
@@ -563,6 +595,7 @@ export function rebuildModelState(predictions = [], extraConfig = {}) {
       dynamicModelBrierSum += Math.pow(liveModelProbs[k] - target, 2);
     }
     brierSum += matchBrier;
+    stepBriers.push(matchBrier);
     logLossSum += -Math.log(clamp(usedRawProbs[match.result], 0.02, 0.99));
 
     learningCurve.push({
@@ -766,9 +799,12 @@ export function rebuildModelState(predictions = [], extraConfig = {}) {
     correct: correctCount,
     errors: totalValidated - correctCount,
     marketCorrect: marketCorrectCount,
+    marketSampleSize: marketMetricCount,
     accuracyPct: totalValidated > 0 ? Math.round((correctCount / totalValidated) * 100) : null,
     marketAccuracyPct:
-      totalValidated > 0 ? Math.round((marketCorrectCount / totalValidated) * 100) : null,
+      marketMetricCount > 0
+        ? Math.round((marketCorrectCount / marketMetricCount) * 100)
+        : null,
     brierScore: totalValidated > 0 ? Math.round((brierSum / totalValidated) * 1000) / 1000 : null,
     liveBrierScore:
       totalValidated > 0
@@ -809,6 +845,7 @@ export function rebuildModelState(predictions = [], extraConfig = {}) {
     errorJournal,
     errorBreakdown,
     learningCurve,
+    stepBriers,
     metrics: performanceMetrics,
     performanceMetrics,
     trainingMetrics,
@@ -822,141 +859,182 @@ export function rebuildModelState(predictions = [], extraConfig = {}) {
  * la configuration qui minimise simultanément le Brier Score et le Log-Loss !
  */
 export function runContinuousEvolution(predictions = [], currentHyper = {}, optaOverrides = {}) {
-  const validated = predictions.filter(isLearningEligible);
-  if (validated.length === 0) {
-    return {
-      evolvedHyper: {
-        dcWeight: 0.64,
-        drawScale: 1.0,
-        homeAdvScale: 1.0,
-        eloTemperature: 1.0,
-        generation: (currentHyper?.generation || 1) + 1,
-      },
-      beforeBrier: null,
-      afterBrier: null,
-      improvementPct: 0,
-    };
-  }
-
-  const baseEval = rebuildModelState(predictions, {
-    optaOverrides,
-    evolvedHyper: {
-      dcWeight: currentHyper.dcWeight ?? 0.64,
-      drawScale: currentHyper.drawScale ?? 1.0,
-      homeAdvScale: currentHyper.homeAdvScale ?? 1.0,
-      eloTemperature: currentHyper.eloTemperature ?? 1.0,
-      generation: currentHyper.generation || 1,
-    },
-  });
-
-  let bestParams = {
-    dcWeight: currentHyper.dcWeight ?? 0.64,
-    drawScale: currentHyper.drawScale ?? 1.0,
-    homeAdvScale: currentHyper.homeAdvScale ?? 1.0,
-    eloTemperature: currentHyper.eloTemperature ?? 1.0,
-  };
-  let bestObjective =
-    (baseEval.trainingMetrics.brierScore || 1) + 0.35 * (baseEval.trainingMetrics.logLoss || 1);
-  let bestBrier = baseEval.trainingMetrics.brierScore;
-  let bestAcc = baseEval.trainingMetrics.accuracyPct;
-
   const PRIOR_HYPER = {
     dcWeight: 0.64,
     drawScale: 1.0,
     homeAdvScale: 1.0,
     eloTemperature: 1.0,
   };
+  const bounds = {
+    dcWeight: [0.44, 0.82],
+    drawScale: [0.82, 1.24],
+    homeAdvScale: [0.84, 1.22],
+    eloTemperature: [0.9, 1.12],
+  };
+  const currentParams = Object.fromEntries(
+    Object.entries(PRIOR_HYPER).map(([key, fallback]) => {
+      const rawValue = currentHyper?.[key];
+      const candidate =
+        rawValue === null || rawValue === undefined || String(rawValue).trim() === ""
+          ? NaN
+          : Number(rawValue);
+      return [key, Number.isFinite(candidate) ? candidate : fallback];
+    })
+  );
+  const currentGeneration = Number.isInteger(currentHyper?.generation)
+    ? Math.max(1, currentHyper.generation)
+    : 1;
   const validatedCount = predictions.filter(isLearningEligible).length;
-  // GARDE ANTI-SURAPPRENTISSAGE : interdit formellement de déformer les hyperparamètres
-  // sur seulement 1 à 5 matchs (élimine l'illusion d'un schéma qui a passé 1 ou 2 fois !)
-  if (validatedCount < 6) {
-    return {
-      evolvedHyper: {
-        ...PRIOR_HYPER,
-        generation: (currentHyper?.generation || 1) + 1,
-      },
-      beforeBrier: baseEval.trainingMetrics.brierScore,
-      afterBrier: baseEval.trainingMetrics.brierScore,
-      newAccuracyPct: baseEval.trainingMetrics.accuracyPct,
-      improvementPct: 0,
-      antiOverfitNote: `Protection Bayésienne active (${validatedCount}/6 matchs validés minimum requis avant dérive d'hyperparamètres).`,
-    };
+  const unchanged = (extra = {}) => ({
+    evolvedHyper: { ...currentParams, generation: currentGeneration },
+    beforeBrier: extra.beforeBrier ?? null,
+    afterBrier: extra.beforeBrier ?? null,
+    newAccuracyPct: extra.newAccuracyPct ?? null,
+    improvementPct: 0,
+    ...(extra.holdoutGate ? { holdoutGate: extra.holdoutGate } : {}),
+    antiOverfitNote: extra.antiOverfitNote,
+  });
+
+  if (validatedCount < 10) {
+    return unchanged({
+      antiOverfitNote:
+        `Validation hors échantillon impossible avant 10 matchs validés (${validatedCount}/10) : ` +
+        "hyperparamètres inchangés.",
+    });
   }
 
-  // Régularisation L2 (Ridge) vers le prior calibré PRIOR_HYPER
-  const ridgePenalty = (p) =>
+  // rebuildModelState trie les résultats du plus ancien au plus récent et expose un Brier par étape.
+  const baseEval = rebuildModelState(predictions, {
+    optaOverrides,
+    evolvedHyper: { ...currentParams, generation: currentGeneration },
+  });
+  const stepBriers = baseEval.stepBriers || [];
+  const beforeBrier = baseEval.trainingMetrics.brierScore;
+  if (
+    stepBriers.length !== validatedCount ||
+    !Number.isFinite(beforeBrier) ||
+    !stepBriers.every(Number.isFinite)
+  ) {
+    return unchanged({
+      beforeBrier: Number.isFinite(beforeBrier) ? beforeBrier : null,
+      newAccuracyPct: baseEval.trainingMetrics.accuracyPct,
+      antiOverfitNote: "Réjeu incomplet ou invalide : hyperparamètres inchangés.",
+    });
+  }
+
+  const trainSize = Math.floor(validatedCount * 0.7);
+  if (trainSize < 1 || trainSize >= validatedCount) {
+    return unchanged({
+      beforeBrier,
+      newAccuracyPct: baseEval.trainingMetrics.accuracyPct,
+      antiOverfitNote: "Échantillon insuffisant pour une séparation chronologique : réglage ignoré.",
+    });
+  }
+  const meanBrier = (values, from, to) => {
+    const slice = values.slice(from, to);
+    return slice.length
+      ? slice.reduce((sum, value) => sum + value, 0) / slice.length
+      : Infinity;
+  };
+  const ridgePenalty = (params) =>
     0.045 *
-    (Math.pow(p.dcWeight - PRIOR_HYPER.dcWeight, 2) +
-      Math.pow(p.drawScale - PRIOR_HYPER.drawScale, 2) +
-      Math.pow(p.homeAdvScale - PRIOR_HYPER.homeAdvScale, 2) +
-      Math.pow(p.eloTemperature - PRIOR_HYPER.eloTemperature, 2));
+    Object.keys(PRIOR_HYPER).reduce(
+      (sum, key) => sum + (params[key] - PRIOR_HYPER[key]) ** 2,
+      0
+    );
 
-  bestObjective += ridgePenalty(bestParams);
-
-  // Recherche coordonnée multi-résolution régularisée
+  let bestParams = { ...currentParams };
+  let bestObjective = meanBrier(stepBriers, 0, trainSize) + ridgePenalty(bestParams);
   const stepSizes = [0.06, 0.03, 0.015, 0.008];
-  const keys = [
-    ["dcWeight", 0.44, 0.82],
-    ["drawScale", 0.82, 1.24],
-    ["homeAdvScale", 0.84, 1.22],
-    ["eloTemperature", 0.9, 1.12],
-  ];
 
+  // La recherche ne voit que les 70 % de matchs les plus anciens.
   for (const step of stepSizes) {
-    for (const [param, minV, maxV] of keys) {
-      for (const dir of [-1, 1]) {
+    for (const [param, [minValue, maxValue]] of Object.entries(bounds)) {
+      for (const direction of [-1, 1]) {
         const candidate = {
           ...bestParams,
-          [param]: clamp(bestParams[param] + dir * step, minV, maxV),
+          [param]: clamp(bestParams[param] + direction * step, minValue, maxValue),
         };
-        const st = rebuildModelState(predictions, {
+        const evaluation = rebuildModelState(predictions, {
           optaOverrides,
-          evolvedHyper: candidate,
+          evolvedHyper: { ...candidate, generation: currentGeneration },
         });
-        const obj = st.trainingMetrics.brierScore + 0.35 * st.trainingMetrics.logLoss + ridgePenalty(candidate);
-        if (obj < bestObjective - 1e-6) {
-          bestObjective = obj;
+        const objective =
+          meanBrier(evaluation.stepBriers || [], 0, trainSize) + ridgePenalty(candidate);
+        if (Number.isFinite(objective) && objective < bestObjective - 1e-6) {
+          bestObjective = objective;
           bestParams = candidate;
-          bestBrier = st.trainingMetrics.brierScore;
-          bestAcc = st.trainingMetrics.accuracyPct;
         }
       }
     }
   }
 
-  // Shrinkage bayésien final proportionnel à la taille réelle d'échantillon
-  const cred = computeBayesianCredibility(validatedCount, 14);
-  const shrunkParams = {
-    dcWeight: Math.round((PRIOR_HYPER.dcWeight * (1 - cred) + bestParams.dcWeight * cred) * 1000) / 1000,
-    drawScale: Math.round((PRIOR_HYPER.drawScale * (1 - cred) + bestParams.drawScale * cred) * 1000) / 1000,
-    homeAdvScale:
-      Math.round((PRIOR_HYPER.homeAdvScale * (1 - cred) + bestParams.homeAdvScale * cred) * 1000) / 1000,
-    eloTemperature:
-      Math.round((PRIOR_HYPER.eloTemperature * (1 - cred) + bestParams.eloTemperature * cred) * 1000) / 1000,
+  const credibility = computeBayesianCredibility(validatedCount, 14);
+  const shrunkParams = Object.fromEntries(
+    Object.keys(PRIOR_HYPER).map((key) => [
+      key,
+      Math.round(
+        (PRIOR_HYPER[key] * (1 - credibility) + bestParams[key] * credibility) * 1000
+      ) / 1000,
+    ])
+  );
+  const candidateEval = rebuildModelState(predictions, {
+    optaOverrides,
+    evolvedHyper: { ...shrunkParams, generation: currentGeneration + 1 },
+  });
+  const candidateBrier = candidateEval.trainingMetrics.brierScore;
+  const holdoutBefore = meanBrier(stepBriers, trainSize, validatedCount);
+  const holdoutAfter = meanBrier(candidateEval.stepBriers || [], trainSize, validatedCount);
+  const accepted =
+    Number.isFinite(candidateBrier) &&
+    Number.isFinite(holdoutAfter) &&
+    holdoutAfter < holdoutBefore &&
+    candidateBrier <= beforeBrier;
+  const holdoutGate = {
+    trainMatches: trainSize,
+    holdoutMatches: validatedCount - trainSize,
+    holdoutBrierBefore: Math.round(holdoutBefore * 1000) / 1000,
+    holdoutBrierAfter: Math.round(holdoutAfter * 1000) / 1000,
+    accepted,
   };
-  bestParams = shrunkParams;
 
-  const beforeB = baseEval.trainingMetrics.brierScore;
+  if (!accepted) {
+    return unchanged({
+      beforeBrier,
+      newAccuracyPct: baseEval.trainingMetrics.accuracyPct,
+      holdoutGate,
+      antiOverfitNote:
+        "Validation hors échantillon : la configuration n'améliore pas les matchs récents sans " +
+        "dégrader le Brier global; hyperparamètres conservés.",
+    });
+  }
+
   const improvementPct =
-    beforeB > 0 ? Math.max(0, Math.round(((beforeB - bestBrier) / beforeB) * 1000) / 10) : 0;
-
+    beforeBrier > 0
+      ? Math.max(0, Math.round(((beforeBrier - candidateBrier) / beforeBrier) * 1000) / 10)
+      : 0;
   return {
-    evolvedHyper: {
-      ...bestParams,
-      generation: (currentHyper?.generation || 1) + 1,
-    },
-    beforeBrier: beforeB,
-    afterBrier: bestBrier,
-    newAccuracyPct: bestAcc,
+    evolvedHyper: { ...shrunkParams, generation: currentGeneration + 1 },
+    beforeBrier,
+    afterBrier: candidateBrier,
+    newAccuracyPct: candidateEval.trainingMetrics.accuracyPct,
     improvementPct,
+    holdoutGate,
   };
 }
 
 export function checkPickResult(pred) {
   if (!isValidated(pred)) return null;
-  const pickCode =
-    pred.selectedMarket?.code || SHORT_OUTCOMES[pred.probs.indexOf(Math.max(...pred.probs))];
-  const hasScore = typeof pred.scoreHome === "number" && typeof pred.scoreAway === "number";
+  const probabilityVector = Array.isArray(pred.probs) ? pred.probs.map(Number) : [];
+  const predictedIndex = probabilityVector.length
+    ? probabilityVector.indexOf(Math.max(...probabilityVector))
+    : -1;
+  const pickCode = pred.selectedMarket?.code || SHORT_OUTCOMES[predictedIndex] || null;
+  const hasScore =
+    Number.isInteger(pred.scoreHome) &&
+    Number.isInteger(pred.scoreAway) &&
+    pred.scoreHome >= 0 &&
+    pred.scoreAway >= 0;
 
   switch (pickCode) {
     case "1":
@@ -971,14 +1049,17 @@ export function checkPickResult(pred) {
       return pred.result === 1 || pred.result === 2;
     case "12":
       return pred.result === 0 || pred.result === 2;
+    // Les marchés de buts sont non vérifiables sans score officiel complet.
     case "O15":
-      return hasScore ? pred.scoreHome + pred.scoreAway >= 2 : pred.result !== 1;
+      return hasScore ? pred.scoreHome + pred.scoreAway >= 2 : null;
     case "O25":
-      return hasScore ? pred.scoreHome + pred.scoreAway >= 3 : pred.result !== 1;
+      return hasScore ? pred.scoreHome + pred.scoreAway >= 3 : null;
     case "U25":
-      return hasScore ? pred.scoreHome + pred.scoreAway <= 2 : pred.result === 1;
+      return hasScore ? pred.scoreHome + pred.scoreAway <= 2 : null;
     case "BTTS_Y":
       return hasScore ? pred.scoreHome >= 1 && pred.scoreAway >= 1 : null;
+    case "BTTS_N":
+      return hasScore ? pred.scoreHome === 0 || pred.scoreAway === 0 : null;
     default: {
       const maxIdx = pred.probs.indexOf(Math.max(...pred.probs));
       return pred.result === maxIdx;
@@ -1417,6 +1498,9 @@ export function computeFullPrediction(
           code: SHORT_OUTCOMES[idx],
           label: OUTCOMES[idx],
           bookOdd: odd,
+          oddSource: ["feed", "manual", "screenshot"].includes(bookmakerOdds.oddSource)
+            ? bookmakerOdds.oddSource
+            : "unverified",
           fairOdd: fairOdds[idx],
           evPct: Math.round(edge * 1000) / 10,
           isValue: edge >= 0.03,

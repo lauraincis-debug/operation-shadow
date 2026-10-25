@@ -1,3 +1,4 @@
+import { realOddOf, hasRealOdd } from "./oddsPolicy.js";
 import { computeFullPrediction } from "./predictor.js";
 import { predictOmniSportMatch } from "./omniSportEngine.js";
 import { extractTeamsFromQuestion } from "../services/cloeBridge.js";
@@ -32,6 +33,7 @@ export function auditCouponSlip(coupon = [], modelState) {
     const chosenPct = Number(item.selectedMarket?.pct || 60);
     const saferAlt = pred.recommendedMarket;
     const gainSafety = Math.max(0, (saferAlt?.pct || chosenPct) - chosenPct);
+    const realSaferOdd = saferAlt ? realOddOf(pred, saferAlt) : null;
 
     combinedSurvival *= Math.min(0.98, Math.max(0.05, chosenPct / 100));
 
@@ -46,15 +48,19 @@ export function auditCouponSlip(coupon = [], modelState) {
       matchLabel: `${pred.home} vs ${pred.away}`,
       chosenLabel: item.selectedMarket?.label || "Sélection",
       chosenPct,
-      chosenOdd: Number(item.selectedMarket?.bookOdd || 1.5),
-      saferAlternative: {
-        ...saferAlt,
-        prob: saferAlt.prob ?? Math.min(0.98, Math.max(0.03, (saferAlt.pct || 70) / 100)),
-        bookOdd: Number(saferAlt.marketOdd || saferAlt.bookOdd || 1.32),
-      },
+      chosenOdd: hasRealOdd(item.selectedMarket) ? Number(item.selectedMarket.bookOdd) : null,
+      oddsVerified: hasRealOdd(item.selectedMarket),
+      saferAlternative: saferAlt
+        ? {
+            ...saferAlt,
+            prob: saferAlt.prob ?? Math.min(0.98, Math.max(0.03, (saferAlt.pct || 70) / 100)),
+            bookOdd: realSaferOdd,
+          }
+        : null,
       gainSafetyPct: gainSafety,
       riskTag,
-      canUpgrade: saferAlt && saferAlt.code !== item.selectedMarket?.code && gainSafety >= 6,
+      canUpgrade:
+        Boolean(realSaferOdd) && saferAlt.code !== item.selectedMarket?.code && gainSafety >= 6,
     };
   });
 
@@ -126,7 +132,8 @@ export function parseExternalTicketText(rawText = "", modelState) {
         selectedMarket: {
           ...default1X2Market,
           prob: default1X2Market.prob ?? (default1X2Market.pct || 65) / 100,
-          bookOdd: Number(default1X2Market.marketOdd || 1.65),
+          bookOdd: null,
+          oddSource: "unverified",
         },
       });
     }

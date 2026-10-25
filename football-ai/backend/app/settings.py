@@ -33,6 +33,7 @@ class Settings:
     football_standings_ttl_seconds: int = 21600
     player_stats_ttl_seconds: int = 3600
     stale_if_error_seconds: int = 86400
+    rate_limit_per_minute: int = 240
     allowed_origins: Tuple[str, ...] = DEFAULT_ALLOWED_ORIGINS
 
     @classmethod
@@ -53,5 +54,6 @@ class Settings:
             football_standings_ttl_seconds=int(os.getenv("FOOTBALL_STANDINGS_TTL_SECONDS", "21600")),
             player_stats_ttl_seconds=int(os.getenv("PLAYER_STATS_TTL_SECONDS", "3600")),
             stale_if_error_seconds=int(os.getenv("STALE_IF_ERROR_SECONDS", "86400")),
+            rate_limit_per_minute=int(os.getenv("RATE_LIMIT_PER_MINUTE", "240")),
             allowed_origins=_csv(os.getenv("CORS_ALLOW_ORIGINS"), DEFAULT_ALLOWED_ORIGINS),
         )

@@ -107,12 +107,12 @@ export default function TournamentTab({ modelState, onAddOutrightToCoupon }) {
                       label: `🏆 Vainqueur Final : ${topWinner.team}`,
                       prob: Math.min(0.95, Math.max(0.03, pct / 100)),
                       pct,
-                      bookOdd: topWinner.fairOutrightOdd,
+                      fairOdd: topWinner.fairOutrightOdd,
                     },
                   });
                 }}
               >
-                🎰 + Ajouter Vainqueur au Coupon (@{topWinner.fairOutrightOdd.toFixed(2)})
+                🎰 Ajouter Vainqueur — cote bookmaker réelle requise
               </button>
             )}
           </div>

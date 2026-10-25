@@ -23,7 +23,7 @@ export default function ProMarketsPanel({ pred, matchContext, onAddCustomMarket 
         label,
         prob,
         pct,
-        bookOdd: odd,
+        marketOdd: odd,
       },
     });
   };
@@ -87,7 +87,7 @@ export default function ProMarketsPanel({ pred, matchContext, onAddCustomMarket 
                   style={{ padding: "4px 8px", fontSize: 11 }}
                   onClick={() => pushPick(`⚽ Buteur : ${s.name}`, s.pct, s.marketOdd)}
                 >
-                  + Coupon (@{s.marketOdd.toFixed(2)})
+                  Cote estimée @{s.marketOdd.toFixed(2)} · non cotée
                 </button>
               </div>
             </div>
@@ -140,7 +140,7 @@ export default function ProMarketsPanel({ pred, matchContext, onAddCustomMarket 
                 style={{ padding: "3px 8px", fontSize: 11 }}
                 onClick={() => pushPick(lbl, pct, odd)}
               >
-                @{odd.toFixed(2)} +
+                Estimée @{odd.toFixed(2)} · non cotée
               </button>
             </div>
           ))}
@@ -182,7 +182,7 @@ export default function ProMarketsPanel({ pred, matchContext, onAddCustomMarket 
                 style={{ padding: "3px 8px", fontSize: 11 }}
                 onClick={() => pushPick(lbl, pct, odd)}
               >
-                @{odd.toFixed(2)} +
+                Estimée @{odd.toFixed(2)} · non cotée
               </button>
             </div>
           ))}
@@ -224,7 +224,7 @@ export default function ProMarketsPanel({ pred, matchContext, onAddCustomMarket 
                 style={{ padding: "3px 8px", fontSize: 11 }}
                 onClick={() => pushPick(lbl, pct, odd)}
               >
-                @{odd.toFixed(2)} +
+                Estimée @{odd.toFixed(2)} · non cotée
               </button>
             </div>
           ))}

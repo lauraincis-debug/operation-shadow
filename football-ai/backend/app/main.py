@@ -1,14 +1,17 @@
 from __future__ import annotations
 
+from collections import OrderedDict, deque
 from contextlib import asynccontextmanager
 from datetime import date, timedelta
 import re
+import time
 import unicodedata
 from typing import Any, Optional
 
 import httpx
 from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 
 from .cache import MemoryJsonCache, PostgresJsonCache
 from .normalization import extract_football_data_matches, normalize_football_data_match
@@ -121,13 +124,47 @@ def create_app(
         else None
     )
 
-    application.add_middleware(
-        CORSMiddleware,
-        allow_origins=list(configured_settings.allowed_origins),
-        allow_credentials=False,
-        allow_methods=["GET", "OPTIONS"],
-        allow_headers=["Accept", "Content-Type"],
-    )
+    # Limiteur glissant local au processus. Ce n'est pas un quota global si le service
+    # démarre plusieurs workers/instances; voir backend/README.md avant toute exposition publique.
+    request_times: OrderedDict[str, deque[float]] = OrderedDict()
+
+    @application.middleware("http")
+    async def rate_limit_api(request: Request, call_next):
+        path = request.url.path
+        if not path.startswith("/api/") or path == "/api/health":
+            return await call_next(request)
+
+        try:
+            limit = max(1, int(request.app.state.settings.rate_limit_per_minute))
+        except (TypeError, ValueError):
+            limit = 240
+        client_ip = request.client.host if request.client else "unknown"
+        now = time.monotonic()
+        window = request_times.get(client_ip)
+        if window is None:
+            window = deque()
+            request_times[client_ip] = window
+        else:
+            request_times.move_to_end(client_ip)
+        while window and now - window[0] >= 60:
+            window.popleft()
+
+        if len(window) >= limit:
+            return JSONResponse(
+                status_code=429,
+                content={"detail": "Trop de requêtes : réessayez dans une minute."},
+                headers={
+                    "Retry-After": "60",
+                    "Cache-Control": "no-store",
+                    "X-Content-Type-Options": "nosniff",
+                },
+            )
+
+        window.append(now)
+        # Borne la mémoire si de nombreuses adresses différentes sollicitent le processus.
+        if len(request_times) > 10000:
+            request_times.popitem(last=False)
+        return await call_next(request)
 
     @application.middleware("http")
     async def prevent_shared_api_caching(request: Request, call_next):
@@ -136,6 +173,15 @@ def create_app(
             response.headers["Cache-Control"] = "no-store"
             response.headers["X-Content-Type-Options"] = "nosniff"
         return response
+
+    # CORS doit rester extérieur aux middlewares maison afin que les 429 gardent leurs en-têtes CORS.
+    application.add_middleware(
+        CORSMiddleware,
+        allow_origins=list(configured_settings.allowed_origins),
+        allow_credentials=False,
+        allow_methods=["GET", "OPTIONS"],
+        allow_headers=["Accept", "Content-Type"],
+    )
 
     def gateway_for(request: Request) -> ProviderGateway:
         gateway = request.app.state.gateway

@@ -8,6 +8,7 @@ import { CLUBS_DB, canonicalTeamName, normalizeKey } from "../data/clubs.js";
 import { computeFullPrediction, rebuildModelState } from "./predictor.js";
 import { computeProMatchMarkets } from "./proMarketsEngine.js";
 import { predictOmniSportMatch } from "./omniSportEngine.js";
+import { isRealOdd } from "./oddsPolicy.js";
 
 let __defaultPriorModel = null;
 function getDefaultModelState() {
@@ -337,8 +338,8 @@ export function parseBookmakerMarketsFromText(rawText = "", homeTeam = "", awayT
 }
 
 /**
- * Calcule la VRAIE probabilité Poisson/Dixon-Coles ou Omni-Sport exacte pour n'importe quelle option
- * extraite d'une capture d'écran Betclic, puis élit UN SEUL « PARI DÉFINITIF » !
+ * Estime une probabilité Poisson/Dixon-Coles ou Omni-Sport pour les options lues sur la capture.
+ * La sélection affichée reste une estimation du modèle, pas une garantie de valeur ou de gain.
  */
 export function evaluateScreenshotMarketsAndPickDefinitiveBet({
   home,
@@ -356,14 +357,46 @@ export function evaluateScreenshotMarketsAndPickDefinitiveBet({
   bankrollCapital = 50000,
   currency = "XOF",
 }) {
-  home = canonicalTeamName(home || homeTeam || "PSG");
-  away = canonicalTeamName(away || awayTeam || "Marseille");
-  const normalizedInputOpts = (extractedOptions || options || []).map((o) => ({
-    ...o,
-    kind: o.kind || o.code || "1",
-    code: o.code || o.kind || "1",
-    bookOdd: Number(o.bookOdd ?? o.odd ?? 1.5),
-  }));
+  const rawHome = String(home || homeTeam || "").trim();
+  const rawAway = String(away || awayTeam || "").trim();
+  if (
+    rawHome.length < 2 ||
+    rawAway.length < 2 ||
+    normalizeKey(rawHome) === normalizeKey(rawAway)
+  ) {
+    const reason = "Équipes absentes ou identiques : aucune prédiction ni sélection n'est produite.";
+    return {
+      ok: false,
+      bookmakerName,
+      sport,
+      league,
+      expectedSummary: reason,
+      analyzedOptions: [],
+      evaluatedOptions: [],
+      hasApprovedBet: false,
+      definitiveBet: null,
+      bestAvailableEvenIfNegative: null,
+      noBetReason: reason,
+      verdictHeadline: "🛑 VERDICT : PASSER SON TOUR — équipes non confirmées",
+      verdictExplanation: reason,
+      rejectedSummary: [],
+    };
+  }
+  home = canonicalTeamName(rawHome);
+  away = canonicalTeamName(rawAway);
+  const normalizedInputOpts = (Array.isArray(extractedOptions || options) ? extractedOptions || options : [])
+    .map((o) => {
+      const bookOdd = Number(o?.bookOdd ?? o?.odd);
+      return o && isRealOdd(bookOdd) && bookOdd <= 40
+        ? {
+            ...o,
+            kind: o.kind || o.code || "1",
+            code: o.code || o.kind || "1",
+            bookOdd,
+          }
+        : null;
+    })
+    .filter(Boolean);
   extractedOptions = normalizedInputOpts;
   modelState = modelState || getDefaultModelState();
   const isSoccer = !sport || sport === "soccer";
@@ -529,8 +562,8 @@ export function evaluateScreenshotMarketsAndPickDefinitiveBet({
     if (evPct < 0) rankScore -= 15;
 
     let statusTag = "⚪ Cote juste";
-    if (evPct >= 3 && !isLottoTrap) statusTag = "💎 VALUE BET CERTIFIÉE";
-    else if (evPct > 0 && trueProb >= 0.55) statusTag = "✅ BONNE OPTION";
+    if (evPct >= 3 && !isLottoTrap) statusTag = "💎 VALUE ESTIMÉE (non garantie)";
+    else if (evPct > 0 && trueProb >= 0.55) statusTag = "✅ SIGNAL ESTIMÉ POSITIF";
     else if (isLottoTrap) statusTag = "⚠️ LOTERIE RISQUÉE";
     else if (evPct <= -4) statusTag = "🚫 COTE ÉCRASÉE (PIÈGE)";
 
@@ -571,7 +604,7 @@ export function evaluateScreenshotMarketsAndPickDefinitiveBet({
     );
 
   const verdictExplanation = isApprovedDefinitiveBet
-    ? `Parmi les ${analyzedOptions.length} option(s) proposées par ${bookmakerName}, « ${topCandidate.label} » à @${topCandidate.bookOdd.toFixed(2)} offre le meilleur couple sécurité/rentabilité mathématique : probabilité réelle IA de ${topCandidate.trueProbPct}% contre ${topCandidate.impliedProbPct}% implicite chez ${bookmakerName} (Espérance ${topCandidate.evPct >= 0 ? "+" : ""}${topCandidate.evPct}%, cote juste IA @${topCandidate.fairOdd.toFixed(2)}).`
+    ? `Parmi les ${analyzedOptions.length} option(s) proposées par ${bookmakerName}, « ${topCandidate.label} » à @${topCandidate.bookOdd.toFixed(2)} présente le signal estimé le plus favorable : probabilité estimée par le modèle ${topCandidate.trueProbPct}% contre ${topCandidate.impliedProbPct}% implicite (EV estimée ${topCandidate.evPct >= 0 ? "+" : ""}${topCandidate.evPct}%, cote juste modèle @${topCandidate.fairOdd.toFixed(2)}). Cette estimation n'est pas une garantie.`
     : `Protection du capital activée : sur les ${analyzedOptions.length} option(s) lues sur cette capture ${bookmakerName}, la marge du bookmaker écrase toutes les cotes (meilleure option : ${topCandidate ? `${topCandidate.label} @${topCandidate.bookOdd.toFixed(2)}, EV ${topCandidate.evPct}%` : "aucune"}). Ne misez pas à perte !`;
 
   return {
@@ -660,26 +693,9 @@ export async function extractScreenshotDataFromImage(
 
   safeProgress(12, "Préparation de la capture d'écran Bookmaker...");
 
-  // 1. Si une clé Gemini Vision est disponible, extraction JSON multimodale ultra-précise en < 2s (cascade 2.5 -> 2.0)
-  const geminiKey =
-    explicitKeyArg ||
-    authObj.geminiKey ||
-    authObj.geminiApiKey ||
-    (typeof localStorage !== "undefined"
-      ? (() => {
-          try {
-            const memV4 = JSON.parse(localStorage.getItem("cloe_ultra_personal_memory_v4") || "{}");
-            if (memV4.llmProvider === "gemini" && memV4.llmApiKey) return memV4.llmApiKey;
-            const memV5 = JSON.parse(localStorage.getItem("cloe_standalone_memory_v5") || "{}");
-            if (memV5.llmProvider === "gemini" && memV5.llmApiKey) return memV5.llmApiKey;
-            const rawJavis = localStorage.getItem("javis_gemKey") || "";
-            const javisKey = rawJavis.startsWith('"') ? JSON.parse(rawJavis) : rawJavis;
-            return javisKey || "";
-          } catch {
-            return "";
-          }
-        })()
-      : "");
+  // Aucune recherche dans localStorage : la clé éventuelle doit être explicitement fournie
+  // pour cette session et n'est jamais récupérée depuis une ancienne mémoire locale.
+  const geminiKey = explicitKeyArg || authObj.geminiKey || authObj.geminiApiKey || "";
 
   if (geminiKey && typeof FileReader !== "undefined") {
     try {
@@ -761,6 +777,7 @@ export async function extractScreenshotDataFromImage(
               line: o.line ?? null,
               label: o.label,
               bookOdd: Number(o.bookOdd),
+              oddSource: "screenshot",
             })),
           };
         }
@@ -792,7 +809,10 @@ export async function extractScreenshotDataFromImage(
   const teamsConfirmed = Boolean(detectedMatch?.home && detectedMatch?.away);
   const labelHome = teamsConfirmed ? detectedMatch.home : "Équipe Domicile";
   const labelAway = teamsConfirmed ? detectedMatch.away : "Équipe Extérieur";
-  const options = parseBookmakerMarketsFromText(rawText, labelHome, labelAway);
+  const options = parseBookmakerMarketsFromText(rawText, labelHome, labelAway).map((option) => ({
+    ...option,
+    oddSource: "screenshot",
+  }));
 
   safeProgress(100, "Lecture optique terminée !");
   return {

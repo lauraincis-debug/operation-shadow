@@ -17,6 +17,8 @@ export default function LearningPerformanceBubble({
   const rate = metrics?.accuracyPct ?? null;
   const sample = metrics?.total || 0;
   const minSample = metrics?.minimumSample || 30;
+  const marketSample = metrics?.marketSampleSize || 0;
+  const marketMinimumSample = metrics?.marketMinimumSample || minSample;
   const color = performanceColor(rate);
 
   useEffect(() => {
@@ -73,7 +75,7 @@ export default function LearningPerformanceBubble({
               <strong>{metrics?.duplicateForecastRowsExcluded || 0}</strong>
             </div>
             <div className="fai-performance-stat">
-              <span>Marchés gagnants</span>
+              <span>Marchés gagnants ({marketSample}/{marketMinimumSample})</span>
               <strong>
                 {metrics?.marketAccuracyPct === null || metrics?.marketAccuracyPct === undefined
                   ? "—"

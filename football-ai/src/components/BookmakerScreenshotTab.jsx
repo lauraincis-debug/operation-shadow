@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { CLUBS_DB } from "../data/clubs.js";
 import { doesVideoInsightMatchTeams } from "../engine/videoAnalyzer.js";
+import { isRealOdd } from "../engine/oddsPolicy.js";
 import {
   extractScreenshotDataFromImage,
   evaluateScreenshotMarketsAndPickDefinitiveBet,
@@ -42,18 +43,22 @@ export default function BookmakerScreenshotTab({
   const [engineUsed, setEngineUsed] = useState("");
   const [extractedOptions, setExtractedOptions] = useState([]);
   const [teamsNeedConfirmation, setTeamsNeedConfirmation] = useState(false);
+  const [screenshotConfirmed, setScreenshotConfirmed] = useState(false);
+  const [demoData, setDemoData] = useState(false);
 
   // Ajout manuel ultra-rapide d'une option supplémentaire lue sur la capture si souhaité
   const [newKind, setNewKind] = useState("OVER");
   const [newLine, setNewLine] = useState("2.5");
   const [newOdd, setNewOdd] = useState("1.75");
-  const [personalGeminiKey, setPersonalGeminiKey] = useState(() => {
+  const [personalGeminiKey, setPersonalGeminiKey] = useState("");
+
+  useEffect(() => {
     try {
-      return localStorage.getItem("fai_user_gemini_vision_key") || "";
+      localStorage.removeItem("fai_user_gemini_vision_key");
     } catch {
-      return "";
+      // ignore unavailable storage
     }
-  });
+  }, []);
 
   const processScreenshotFile = useCallback(
     async (file) => {
@@ -62,6 +67,9 @@ export default function BookmakerScreenshotTab({
         return;
       }
       setErrMsg("");
+      setScreenshotConfirmed(false);
+      setDemoData(false);
+      setExtractedOptions([]);
       setBusy(true);
       setProgress(10);
 
@@ -96,12 +104,21 @@ export default function BookmakerScreenshotTab({
           );
         }
 
-        if (res.options.length === 0) {
+        const verifiedImageOptions = (res.options || [])
+          .map((option) => {
+            const odd = Number(option?.bookOdd);
+            return isRealOdd(odd) && odd <= 40
+              ? { ...option, bookOdd: odd, oddSource: "screenshot" }
+              : null;
+          })
+          .filter(Boolean);
+        if (verifiedImageOptions.length === 0) {
+          setExtractedOptions([]);
           setErrMsg(
-            "L'image a été chargée mais peu de cotes numériques ont été détectées automatiquement : vérifiez les équipes ci-dessous ou ajoutez la cote visible en 1 clic."
+            "L'image a été chargée, mais aucune cote valide n'a été lue. Vérifiez la capture ou saisissez manuellement la cote visible."
           );
         } else {
-          setExtractedOptions(res.options);
+          setExtractedOptions(verifiedImageOptions);
         }
       } catch (e) {
         setErrMsg(e.message || "Erreur lors de l'analyse optique de la capture.");
@@ -130,18 +147,20 @@ export default function BookmakerScreenshotTab({
   const handleLoadBetclicDemo = () => {
     setErrMsg("");
     setTeamsNeedConfirmation(false);
+    setScreenshotConfirmed(false);
+    setDemoData(true);
     setBookmakerName("Betclic");
     setHome("PSG");
     setAway("Barcelone");
     setSport("soccer");
     setLeague("ucl");
-    setEngineUsed("Simulation Capture Officielle Betclic (11 options extraites)");
+    setEngineUsed("Données d'exemple de démonstration (non vérifiables)");
     const parsed = parseBookmakerMarketsFromText(
       DEMO_BETCLIC_SCREENSHOT_TEXT,
       "PSG",
       "Barcelone"
     );
-    setExtractedOptions(parsed);
+    setExtractedOptions(parsed.map((option) => ({ ...option, oddSource: "unverified" })));
   };
 
   const matchedVideoBoost = doesVideoInsightMatchTeams(videoInsight, home, away)
@@ -165,6 +184,13 @@ export default function BookmakerScreenshotTab({
           currency,
         })
       : null;
+  const canAddDefinitiveBet = Boolean(
+    !demoData &&
+      screenshotConfirmed &&
+      verdict?.definitiveBet &&
+      isRealOdd(verdict.definitiveBet.bookOdd) &&
+      ["screenshot", "manual"].includes(verdict.definitiveBet.oddSource)
+  );
 
   const fmtStake = (amt) =>
     currency === "EUR"
@@ -173,9 +199,10 @@ export default function BookmakerScreenshotTab({
 
   const handleUpdateOptionOdd = (idx, nextOddStr) => {
     const val = parseFloat(String(nextOddStr).replace(",", "."));
+    if (isRealOdd(val) && val <= 40) setScreenshotConfirmed(false);
     setExtractedOptions((prev) =>
       prev.map((o, i) =>
-        i === idx && Number.isFinite(val) && val > 1.01 ? { ...o, bookOdd: val } : o
+        i === idx && isRealOdd(val) && val <= 40 ? { ...o, bookOdd: val, oddSource: "manual" } : o
       )
     );
   };
@@ -185,7 +212,8 @@ export default function BookmakerScreenshotTab({
     const lineNum = ["OVER", "UNDER", "CORNERS_OVER", "HT_OVER"].includes(newKind)
       ? parseFloat(newLine)
       : null;
-    if (!Number.isFinite(odd) || odd <= 1.01) return;
+    if (!isRealOdd(odd) || odd > 40) return;
+    setScreenshotConfirmed(false);
 
     const labelsMap = {
       "1": `Victoire ${home} (1)`,
@@ -208,7 +236,8 @@ export default function BookmakerScreenshotTab({
         line: lineNum,
         label: labelsMap[newKind] || newKind,
         bookOdd: odd,
-      },
+        oddSource: "manual",
+      }
     ]);
   };
 
@@ -220,9 +249,9 @@ export default function BookmakerScreenshotTab({
         </div>
         <p style={{ fontSize: 13, color: "#94a3b8", marginBottom: 14, lineHeight: 1.55 }}>
           Importez, photographiez ou collez directement (<strong>Ctrl+V</strong>) une capture d&apos;écran de{" "}
-          <strong>Betclic</strong> (ou tout autre bookmaker). L&apos;IA lit toutes les options et cotes affichées,
-          calcule la vraie probabilité mathématique et l&apos;espérance de gain (EV%) de chacune, élimine les
-          pièges à marge élevée, et vous sort <strong>UN SEUL PARI DÉFINITIF</strong>.
+          <strong>Betclic</strong> (ou tout autre bookmaker). L&apos;outil lit les options et cotes affichées,
+          les compare aux estimations du modèle et présente un seul choix éventuel. Les probabilités et EV restent
+          des estimations, sans garantie de gain; vérifiez chaque cote sur la capture avant validation.
         </p>
 
         {/* ZONE D'ENVOI / DRAG & DROP / PHOTO / CTRL+V */}
@@ -268,31 +297,23 @@ export default function BookmakerScreenshotTab({
               onClick={handleLoadBetclicDemo}
               disabled={busy}
             >
-              ⚡ Tester un Exemple Réel de Capture Betclic (11 cotes)
+              ⚡ Voir un exemple de démonstration (non ajoutable)
             </button>
           </div>
           <div style={{ fontSize: 11.5, color: "#64748b", marginTop: 8 }}>
-            🔓 <strong>100 % gratuit &amp; illimité sans clé API</strong> (moteur OCR WASM FRA+ENG intégré sur téléphone &amp; PC — sur ordinateur, faites aussi <strong>Ctrl+V</strong> directement).
+              🔓 L&apos;OCR local fonctionne sans clé API. Gemini Vision est facultatif; ses quotas et éventuels coûts dépendent du fournisseur. (Compatible téléphone, PC et collage <strong>Ctrl+V</strong>.)
           </div>
           <details style={{ marginTop: 8, textAlign: "left", maxWidth: 520, marginInline: "auto" }}>
             <summary style={{ cursor: "pointer", fontSize: 11.5, color: "#38bdf8", textAlign: "center" }}>
-              ⚡ Optionnel : activer aussi Gemini Vision IA (clé AI Studio personnelle gratuite)
+              ⚡ Optionnel : analyser aussi avec Gemini Vision (clé personnelle, non requise)
             </summary>
             <div style={{ display: "flex", gap: 8, marginTop: 6 }}>
               <input
                 type="password"
                 className="fai-select"
-                placeholder="Coller votre clé AIza... (optionnel — conservée uniquement sur votre appareil)"
+                placeholder="Clé temporaire en mémoire; envoyée à Google seulement si Gemini est activé"
                 value={personalGeminiKey}
-                onChange={(e) => {
-                  const val = e.target.value;
-                  setPersonalGeminiKey(val);
-                  try {
-                    localStorage.setItem("fai_user_gemini_vision_key", val);
-                  } catch {
-                    // ignore
-                  }
-                }}
+                onChange={(e) => setPersonalGeminiKey(e.target.value)}
               />
             </div>
           </details>
@@ -391,7 +412,10 @@ export default function BookmakerScreenshotTab({
                 <input
                   className="fai-select"
                   value={bookmakerName}
-                  onChange={(e) => setBookmakerName(e.target.value)}
+                  onChange={(e) => {
+                    setBookmakerName(e.target.value);
+                    setScreenshotConfirmed(false);
+                  }}
                 />
               </div>
               <div>
@@ -400,7 +424,10 @@ export default function BookmakerScreenshotTab({
                   className="fai-select"
                   list="clubs-dl-bmp"
                   value={home}
-                  onChange={(e) => setHome(e.target.value)}
+                  onChange={(e) => {
+                    setHome(e.target.value);
+                    setScreenshotConfirmed(false);
+                  }}
                 />
               </div>
               <div>
@@ -409,7 +436,10 @@ export default function BookmakerScreenshotTab({
                   className="fai-select"
                   list="clubs-dl-bmp"
                   value={away}
-                  onChange={(e) => setAway(e.target.value)}
+                  onChange={(e) => {
+                    setAway(e.target.value);
+                    setScreenshotConfirmed(false);
+                  }}
                 />
               </div>
             </div>
@@ -549,20 +579,20 @@ export default function BookmakerScreenshotTab({
                   </div>
                 </div>
                 <div style={{ background: "rgba(15,23,42,0.78)", padding: 10, borderRadius: 10 }}>
-                  <div style={{ fontSize: 11, color: "#94a3b8" }}>Vraie Probabilité IA</div>
+                  <div style={{ fontSize: 11, color: "#94a3b8" }}>Probabilité IA estimée</div>
                   <div style={{ fontSize: 20, fontWeight: 900, color: "#00e676" }}>
                     {verdict.definitiveBet.trueProbPct}%
                   </div>
                 </div>
                 <div style={{ background: "rgba(15,23,42,0.78)", padding: 10, borderRadius: 10 }}>
-                  <div style={{ fontSize: 11, color: "#94a3b8" }}>Avantage Value (EV)</div>
+                  <div style={{ fontSize: 11, color: "#94a3b8" }}>EV selon le modèle (estimée)</div>
                   <div style={{ fontSize: 20, fontWeight: 900, color: "#00e5ff" }}>
                     {verdict.definitiveBet.evPct >= 0 ? "+" : ""}
                     {verdict.definitiveBet.evPct}%
                   </div>
                 </div>
                 <div style={{ background: "rgba(15,23,42,0.78)", padding: 10, borderRadius: 10 }}>
-                  <div style={{ fontSize: 11, color: "#94a3b8" }}>Mise Kelly Conseillée</div>
+                  <div style={{ fontSize: 11, color: "#94a3b8" }}>Simulation Kelly (indicative)</div>
                   <div style={{ fontSize: 18, fontWeight: 900, color: "#fff" }}>
                     {fmtStake(verdict.definitiveBet.recommendedStake)}
                   </div>
@@ -570,11 +600,27 @@ export default function BookmakerScreenshotTab({
               </div>
             )}
 
+            {verdict.definitiveBet && !demoData && (
+              <label style={{ display: "flex", gap: 8, alignItems: "flex-start", marginBottom: 10, fontSize: 12, color: "#cbd5e1" }}>
+                <input
+                  type="checkbox"
+                  checked={screenshotConfirmed}
+                  onChange={(event) => setScreenshotConfirmed(event.target.checked)}
+                />
+                <span>J&apos;ai vérifié le match et la cote sur la capture, ou je les ai saisis moi-même depuis une source bookmaker réelle.</span>
+              </label>
+            )}
+            {demoData && (
+              <div style={{ color: "#ffb74d", fontSize: 12, marginBottom: 10 }}>
+                Exemple de démonstration : ces données ne sont pas une capture vérifiée et ne peuvent pas entrer dans un coupon.
+              </div>
+            )}
             {verdict.definitiveBet && onAddDefinitiveBetToCoupon && (
               <button
                 type="button"
                 className="fai-btn-primary"
-                style={{ maxWidth: 460 }}
+                style={{ maxWidth: 460, opacity: canAddDefinitiveBet ? 1 : 0.55 }}
+                disabled={!canAddDefinitiveBet}
                 onClick={() =>
                   onAddDefinitiveBetToCoupon({
                     home,
@@ -587,18 +633,26 @@ export default function BookmakerScreenshotTab({
                       pct: Math.round(verdict.definitiveBet.trueProbPct),
                       fairOdd: verdict.definitiveBet.fairOdd,
                       bookOdd: verdict.definitiveBet.bookOdd,
+                      oddSource:
+                        screenshotConfirmed && !demoData
+                          ? verdict.definitiveBet.oddSource === "manual"
+                            ? "manual"
+                            : "screenshot"
+                          : "unverified",
                     },
                   })
                 }
               >
-                🏆 Valider &amp; Envoyer ce Pari Définitif au Coupon (@{verdict.definitiveBet.bookOdd.toFixed(2)})
+                {canAddDefinitiveBet
+                  ? `🏆 Valider & envoyer le Pari Définitif (@${verdict.definitiveBet.bookOdd.toFixed(2)})`
+                  : "Vérifiez les équipes et la cote sur la capture pour valider"}
               </button>
             )}
           </div>
 
           {/* TABLEAU COMPARATIF COMPLET DE TOUTES LES OPTIONS LUES SUR LA CAPTURE */}
           <div className="fai-card-title" style={{ fontSize: 14 }}>
-            📊 Classement Mathématique Complet des {verdict.analyzedOptions.length} Options lues sur {bookmakerName}
+            📊 Comparaison estimative des {verdict.analyzedOptions.length} options lues sur {bookmakerName}
           </div>
           <div style={{ display: "grid", gap: 8 }}>
             {verdict.analyzedOptions.map((opt, rankIdx) => {

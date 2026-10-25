@@ -33,6 +33,7 @@ import {
   OMNI_SPORT_ENDPOINTS,
 } from "./services/liveMatchesApi.js";
 import { predictOmniSportMatch } from "./engine/omniSportEngine.js";
+import { hasRealOdd, isRealOdd, realOddOf } from "./engine/oddsPolicy.js";
 import LiveMatchesTab from "./components/LiveMatchesTab.jsx";
 import HeadToHeadTab from "./components/HeadToHeadTab.jsx";
 import VideoAnalysisTab from "./components/VideoAnalysisTab.jsx";
@@ -103,7 +104,11 @@ function sanitizeCouponList(list = []) {
           ...(item.selectedMarket || { label: "Choix IA" }),
           prob,
           pct: item.selectedMarket?.pct ?? Math.round(prob * 100),
-          bookOdd: Number(item.selectedMarket?.bookOdd || item.selectedMarket?.marketOdd || 1.5),
+          // Conserver les anciennes valeurs pour consultation, mais les marquer non vérifiées.
+          bookOdd: isRealOdd(item.selectedMarket?.bookOdd ?? item.selectedMarket?.marketOdd)
+            ? Number(item.selectedMarket?.bookOdd ?? item.selectedMarket?.marketOdd)
+            : null,
+          oddSource: hasRealOdd(item.selectedMarket) ? item.selectedMarket.oddSource : "unverified",
         },
       };
     });
@@ -825,6 +830,40 @@ export default function FootballAI() {
     setToast(msg);
   }, []);
 
+  const addCouponItemWithRealOdd = useCallback(
+    (candidate, successMessage = "Sélection ajoutée au coupon.") => {
+      const item = sanitizeCouponList([candidate])[0];
+      if (!item || !hasRealOdd(item.selectedMarket)) {
+        triggerToast(
+          "⛔ Cote non vérifiable : saisissez une cote bookmaker réelle ou validez la cote de la capture avant l'ajout."
+        );
+        return false;
+      }
+      setCoupon((previous) => [...previous, item]);
+      if (successMessage) triggerToast(successMessage);
+      return true;
+    },
+    [triggerToast]
+  );
+
+  const replaceCouponWithVerifiedItems = useCallback(
+    (candidates, successMessage = "Coupon chargé.") => {
+      const sanitized = sanitizeCouponList(candidates);
+      const verified = sanitized.filter((item) => hasRealOdd(item.selectedMarket));
+      const rejectedCount = sanitized.length - verified.length;
+      setCoupon(verified);
+      if (rejectedCount > 0) {
+        triggerToast(
+          `⛔ ${rejectedCount} sélection(s) sans cote réelle ont été écartées; ressaisissez les cotes pour les valider.`
+        );
+      } else if (successMessage) {
+        triggerToast(successMessage);
+      }
+      return verified;
+    },
+    [triggerToast]
+  );
+
   // Réception instantanée bidirectionnelle SÉCURISÉE depuis Cloé · Agent personnel · Abidjan (#sync=...)
   useEffect(() => {
     try {
@@ -851,23 +890,26 @@ export default function FootballAI() {
               );
             }
             if (Array.isArray(decoded.coupon) && decoded.coupon.length > 0) {
-              setCoupon(
-                decoded.coupon.slice(0, 12).map((it, idx) => ({
-                  id: `cloe-sync-${Date.now()}-${idx}`,
-                  home: cleanStr(it.home, 60),
-                  away: cleanStr(it.away, 60),
-                  sport: cleanStr(it.sport || "soccer", 20),
-                  league: cleanStr(it.league || "ucl", 24),
-                  probs: Array.isArray(it.probs) ? it.probs.map((x) => Number(x) || 33) : [50, 25, 25],
-                  rawProbs: [0.5, 0.25, 0.25],
-                  selectedMarket: {
-                    code: cleanStr(it.selectedMarket?.code || "rec", 20),
-                    label: cleanStr(it.selectedMarket?.label || it.label || "Double Chance", 90),
-                    prob: Math.min(0.98, Math.max(0.03, (Number(it.selectedMarket?.pct || it.pct || 72)) / 100)),
-                    pct: Math.min(98, Math.max(3, Math.round(Number(it.selectedMarket?.pct || it.pct || 72)))),
-                    bookOdd: Math.min(100, Math.max(1.02, Number(it.selectedMarket?.bookOdd || it.odd) || 1.35)),
-                  },
-                }))
+              const incomingCoupon = decoded.coupon.slice(0, 12).map((it, idx) => ({
+                id: `cloe-sync-${Date.now()}-${idx}`,
+                home: cleanStr(it.home, 60),
+                away: cleanStr(it.away, 60),
+                sport: cleanStr(it.sport || "soccer", 20),
+                league: cleanStr(it.league || "ucl", 24),
+                probs: Array.isArray(it.probs) ? it.probs.map((x) => Number(x) || 33) : [50, 25, 25],
+                rawProbs: [0.5, 0.25, 0.25],
+                selectedMarket: {
+                  code: cleanStr(it.selectedMarket?.code || "rec", 20),
+                  label: cleanStr(it.selectedMarket?.label || it.label || "Double Chance", 90),
+                  prob: Math.min(0.98, Math.max(0.03, Number(it.selectedMarket?.pct || it.pct || 72) / 100)),
+                  pct: Math.min(98, Math.max(3, Math.round(Number(it.selectedMarket?.pct || it.pct || 72)))),
+                  bookOdd: isRealOdd(it.selectedMarket?.bookOdd) ? Number(it.selectedMarket.bookOdd) : null,
+                  oddSource: it.selectedMarket?.oddSource || "unverified",
+                },
+              }));
+              replaceCouponWithVerifiedItems(
+                incomingCoupon,
+                "Synchronisation Cloé reçue; seules les cotes vérifiables sont chargées."
               );
               setTab("coupon");
             }
@@ -878,7 +920,7 @@ export default function FootballAI() {
     } catch {
       // ignore invalid hash
     }
-  }, [triggerToast]);
+  }, [triggerToast, replaceCouponWithVerifiedItems]);
 
   useEffect(() => {
     const onBeforeInstall = (e) => {
@@ -1130,7 +1172,6 @@ export default function FootballAI() {
                 xg: pred.xg,
                 selectedMarket: {
                   ...pred.recommendedMarket,
-                  bookOdd: pred.recommendedMarket.marketOdd,
                 },
                 date: m.dateFr || new Date().toLocaleDateString("fr-FR"),
                 result: outcome,
@@ -1249,21 +1290,15 @@ export default function FootballAI() {
       }
       return next;
     });
-    setBookOdds((o) => ({ odd1: o.odd2, oddN: o.oddN, odd2: o.odd1 }));
+    setBookOdds((o) => ({ odd1: o.odd2, oddN: o.oddN, odd2: o.odd1, oddSource: o.oddSource }));
   };
 
   const buildPredictionRecord = () => {
     if (!livePrediction || !currentPickedMarket) return null;
-    const customOddMap = {
-      "1": parseFloat(bookOdds.odd1),
-      N: parseFloat(bookOdds.oddN),
-      "2": parseFloat(bookOdds.odd2),
-    };
-    const chosenOdd =
-      !Number.isNaN(customOddMap[currentPickedMarket.code]) &&
-      customOddMap[currentPickedMarket.code] > 1.01
-        ? customOddMap[currentPickedMarket.code]
-        : currentPickedMarket.marketOdd;
+    const chosenOdd = realOddOf(livePrediction, currentPickedMarket);
+    const quoteDetails = livePrediction.valueAnalysis?.items?.find(
+      (item) => item.code === currentPickedMarket.code
+    );
     const fixture = findOfficialFixtureForTeams(
       livePrediction.home,
       livePrediction.away,
@@ -1285,6 +1320,7 @@ export default function FootballAI() {
       selectedMarket: {
         ...currentPickedMarket,
         bookOdd: chosenOdd,
+        oddSource: chosenOdd ? quoteDetails?.oddSource || "unverified" : "unverified",
       },
       date: new Date().toLocaleDateString("fr-FR"),
       result: undefined,
@@ -1295,8 +1331,10 @@ export default function FootballAI() {
     const rec = buildPredictionRecord();
     if (!rec) return;
     setPredictions((prev) => [rec, ...prev]);
-    setCoupon((prev) => [...prev, rec]);
-    triggerToast(`✓ "${rec.home} vs ${rec.away}" ajouté au Coupon (${rec.selectedMarket.label})`);
+    addCouponItemWithRealOdd(
+      rec,
+      `✓ "${rec.home} vs ${rec.away}" ajouté au Coupon (${rec.selectedMarket.label})`
+    );
     setTab("coupon");
   };
 
@@ -1304,6 +1342,10 @@ export default function FootballAI() {
     const pred = liveMatch.prediction;
     const sport = liveMatch.sport || pred.sport || "soccer";
     const prob = pred.recommendedMarket?.prob ?? (pred.recommendedMarket?.pct || 68) / 100;
+    const verifiedOdd = realOddOf(pred, pred.recommendedMarket);
+    const quoteDetails = pred.valueAnalysis?.items?.find(
+      (item) => item.code === pred.recommendedMarket?.code
+    );
     const provenance =
       sport === "soccer" ? buildForecastProvenance(liveMatch, rawLiveFeed) : {};
     const rec = {
@@ -1321,12 +1363,8 @@ export default function FootballAI() {
       selectedMarket: {
         ...pred.recommendedMarket,
         prob,
-        bookOdd: Number(
-          pred.recommendedMarket.marketOdd ||
-            pred.recommendedMarket.bookOdd ||
-            pred.recommendedMarket.fairOdd ||
-            1.5
-        ),
+        bookOdd: verifiedOdd,
+        oddSource: verifiedOdd ? quoteDetails?.oddSource || "unverified" : "unverified",
       },
       date: liveMatch.dateFr || new Date().toLocaleDateString("fr-FR"),
       result: undefined,
@@ -1334,8 +1372,7 @@ export default function FootballAI() {
     if (sport === "soccer") {
       setPredictions((prev) => [rec, ...prev]);
     }
-    setCoupon((prev) => [...prev, rec]);
-    triggerToast(`🎰 "${pred.home} vs ${pred.away}" ajouté au Coupon !`);
+    addCouponItemWithRealOdd(rec, `🎰 "${pred.home} vs ${pred.away}" ajouté au Coupon !`);
   };
 
   const handleInspectLiveMatch = (liveMatch) => {
@@ -1374,23 +1411,25 @@ export default function FootballAI() {
         return next;
       });
       setCoupon((prev) => prev.map(updateItem));
-      triggerToast("🧬 Erreur/Succès analysé — Modèle IA recalibré automatiquement !");
+      triggerToast("Résultat enregistré. Les hyperparamètres ne changent que si la validation chronologique récente s'améliore (10 résultats minimum)." );
     },
     [evolvedHyper, optaOverrides, triggerToast]
   );
 
   const handleManualSelfEvolution = () => {
     const trainingCount = modelState.trainingMetrics.total;
-    if (trainingCount < 6) {
+    if (trainingCount < 10) {
       triggerToast(
-        `Optimisation suspendue : ${trainingCount}/6 résultats d'apprentissage requis. Les exemples de calibration ne sont plus injectés dans la mémoire.`
+        `Optimisation suspendue : ${trainingCount}/10 résultats validés nécessaires pour une validation hors échantillon. Les hyperparamètres restent inchangés.`
       );
       return;
     }
     const res = runContinuousEvolution(predictions, modelState.hyper, optaOverrides);
     setEvolvedHyper(res.evolvedHyper);
     triggerToast(
-      `🧬 Génération #${res.evolvedHyper.generation} optimisée sur le rejeu historique (Brier ${res.afterBrier?.toFixed(3) ?? "—"}, non assimilable à une performance prospective).`
+      res.holdoutGate?.accepted
+        ? `🧬 Validation chronologique acceptée (${res.holdoutGate.trainMatches} anciens / ${res.holdoutGate.holdoutMatches} récents). Brier du rejeu : ${res.beforeBrier?.toFixed(3)} → ${res.afterBrier?.toFixed(3)}; ce n'est pas une performance prospective.`
+        : `Aucun hyperparamètre modifié. ${res.antiOverfitNote || "La configuration actuelle est conservée."}`
     );
   };
 
@@ -1408,7 +1447,8 @@ export default function FootballAI() {
               ...item,
               selectedMarket: {
                 ...item.selectedMarket,
-                bookOdd: Number.isNaN(parsed) || parsed < 1.01 ? item.selectedMarket.bookOdd : parsed,
+                bookOdd: isRealOdd(parsed) ? parsed : null,
+                oddSource: isRealOdd(parsed) ? "manual" : "unverified",
                 rawOddInput: rawVal,
               },
             }
@@ -1491,7 +1531,8 @@ export default function FootballAI() {
             code: c.selectedMarket?.code || "rec",
             label: c.selectedMarket?.label || "Sélection IA",
             pct: c.selectedMarket?.pct || 70,
-            bookOdd: Number(c.selectedMarket?.bookOdd || 1.5),
+            bookOdd: hasRealOdd(c.selectedMarket) ? Number(c.selectedMarket.bookOdd) : null,
+            oddSource: hasRealOdd(c.selectedMarket) ? c.selectedMarket.oddSource : "unverified",
           },
         })),
       };
@@ -1508,13 +1549,20 @@ export default function FootballAI() {
     const lines = [
       `⚡ COUPON OMNI-SPORT & FOOTBALL AI ULTRA v6.4 (${coupon.length} match${coupon.length > 1 ? "s" : ""})`,
       "────────────────────────",
-      ...coupon.map(
-        (c, idx) =>
-          `${idx + 1}. ${c.home} vs ${c.away} → ${c.selectedMarket?.label} (${c.selectedMarket?.pct}% | Cote ${Number(c.selectedMarket?.bookOdd || 1.5).toFixed(2)})`
-      ),
+      ...coupon.map((c, idx) => {
+        const verified = hasRealOdd(c.selectedMarket);
+        const oddLabel = verified
+          ? `Cote ${Number(c.selectedMarket.bookOdd).toFixed(2)} (${c.selectedMarket.oddSource})`
+          : "COTE NON VÉRIFIÉE";
+        return `${idx + 1}. ${c.home} vs ${c.away} → ${c.selectedMarket?.label} (${c.selectedMarket?.pct}% | ${oddLabel})`;
+      }),
       "────────────────────────",
-      `📊 Cote totale : ${couponSummary.combinedBookOdd.toFixed(2)} | Probabilité IA : ${couponSummary.combinedProbPct}%`,
-      `💰 Mise : ${formatMoney(stake, currency)} → Gain potentiel : ${formatMoney(couponSummary.potentialPayout, currency)}`,
+      couponSummary.oddsVerified
+        ? `📊 Cote totale : ${couponSummary.combinedBookOdd.toFixed(2)} | Probabilité IA estimée : ${couponSummary.combinedProbPct}%`
+        : `📊 Cotes non vérifiées — cote totale et gain non calculés | Probabilité IA estimée : ${couponSummary.combinedProbPct}%`,
+      couponSummary.oddsVerified
+        ? `💰 Mise : ${formatMoney(stake, currency)} → Gain brut potentiel : ${formatMoney(couponSummary.potentialPayout, currency)}`
+        : "💰 Gain non calculé : vérifiez les cotes auprès du bookmaker.",
       `🔗 Charger ce coupon en 1 clic dans l'app : ${shareUrl}`,
     ];
     const text = lines.join("\n");
@@ -1581,14 +1629,14 @@ export default function FootballAI() {
   const couponSummary = useMemo(() => {
     if (coupon.length === 0) return null;
     let combinedProb = 1;
-    let combinedBookOdd = 1;
+    const oddsVerified = coupon.every((item) => hasRealOdd(item.selectedMarket));
+    let combinedBookOdd = oddsVerified ? 1 : null;
     let weakestLeg = coupon[0];
 
     for (const item of coupon) {
       const legProb = getCouponLegProb(item);
-      const legOdd = Number(item.selectedMarket?.bookOdd ?? 1.5);
       combinedProb *= legProb;
-      combinedBookOdd *= legOdd;
+      if (oddsVerified) combinedBookOdd *= Number(item.selectedMarket.bookOdd);
       const weakestProb = getCouponLegProb(weakestLeg);
       if (legProb < weakestProb) {
         weakestLeg = item;
@@ -1596,9 +1644,11 @@ export default function FootballAI() {
     }
 
     const fairCombinedOdd = 1 / Math.max(combinedProb, 0.0001);
-    const potentialPayout = stake * combinedBookOdd;
-    const netProfit = potentialPayout - stake;
-    const evPct = Math.round((combinedProb * combinedBookOdd - 1) * 1000) / 10;
+    const potentialPayout = oddsVerified ? stake * combinedBookOdd : null;
+    const netProfit = oddsVerified ? potentialPayout - stake : null;
+    const evPct = oddsVerified
+      ? Math.round((combinedProb * combinedBookOdd - 1) * 1000) / 10
+      : null;
 
     let riskLabel = "Faible (Ticket Solide)";
     let riskColor = "#00e676";
@@ -1615,7 +1665,8 @@ export default function FootballAI() {
 
     return {
       combinedProbPct: Math.round(combinedProb * 1000) / 10,
-      combinedBookOdd: Math.round(combinedBookOdd * 100) / 100,
+      oddsVerified,
+      combinedBookOdd: oddsVerified ? Math.round(combinedBookOdd * 100) / 100 : null,
       fairCombinedOdd: Math.round(fairCombinedOdd * 100) / 100,
       potentialPayout,
       netProfit,
@@ -1775,11 +1826,16 @@ export default function FootballAI() {
                   1X2 officiel ({modelState.metrics.total}/{MIN_PERFORMANCE_SAMPLE})
                 </div>
               </div>
-              <div className="fai-kpi-pill" title="Calculé sur les mêmes pronostics pré-match vérifiés">
+              <div
+                className="fai-kpi-pill"
+                title={`Calculé uniquement sur les marchés à résultat vérifiable : ${modelState.metrics.marketSampleSize ?? 0}/${modelState.metrics.marketMinimumSample ?? MIN_PERFORMANCE_SAMPLE} observations minimum`}
+              >
                 <div className="fai-kpi-val" style={{ color: modelState.metrics.marketAccuracyPct === null ? "#9aa3c7" : "#00e5ff" }}>
                   {modelState.metrics.marketAccuracyPct === null ? "—" : `${modelState.metrics.marketAccuracyPct}%`}
                 </div>
-                <div className="fai-kpi-lbl">Marchés officiels</div>
+                <div className="fai-kpi-lbl">
+                  Marchés officiels ({modelState.metrics.marketSampleSize ?? 0}/{modelState.metrics.marketMinimumSample ?? MIN_PERFORMANCE_SAMPLE})
+                </div>
               </div>
             </div>
           </div>
@@ -2041,7 +2097,7 @@ export default function FootballAI() {
                           placeholder="Ex: 1.85"
                           value={bookOdds[field]}
                           onChange={(e) =>
-                            setBookOdds((prev) => ({ ...prev, [field]: e.target.value }))
+                            setBookOdds((prev) => ({ ...prev, [field]: e.target.value, oddSource: "manual" }))
                           }
                         />
                       </div>
@@ -2590,11 +2646,10 @@ export default function FootballAI() {
                   pred={livePrediction}
                   matchContext={matchContext}
                   onAddCustomMarket={(customItem) => {
-                    setCoupon((prev) => [
-                      ...prev,
+                    addCouponItemWithRealOdd(
                       { ...customItem, id: Date.now() + Math.floor(Math.random() * 1000) },
-                    ]);
-                    triggerToast(`🎯 ${customItem.selectedMarket.label} ajouté au Coupon !`);
+                      `🎯 ${customItem.selectedMarket.label} ajouté au Coupon !`
+                    );
                   }}
                 />
               </div>
@@ -2609,11 +2664,10 @@ export default function FootballAI() {
           <TournamentTab
             modelState={modelState}
             onAddOutrightToCoupon={(item) => {
-              setCoupon((prev) => [
-                ...prev,
+              addCouponItemWithRealOdd(
                 { ...item, id: Date.now() + Math.floor(Math.random() * 1000) },
-              ]);
-              triggerToast(`🏆 ${item.selectedMarket.label} ajouté au Coupon !`);
+                `🏆 ${item.selectedMarket.label} ajouté au Coupon !`
+              );
             }}
           />
         )}
@@ -2649,8 +2703,7 @@ export default function FootballAI() {
             bankrollCapital={currency === "EUR" ? 100 : 50000}
             onAddDefinitiveBetToCoupon={(newItem) => {
               const probFrac = Math.min(0.98, Math.max(0.03, (newItem.selectedMarket?.pct || 65) / 100));
-              setCoupon((prev) => [
-                ...prev,
+              const added = addCouponItemWithRealOdd(
                 {
                   id: `betclic-${Date.now()}`,
                   home: newItem.home,
@@ -2659,14 +2712,11 @@ export default function FootballAI() {
                   league: newItem.league || "ucl",
                   probs: [Math.round(probFrac * 100), 20, Math.max(5, 80 - Math.round(probFrac * 100))],
                   rawProbs: [probFrac, 0.2, Math.max(0.05, 0.8 - probFrac)],
-                  selectedMarket: {
-                    ...newItem.selectedMarket,
-                    prob: probFrac,
-                  },
+                  selectedMarket: { ...newItem.selectedMarket, prob: probFrac },
                 },
-              ]);
-              setTab("coupon");
-              triggerToast(`🏆 Pari Définitif « ${newItem.selectedMarket.label} » ajouté au Coupon !`);
+                `🏆 Pari Définitif « ${newItem.selectedMarket.label} » ajouté au Coupon !`
+              );
+              if (added) setTab("coupon");
             }}
           />
         )}
@@ -2686,8 +2736,7 @@ export default function FootballAI() {
             }}
             onAddLiveBetToCoupon={(liveItem) => {
               const probFrac = Math.min(0.98, Math.max(0.05, (liveItem.selectedMarket?.pct || 68) / 100));
-              setCoupon((prev) => [
-                ...prev,
+              const added = addCouponItemWithRealOdd(
                 {
                   id: `live-vid-${Date.now()}`,
                   home: liveItem.home,
@@ -2696,14 +2745,11 @@ export default function FootballAI() {
                   league: liveItem.league || "ucl",
                   probs: [Math.round(probFrac * 100), 20, Math.max(5, 80 - Math.round(probFrac * 100))],
                   rawProbs: [probFrac, 0.2, Math.max(0.05, 0.8 - probFrac)],
-                  selectedMarket: {
-                    ...liveItem.selectedMarket,
-                    prob: probFrac,
-                  },
+                  selectedMarket: { ...liveItem.selectedMarket, prob: probFrac },
                 },
-              ]);
-              setTab("coupon");
-              triggerToast(`🔴 Pari Live « ${liveItem.selectedMarket.label} » ajouté au Coupon !`);
+                `🔴 Pari Live « ${liveItem.selectedMarket.label} » ajouté au Coupon !`
+              );
+              if (added) setTab("coupon");
             }}
             onVideoInsightReady={(res) => {
               setVideoInsight(res);
@@ -2759,11 +2805,11 @@ export default function FootballAI() {
             modelState={modelState}
             liveMatches={enrichedLiveFeed.matches}
             onAddLivePickToCoupon={(item) => {
-              setCoupon((prev) => [
-                ...prev,
+              const added = addCouponItemWithRealOdd(
                 { ...item, id: Date.now() + Math.floor(Math.random() * 1000) },
-              ]);
-              triggerToast(`🎰 Sélection Live ajoutée au Coupon !`);
+                "🎰 Sélection Live ajoutée au Coupon !"
+              );
+              if (added) setTab("coupon");
             }}
           />
         )}
@@ -2781,15 +2827,24 @@ export default function FootballAI() {
               currency={currency}
               couponSummary={couponSummary}
               onLoadGeneratedTicket={(items, suggestedStake, badge) => {
-                setCoupon(sanitizeCouponList(items));
+                if (String(badge).startsWith("📋 Ticket Importé")) {
+                  // Import pour audit uniquement : conserver les jambes, mais ne pas certifier les cotes.
+                  setCoupon(sanitizeCouponList(items));
+                  triggerToast("Ticket importé pour audit; ses cotes restent non vérifiées jusqu'à ressaisie.");
+                } else {
+                  replaceCouponWithVerifiedItems(items, `${badge} chargé.`);
+                }
                 setStake(suggestedStake);
-                triggerToast(`${badge} chargé avec mise optimale !`);
               }}
               onApplyRecommendedStake={(amt) => {
                 setStake(amt);
                 triggerToast(`🛡️ Mise optimale Kelly appliquée !`);
               }}
               onReplaceCouponItem={(itemId, saferMarket) => {
+                if (!hasRealOdd(saferMarket)) {
+                  triggerToast("Alternative sans cote réelle vérifiée : remplacement refusé.");
+                  return;
+                }
                 setCoupon((prev) =>
                   prev.map((c) =>
                     c.id === itemId ? { ...c, selectedMarket: saferMarket } : c
@@ -2931,11 +2986,29 @@ export default function FootballAI() {
                               }}
                               value={
                                 item.selectedMarket?.rawOddInput ??
-                                item.selectedMarket?.bookOdd ??
-                                1.5
+                                (hasRealOdd(item.selectedMarket) ? item.selectedMarket.bookOdd : "")
+                              }
+                              placeholder={
+                                isRealOdd(item.selectedMarket?.bookOdd) && !hasRealOdd(item.selectedMarket)
+                                  ? `Ancienne cote ${Number(item.selectedMarket.bookOdd).toFixed(2)}`
+                                  : "Cote réelle"
                               }
                               onChange={(e) => handleUpdateCouponOdd(item.id, e.target.value)}
                             />
+                            <div
+                              style={{
+                                width: 110,
+                                marginTop: 4,
+                                fontSize: 9,
+                                color: hasRealOdd(item.selectedMarket) ? "#00e676" : "#ffb74d",
+                              }}
+                            >
+                              {hasRealOdd(item.selectedMarket)
+                                ? `Vérifiée · ${item.selectedMarket.oddSource}`
+                                : isRealOdd(item.selectedMarket?.bookOdd)
+                                  ? "Ancienne cote non vérifiée"
+                                  : "Cote non vérifiée"}
+                            </div>
                             <button
                               type="button"
                               onClick={() =>
@@ -3032,21 +3105,27 @@ export default function FootballAI() {
                       }}
                     >
                       {[
-                        ["Cote Totale Combinée", couponSummary.combinedBookOdd.toFixed(2), "#fff"],
                         [
-                          "Probabilité Réelle IA",
+                          "Cote totale bookmaker",
+                          couponSummary.oddsVerified ? couponSummary.combinedBookOdd.toFixed(2) : "À VÉRIFIER",
+                          couponSummary.oddsVerified ? "#fff" : "#ffb74d",
+                        ],
+                        [
+                          "Probabilité combinée estimée",
                           `${couponSummary.combinedProbPct}%`,
                           couponSummary.riskColor,
                         ],
                         [
-                          "Juste Cote Mathématique",
+                          "Cote juste modèle (estimation)",
                           couponSummary.fairCombinedOdd.toFixed(2),
                           "#9aa3c7",
                         ],
                         [
-                          "Espérance Mathématique (EV)",
-                          `${couponSummary.evPct >= 0 ? "+" : ""}${couponSummary.evPct}%`,
-                          couponSummary.evPct >= 0 ? "#00e676" : "#ff9100",
+                          "Espérance estimée (EV)",
+                          couponSummary.oddsVerified
+                            ? `${couponSummary.evPct >= 0 ? "+" : ""}${couponSummary.evPct}%`
+                            : "NON CALCULÉE",
+                          couponSummary.oddsVerified ? (couponSummary.evPct >= 0 ? "#00e676" : "#ff9100") : "#ffb74d",
                         ],
                       ].map(([k, v, col]) => (
                         <div
@@ -3083,7 +3162,9 @@ export default function FootballAI() {
                             color: "#00e676",
                           }}
                         >
-                          {formatMoney(couponSummary.potentialPayout, currency)}
+                          {couponSummary.oddsVerified
+                            ? formatMoney(couponSummary.potentialPayout, currency)
+                            : "Non calculé — cote réelle requise"}
                         </span>
                       </div>
                       <div
@@ -3094,7 +3175,9 @@ export default function FootballAI() {
                           marginTop: 3,
                         }}
                       >
-                        Bénéfice net : +{formatMoney(couponSummary.netProfit, currency)}
+                        {couponSummary.oddsVerified
+                          ? `Bénéfice net estimé : ${formatMoney(couponSummary.netProfit, currency)}`
+                          : "Gain non estimé tant que les cotes ne sont pas vérifiées."}
                       </div>
                     </div>
 
@@ -3300,7 +3383,7 @@ export default function FootballAI() {
                     : "—"}
                 </div>
                 <div style={{ fontSize: 11, color: "#7f89b2", marginTop: 4 }}>
-                  {modelState.metrics.marketCorrect} / {modelState.metrics.total} sélections pré-match officielles
+                  {modelState.metrics.marketCorrect} / {modelState.metrics.marketSampleSize ?? 0} marchés vérifiables • minimum {modelState.metrics.marketMinimumSample ?? MIN_PERFORMANCE_SAMPLE}
                 </div>
               </div>
 

@@ -371,9 +371,7 @@ export function parseOmniEspnEvent(ev, endpointMeta) {
     let liveOdds = null;
     const oddsEntry = comp.odds?.[0];
     if (oddsEntry) {
-      const o1 = americanToDecimalOdd(
-        oddsEntry.homeTeamOdds?.moneyLine ?? oddsEntry.awayTeamOdds ? oddsEntry.homeTeamOdds?.moneyLine : null
-      );
+      const o1 = americanToDecimalOdd(oddsEntry.homeTeamOdds?.moneyLine);
       const oN = americanToDecimalOdd(oddsEntry.drawOdds?.moneyLine);
       const o2 = americanToDecimalOdd(oddsEntry.awayTeamOdds?.moneyLine);
       const spread = oddsEntry.spread ?? null;
@@ -381,6 +379,7 @@ export function parseOmniEspnEvent(ev, endpointMeta) {
       if (o1 || oN || o2 || spread !== null || totalLine !== null) {
         liveOdds = {
           provider: oddsEntry.provider?.name || "Market Consensus",
+          oddSource: "feed",
           odd1: o1 ? String(o1) : "",
           oddN: oN ? String(oN) : "",
           odd2: o2 ? String(o2) : "",

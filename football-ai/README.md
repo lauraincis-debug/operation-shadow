@@ -15,7 +15,7 @@ Application web & PWA d'analyse tactique, de prédiction footballistique et d'ap
 3. **⚔️ Face-à-Face** (`src/components/HeadToHeadTab.jsx`) : comparaisons et historique uniquement lorsque des résultats sourcés sont disponibles.
 4. **🎥 Vidéo IA** (`src/engine/videoAnalyzer.js`) : recherche et analyse vidéo bloquées sans revalidation récente du statut officiel « en cours »; toute rencontre terminée est rejetée.
 5. **👑 Fantasy IA** : simulation d'équipe sous budget, sans garantie de résultat.
-6. **🎯 Coupon** : un ticket automatique n'est proposé que si au moins deux rencontres officielles, fraîches, futures et admissibles sont présentes; sinon le système s'abstient (NO-BET). Aucune mise n'est automatisée.
+6. **🎯 Coupon** : les cotes de ticket doivent provenir d'un flux identifié, d'une saisie manuelle ou d'une capture vérifiée. Les cotes estimées ne deviennent jamais des cotes bookmaker; un ticket automatique sans deux sélections à cote réelle s'abstient (NO-BET). Les anciens coupons restent visibles avec le statut « non vérifiée » jusqu'à ressaisie. Aucune mise n'est automatisée.
 7. **📋 Historique / 📊 Performance** : seules les prédictions pré-match évaluables et les données officielles sont comptées. Le rejeu d'apprentissage est séparé du taux prospectif.
 8. **Bulle Performance & apprentissage** : accessible depuis toutes les pages; elle distingue le taux réellement mesuré, la taille d'échantillon et les résultats intégrés à l'apprentissage.
 
@@ -23,7 +23,9 @@ Application web & PWA d'analyse tactique, de prédiction footballistique et d'ap
 
 ## Architecture des données et secrets
 
-Le backend FastAPI est dans `backend/`. Les appels Football-Data.org et API-Football ne partent jamais de React : les clés sont lues exclusivement dans l'environnement du serveur. Aucun champ de clé n'est conservé dans l'interface; une ancienne clé éventuellement enregistrée dans le stockage local est supprimée au prochain chargement.
+Le backend FastAPI est dans `backend/`. Les appels Football-Data.org et API-Football ne partent jamais de React : leurs clés sont lues exclusivement dans l'environnement du serveur et aucune clé fournisseur ne doit être placée dans `VITE_*`.
+
+Cloé et le scanner peuvent proposer, en option, une clé LLM personnelle saisie par l'utilisateur. Elle reste uniquement en mémoire pendant la session, n'est plus écrite dans `localStorage` et n'est pas nécessaire au fonctionnement de base. Si l'utilisateur l'active, la requête part directement vers le fournisseur choisi et peut être soumise à ses quotas ou frais; l'OCR local et le moteur de base restent disponibles sans cette clé. Les anciennes clés LLM enregistrées par les versions précédentes sont supprimées au prochain chargement de Cloé.
 
 Routes principales :
 
@@ -35,6 +37,8 @@ Routes principales :
 - `GET /api/football/player-stats?team_name=…&season=…&league_id=…` — résolution du nom d'équipe exacte côté serveur puis statistiques joueurs API-Football, si configuré; `team_id` peut aussi être fourni directement.
 
 Les réponses fournisseurs sont mises en cache dans PostgreSQL/JSONB avec TTL différenciés (fixtures, résultats, classements et joueurs). En absence de `DATABASE_URL`, le backend démarre avec un cache mémoire de repli : il ne faut pas le confondre avec le cache PostgreSQL de production. En cas d'erreur fournisseur, une réponse périmée peut être rendue comme archive, mais elle est explicitement marquée `isSnapshot`/`isCached`; elle ne peut ni certifier le direct ni autoriser une vidéo. Le Service Worker contourne entièrement le cache et le mode hors ligne pour `/api/*`.
+
+Une limite locale par adresse cliente renvoie HTTP 429 sur `/api/*`, sauf `/api/health`. Elle est conservée en mémoire par processus et n'est pas partagée entre instances Cloud Run : c'est un frein aux rafales, pas un quota global ni une protection garantie contre l'épuisement des quotas amont. Uvicorn fait confiance aux en-têtes proxy configurés pour Cloud Run; ne pas réutiliser cette configuration derrière un proxy non fiable. Aucun service payant de limitation distribuée n'a été ajouté.
 
 **Connecteurs optionnels :** `FOOTBALL_DATA_API_KEY`, `API_FOOTBALL_KEY`, `DATABASE_URL`. L'usage de base reste sans compte ni clé grâce aux flux ESPN publics. Les quotas des fournisseurs à clé restent soumis aux offres de ces fournisseurs; le cache PostgreSQL réduit les requêtes répétées.
 
@@ -65,6 +69,7 @@ Pour activer les fournisseurs en local, définir les variables dans l'environnem
 
 ```bash
 npm run test:model
+npm run test:regressions
 npm run build
 (cd backend && pytest -q)
 ```
