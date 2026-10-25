@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - "arena/**"
     paths:
       - "football-ai/**"
       - "cloe-abidjan/**"
@@ -83,6 +84,7 @@ jobs:
           project_id: football-ai-43e33
 
       - name: Deploy FastAPI data service to Cloud Run
+        if: github.ref == 'refs/heads/main'
         working-directory: football-ai
         shell: bash
         run: |
