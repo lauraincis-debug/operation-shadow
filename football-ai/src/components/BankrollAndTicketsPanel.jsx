@@ -234,10 +234,10 @@ export default function BankrollAndTicketsPanel({
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8 }}>
           <div>
             <h3 style={{ margin: 0, fontSize: 17 }}>
-              ⚡ Générateur Automatique des 3 Meilleurs Tickets IA du Jour
+              ⚡ Générateur de Tickets — avec abstention NO-BET
             </h3>
             <p style={{ margin: "4px 0 0", fontSize: 12, color: "#8e98c2" }}>
-              Sélectionnés automatiquement par l&apos;IA parmi les matchs programmés et calibrés selon votre profil de risque :
+              Uniquement sur des matchs futurs récents et officiels autorisés par le portail de fiabilité; aucun événement de démonstration n&apos;est utilisé.
             </p>
           </div>
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
@@ -358,8 +358,9 @@ export default function BankrollAndTicketsPanel({
           }}
         >
           {autoTickets.map((t) => {
-            const suggestedBet =
-              currency === "EUR"
+            const suggestedBet = t.noBet
+              ? 0
+              : currency === "EUR"
                 ? Math.max(1, Math.round((bankroll.currentCapital * t.recommendedBankrollPct) / 100))
                 : Math.max(
                     200,
@@ -382,8 +383,8 @@ export default function BankrollAndTicketsPanel({
                 <div>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                     <span style={{ fontSize: 11, fontWeight: 900, color: t.accent }}>{t.badge}</span>
-                    <span style={{ fontSize: 16, fontWeight: 900, color: "#fbbf24" }}>
-                      @{t.totalOdd.toFixed(2)}
+                    <span style={{ fontSize: 16, fontWeight: 900, color: t.noBet ? "#ff1744" : "#fbbf24" }}>
+                      {t.noBet || !Number.isFinite(t.totalOdd) ? "—" : `@${t.totalOdd.toFixed(2)}`}
                     </span>
                   </div>
                   <div style={{ fontSize: 14, fontWeight: 800, color: "#fff", marginTop: 4 }}>
@@ -404,17 +405,24 @@ export default function BankrollAndTicketsPanel({
                 </div>
 
                 <div>
-                  <div style={{ fontSize: 11, color: "#94a3b8", marginBottom: 6 }}>
-                    Probabilité combinée IA : <strong style={{ color: "#fff" }}>{t.winProbPct}%</strong> • Mise conseillée ({t.recommendedBankrollPct}%) :{" "}
-                    <strong style={{ color: t.accent }}>{fmtMoney(suggestedBet)}</strong>
-                  </div>
+                  {t.noBet ? (
+                    <div style={{ fontSize: 11, color: "#ff8a9b", lineHeight: 1.5, marginBottom: 6 }}>
+                      ⛔ Abstention automatique. Aucun ticket ni mise n&apos;est proposé tant qu&apos;au moins deux matchs ne satisfont pas les contrôles de fraîcheur et de fiabilité.
+                    </div>
+                  ) : (
+                    <div style={{ fontSize: 11, color: "#94a3b8", marginBottom: 6 }}>
+                      Probabilité combinée estimée (non garantie) : <strong style={{ color: "#fff" }}>{t.winProbPct}%</strong> • Mise indicative ({t.recommendedBankrollPct}%) :{" "}
+                      <strong style={{ color: t.accent }}>{fmtMoney(suggestedBet)}</strong>
+                    </div>
+                  )}
                   <button
                     type="button"
                     className="fai-btn-secondary"
-                    style={{ width: "100%" }}
+                    style={{ width: "100%", opacity: t.noBet ? 0.55 : 1 }}
+                    disabled={t.noBet}
                     onClick={() => onLoadGeneratedTicket(t.items, suggestedBet, t.badge)}
                   >
-                    ⚡ Charger ce Ticket dans mon Coupon
+                    {t.noBet ? "⛔ NO-BET — chargement désactivé" : "⚡ Charger ce Ticket dans mon Coupon"}
                   </button>
                 </div>
               </div>

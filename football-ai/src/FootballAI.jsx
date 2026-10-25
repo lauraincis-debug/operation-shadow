@@ -17,6 +17,7 @@ import {
   generateExpertAnalysis,
   getConfidence,
   checkPickResult,
+  MIN_PERFORMANCE_SAMPLE,
 } from "./engine/predictor.js";
 import {
   loadFirebaseSyncConfig,
@@ -26,9 +27,10 @@ import {
 } from "./firebase/cloudSync.js";
 import {
   loadExternalApiConfig,
-  saveExternalApiConfig,
   fetchScheduleForOffset,
   peekCachedScheduleForOffset,
+  isMatchFeedFresh,
+  OMNI_SPORT_ENDPOINTS,
 } from "./services/liveMatchesApi.js";
 import { predictOmniSportMatch } from "./engine/omniSportEngine.js";
 import LiveMatchesTab from "./components/LiveMatchesTab.jsx";
@@ -42,6 +44,7 @@ import InPlayTab from "./components/InPlayTab.jsx";
 import BankrollAndTicketsPanel from "./components/BankrollAndTicketsPanel.jsx";
 import TournamentTab from "./components/TournamentTab.jsx";
 import ProMarketsPanel from "./components/ProMarketsPanel.jsx";
+import LearningPerformanceBubble from "./components/LearningPerformanceBubble.jsx";
 import {
   FATIGUE_OPTIONS,
   STAKES_OPTIONS,
@@ -106,20 +109,89 @@ function sanitizeCouponList(list = []) {
     });
 }
 
+function isLegacyCalibrationRecord(item) {
+  return CALIBRATION_MATCHES.some(
+    (fixture) =>
+      fixture.league === item.league &&
+      normalizeKey(canonicalTeamName(fixture.home)) === normalizeKey(canonicalTeamName(item.home)) &&
+      normalizeKey(canonicalTeamName(fixture.away)) === normalizeKey(canonicalTeamName(item.away)) &&
+      fixture.date === item.date &&
+      fixture.scoreHome === item.scoreHome &&
+      fixture.scoreAway === item.scoreAway
+  );
+}
+
+function findOfficialFixtureForTeams(home, away, matches = []) {
+  const homeKey = normalizeKey(canonicalTeamName(home));
+  const awayKey = normalizeKey(canonicalTeamName(away));
+  return matches.find(
+    (match) =>
+      (match.sport || "soccer") === "soccer" &&
+      normalizeKey(canonicalTeamName(match.home)) === homeKey &&
+      normalizeKey(canonicalTeamName(match.away)) === awayKey
+  ) || null;
+}
+
+function buildForecastProvenance(fixture, liveFeed) {
+  const issuedAt = Date.now();
+  const forecastIssuedAtIso = new Date(issuedAt).toISOString();
+  const kickoffAt = fixture?.kickoffIso ? new Date(fixture.kickoffIso).getTime() : NaN;
+  const isOfficialPreMatch = Boolean(
+    fixture?.isRealInternet === true &&
+      fixture.externalId &&
+      fixture.state === "pre" &&
+      fixture.completed !== true &&
+      Number.isFinite(kickoffAt) &&
+      issuedAt < kickoffAt &&
+      liveFeed?.isLiveNetwork === true &&
+      liveFeed?.isSnapshot !== true &&
+      liveFeed?.isCached !== true &&
+      isMatchFeedFresh(fixture, issuedAt)
+  );
+
+  return {
+    ...(fixture?.externalId ? { externalId: fixture.externalId } : {}),
+    ...(fixture?.kickoffIso ? { kickoffIso: fixture.kickoffIso } : {}),
+    createdAtIso: forecastIssuedAtIso,
+    forecastIssuedAtIso,
+    predictionPhase: isOfficialPreMatch ? "pre-match" : fixture?.state === "in" ? "in-play" : "unverified",
+    predictionOrigin: fixture ? "user-issued" : "manual-unlinked",
+    performanceEligible: isOfficialPreMatch,
+    ...(!isOfficialPreMatch
+      ? {
+          performanceExclusionReason: fixture
+            ? "Match officiel non confirmé en pré-match par un flux réseau récent"
+            : "Aucun événement officiel correspondant dans le calendrier récent",
+        }
+      : {}),
+  };
+}
+
 function sanitizePredictionsMemory(list = []) {
   if (!Array.isArray(list)) return [];
-  return list.filter((item) => {
-    if (!item || typeof item !== "object" || !item.home || !item.away) return false;
-    if (item.sport && item.sport !== "soccer") return false;
-    if (
-      typeof item.scoreHome === "number" &&
-      typeof item.scoreAway === "number" &&
-      (item.scoreHome > 15 || item.scoreAway > 15)
-    ) {
-      return false;
-    }
-    return true;
-  });
+  return list
+    .filter((item) => {
+      if (!item || typeof item !== "object" || !item.home || !item.away) return false;
+      if (item.sport && item.sport !== "soccer") return false;
+      if (
+        typeof item.scoreHome === "number" &&
+        typeof item.scoreAway === "number" &&
+        (item.scoreHome > 15 || item.scoreAway > 15)
+      ) {
+        return false;
+      }
+      return true;
+    })
+    .map((item) =>
+      item.isCalibrationFixture || isLegacyCalibrationRecord(item)
+        ? {
+            ...item,
+            isCalibrationFixture: true,
+            performanceEligible: false,
+            predictionOrigin: "historical-test-fixture",
+          }
+        : item
+    );
 }
 
 function loadPersistedData() {
@@ -947,20 +1019,33 @@ export default function FootballAI() {
   // Ingérer automatiquement les vrais matchs de FOOTBALL terminés (Hier + Aujourd'hui) pour apprentissage continu !
   const ingestFinishedMatches = useCallback(
     async (silent = false) => {
-      const [yest, today] = await Promise.all([
+      const schedulePayloads = await Promise.all([
         fetchScheduleForOffset(-1, apiCfg),
         fetchScheduleForOffset(0, apiCfg),
       ]);
-      // SÉCURITÉ MODÈLE POISSON [AUDIT4-P0-05] : n'ingérer JAMAIS de scores NBA/NFL/NHL/MLB/Tennis dans Dixon-Coles Football !
-      const completedReal = [...yest.matches, ...today.matches].filter(
-        (m) =>
-          (!m.sport || m.sport === "soccer") &&
-          m.completed &&
-          typeof m.scoreHome === "number" &&
-          typeof m.scoreAway === "number" &&
-          m.scoreHome <= 15 &&
-          m.scoreAway <= 15
-      );
+      const seenFinishedIds = new Set();
+      // Les scores ne sont intégrés que s'ils proviennent d'un endpoint officiel ou d'un snapshot récent.
+      const completedReal = schedulePayloads
+        .filter((payload) => payload?.isTrustedResults === true)
+        .flatMap((payload) => payload.matches || [])
+        .filter((match) => {
+          if (
+            !match ||
+            match.isRealInternet !== true ||
+            !match.externalId ||
+            (match.sport && match.sport !== "soccer") ||
+            !match.completed ||
+            typeof match.scoreHome !== "number" ||
+            typeof match.scoreAway !== "number" ||
+            match.scoreHome > 15 ||
+            match.scoreAway > 15 ||
+            seenFinishedIds.has(match.externalId)
+          ) {
+            return false;
+          }
+          seenFinishedIds.add(match.externalId);
+          return true;
+        });
 
       if (completedReal.length === 0) {
         if (!silent) {
@@ -974,29 +1059,50 @@ export default function FootballAI() {
         let updatedList = sanitizePredictionsMemory(prev);
         let addedCount = 0;
         let autoValidatedCount = 0;
+        const observedAtFallback = new Date().toISOString();
+        const isSameFixture = (existing, match) => {
+          if (existing.externalId && existing.externalId === match.externalId) return true;
+          const sameTeams =
+            normalizeKey(canonicalTeamName(existing.home)) === normalizeKey(canonicalTeamName(match.home)) &&
+            normalizeKey(canonicalTeamName(existing.away)) === normalizeKey(canonicalTeamName(match.away));
+          const existingKickoff = new Date(existing.kickoffIso || "").getTime();
+          const matchKickoff = new Date(match.kickoffIso || "").getTime();
+          return (
+            sameTeams &&
+            Number.isFinite(existingKickoff) &&
+            Number.isFinite(matchKickoff) &&
+            Math.abs(existingKickoff - matchKickoff) <= 30 * 60 * 1000
+          );
+        };
 
         for (const m of completedReal) {
           const outcome = m.scoreHome > m.scoreAway ? 0 : m.scoreHome === m.scoreAway ? 1 : 2;
+          const resultObservedAtIso = m.fetchedAtIso || observedAtFallback;
 
-          // 1. Valider automatiquement tout match en attente correspondant dans l'Historique de l'utilisateur
+          // Ne valider qu'un pronostic lié au même identifiant ou au même coup d'envoi vérifié.
           updatedList = updatedList.map((existing) => {
-            if (
-              !isValidated(existing) &&
-              normalizeKey(existing.home) === normalizeKey(m.home) &&
-              normalizeKey(existing.away) === normalizeKey(m.away)
-            ) {
+            if (existing.verifiedResult !== true && isSameFixture(existing, m)) {
               autoValidatedCount += 1;
+              const exactEventIdMatch = existing.externalId === m.externalId;
               return {
                 ...existing,
                 result: outcome,
                 scoreHome: m.scoreHome,
                 scoreAway: m.scoreAway,
+                verifiedResult: true,
+                resultSource: "official-feed",
+                resultObservedAtIso,
+                verifiedResultExternalId: m.externalId,
+                performanceEligible: existing.performanceEligible === true && exactEventIdMatch,
+                ...(!exactEventIdMatch
+                  ? { performanceExclusionReason: "Identifiant de résultat différent de celui du pronostic" }
+                  : {}),
               };
             }
             return existing;
           });
 
-          // 2. Intégrer les autres matchs réels terminés dans la mémoire d'apprentissage continu
+          // L'intégration post-match alimente les profils, mais n'est jamais comptée comme pronostic émis.
           if (!knownExt.has(m.externalId)) {
             knownExt.add(m.externalId);
             const curState = rebuildModelState(updatedList, { optaOverrides, evolvedHyper });
@@ -1006,6 +1112,15 @@ export default function FootballAI() {
                 id: Date.now() + addedCount * 10 + Math.floor(Math.random() * 9),
                 externalId: m.externalId,
                 autoLearned: true,
+                performanceEligible: false,
+                predictionPhase: "post-match-learning",
+                predictionOrigin: "post-match-ingestion",
+                createdAtIso: new Date().toISOString(),
+                kickoffIso: m.kickoffIso || undefined,
+                resultObservedAtIso,
+                resultSource: "official-feed",
+                verifiedResult: true,
+                verifiedResultExternalId: m.externalId,
                 home: pred.home,
                 away: pred.away,
                 league: m.league,
@@ -1149,9 +1264,17 @@ export default function FootballAI() {
       customOddMap[currentPickedMarket.code] > 1.01
         ? customOddMap[currentPickedMarket.code]
         : currentPickedMarket.marketOdd;
+    const fixture = findOfficialFixtureForTeams(
+      livePrediction.home,
+      livePrediction.away,
+      rawLiveFeed.matches || []
+    );
+    const provenance = buildForecastProvenance(fixture, rawLiveFeed);
 
     return {
       id: Date.now() + Math.floor(Math.random() * 1000),
+      sport: "soccer",
+      ...provenance,
       home: livePrediction.home,
       away: livePrediction.away,
       league: livePrediction.league,
@@ -1181,10 +1304,13 @@ export default function FootballAI() {
     const pred = liveMatch.prediction;
     const sport = liveMatch.sport || pred.sport || "soccer";
     const prob = pred.recommendedMarket?.prob ?? (pred.recommendedMarket?.pct || 68) / 100;
+    const provenance =
+      sport === "soccer" ? buildForecastProvenance(liveMatch, rawLiveFeed) : {};
     const rec = {
       id: Date.now() + Math.floor(Math.random() * 1000),
       externalId: liveMatch.externalId,
       sport,
+      ...provenance,
       home: pred.home,
       away: pred.away,
       league: liveMatch.league || "ucl",
@@ -1230,12 +1356,15 @@ export default function FootballAI() {
   const handleValidateMatch = useCallback(
     (id, result, scoreHome, scoreAway) => {
       const updateItem = (item) => {
-        if (item.id !== id) return item;
+        if (item.id !== id || item.verifiedResult === true) return item;
         return {
           ...item,
           result,
           scoreHome: typeof scoreHome === "number" ? scoreHome : item.scoreHome,
           scoreAway: typeof scoreAway === "number" ? scoreAway : item.scoreAway,
+          resultSource: "manual",
+          verifiedResult: false,
+          resultObservedAtIso: new Date().toISOString(),
         };
       };
       setPredictions((prev) => {
@@ -1251,14 +1380,17 @@ export default function FootballAI() {
   );
 
   const handleManualSelfEvolution = () => {
-    if (modelState.metrics.total === 0) {
-      handleRunCalibration();
+    const trainingCount = modelState.trainingMetrics.total;
+    if (trainingCount < 6) {
+      triggerToast(
+        `Optimisation suspendue : ${trainingCount}/6 résultats d'apprentissage requis. Les exemples de calibration ne sont plus injectés dans la mémoire.`
+      );
       return;
     }
     const res = runContinuousEvolution(predictions, modelState.hyper, optaOverrides);
     setEvolvedHyper(res.evolvedHyper);
     triggerToast(
-      `🧬 Génération #${res.evolvedHyper.generation} optimisée — Brier Score : ${res.afterBrier.toFixed(3)} !`
+      `🧬 Génération #${res.evolvedHyper.generation} optimisée sur le rejeu historique (Brier ${res.afterBrier?.toFixed(3) ?? "—"}, non assimilable à une performance prospective).`
     );
   };
 
@@ -1282,43 +1414,6 @@ export default function FootballAI() {
             }
           : item
       )
-    );
-  };
-
-  const handleRunCalibration = () => {
-    let runningList = [...predictions];
-    const baseTime = Date.now() - CALIBRATION_MATCHES.length * 60000;
-
-    CALIBRATION_MATCHES.forEach((m, idx) => {
-      const tempState = rebuildModelState(runningList, { optaOverrides, evolvedHyper });
-      const pred = computeFullPrediction(m.home, m.away, m.league, tempState);
-      const outcome = m.scoreHome > m.scoreAway ? 0 : m.scoreHome === m.scoreAway ? 1 : 2;
-      const entry = {
-        id: baseTime + idx * 1000,
-        home: pred.home,
-        away: pred.away,
-        league: m.league,
-        probs: pred.probs,
-        rawProbs: pred.rawProbs,
-        fairOdds: pred.fairOdds,
-        xg: pred.xg,
-        selectedMarket: {
-          ...pred.recommendedMarket,
-          bookOdd: pred.recommendedMarket.marketOdd,
-        },
-        date: m.date,
-        result: outcome,
-        scoreHome: m.scoreHome,
-        scoreAway: m.scoreAway,
-      };
-      runningList = [entry, ...runningList];
-    });
-
-    const evolved = runContinuousEvolution(runningList, evolvedHyper || {}, optaOverrides);
-    setEvolvedHyper(evolved.evolvedHyper);
-    setPredictions(runningList);
-    triggerToast(
-      `⚡ ${CALIBRATION_MATCHES.length} matchs intégrés & auto-calibrés (Génération #${evolved.evolvedHyper.generation}) !`
     );
   };
 
@@ -1531,9 +1626,14 @@ export default function FootballAI() {
     };
   }, [coupon, stake]);
 
+  const historyRows = useMemo(
+    () => predictions.filter((prediction) => prediction.isCalibrationFixture !== true),
+    [predictions]
+  );
+
   const filteredHistory = useMemo(() => {
     const q = normalizeKey(historySearch);
-    return predictions.filter((p) => {
+    return historyRows.filter((p) => {
       if (q) {
         const matchText = `${normalizeKey(p.home)} ${normalizeKey(p.away)} ${normalizeKey(LEAGUES[p.league]?.name)}`;
         if (!matchText.includes(q)) return false;
@@ -1548,7 +1648,7 @@ export default function FootballAI() {
       }
       return true;
     });
-  }, [predictions, historyFilter, historySearch]);
+  }, [historyRows, historyFilter, historySearch]);
 
   const learnedTeamsList = useMemo(
     () =>
@@ -1557,6 +1657,26 @@ export default function FootballAI() {
         .sort((a, b) => b.elo - a.elo),
     [modelState.teams]
   );
+
+  const discoveredSoccerTeams = useMemo(() => {
+    const discovered = new Map();
+    const addTeam = (rawName, source) => {
+      const name = canonicalTeamName(rawName);
+      const key = normalizeKey(name);
+      if (!key || resolveClub(name) || discovered.has(key)) return;
+      discovered.set(key, { name, source });
+    };
+
+    for (const match of rawLiveFeed.matches || []) {
+      if ((match.sport || "soccer") !== "soccer") continue;
+      addTeam(match.home, "calendrier officiel récent");
+      addTeam(match.away, "calendrier officiel récent");
+    }
+    for (const team of learnedTeamsList) {
+      addTeam(team.name, `${team.games} résultat(s) intégré(s)`);
+    }
+    return Array.from(discovered.values()).sort((a, b) => a.name.localeCompare(b.name, "fr"));
+  }, [rawLiveFeed.matches, learnedTeamsList]);
 
   const homeClubPreview = useMemo(() => {
     const key = normalizeKey(canonicalTeamName(form.home));
@@ -1582,7 +1702,7 @@ export default function FootballAI() {
     { id: "fantasy", label: "🏆 Fantasy IA" },
     { id: "cloe", label: "🤖 Cloé IA" },
     { id: "coupon", label: `🎰 Coupon (${coupon.length})` },
-    { id: "history", label: `📊 Historique (${predictions.length})` },
+    { id: "history", label: `📊 Historique (${historyRows.length})` },
     { id: "stats", label: `🧠 Mémoire Gen #${genNumber}` },
   ];
 
@@ -1599,6 +1719,11 @@ export default function FootballAI() {
             {c.fullName}
           </option>
         ))}
+        {discoveredSoccerTeams.map((team) => (
+          <option key={`discovered-${normalizeKey(team.name)}`} value={team.name}>
+            {team.name} — {team.source}; profil à confirmer
+          </option>
+        ))}
       </datalist>
 
       {/* ====== HEADER COLLANT ====== */}
@@ -1613,7 +1738,7 @@ export default function FootballAI() {
                 </span>
               </div>
               <div className="fai-brand-sub">
-                44 Compétitions Live • 📸 Scanner Captures Betclic • 🔴 Vidéos Direct en Cours • Multi-Devises Exact XOF/EUR
+                {OMNI_SPORT_ENDPOINTS.length} compétitions Live • {CLUBS_DB.length} clubs référencés + {discoveredSoccerTeams.length} équipes détectées • 📸 Betclic • 🔴 Vidéo en cours
               </div>
             </div>
 
@@ -1636,37 +1761,26 @@ export default function FootballAI() {
                   📲 Installer l&apos;App
                 </button>
               )}
-              {acc !== null ? (
-                <>
-                  <div className="fai-kpi-pill">
-                    <div
-                      className="fai-kpi-val"
-                      style={{
-                        color: acc >= 60 ? "#00e676" : acc >= 48 ? "#ffea00" : "#ff3d5a",
-                      }}
-                    >
-                      {acc}%
-                    </div>
-                    <div className="fai-kpi-lbl">
-                      1X2 ({modelState.metrics.total} appris)
-                    </div>
-                  </div>
-                  <div className="fai-kpi-pill">
-                    <div className="fai-kpi-val" style={{ color: "#00e5ff" }}>
-                      {modelState.metrics.marketAccuracyPct}%
-                    </div>
-                    <div className="fai-kpi-lbl">Options Coupon</div>
-                  </div>
-                </>
-              ) : (
-                <button
-                  type="button"
-                  className="fai-btn-secondary"
-                  onClick={handleRunCalibration}
+              <div className="fai-kpi-pill" title={modelState.metrics.status}>
+                <div
+                  className="fai-kpi-val"
+                  style={{
+                    color:
+                      acc === null ? "#9aa3c7" : acc >= 60 ? "#00e676" : acc >= 48 ? "#ffea00" : "#ff3d5a",
+                  }}
                 >
-                  ⚡ Calibrer l&apos;IA (24 matchs)
-                </button>
-              )}
+                  {acc === null ? "—" : `${acc}%`}
+                </div>
+                <div className="fai-kpi-lbl">
+                  1X2 officiel ({modelState.metrics.total}/{MIN_PERFORMANCE_SAMPLE})
+                </div>
+              </div>
+              <div className="fai-kpi-pill" title="Calculé sur les mêmes pronostics pré-match vérifiés">
+                <div className="fai-kpi-val" style={{ color: modelState.metrics.marketAccuracyPct === null ? "#9aa3c7" : "#00e5ff" }}>
+                  {modelState.metrics.marketAccuracyPct === null ? "—" : `${modelState.metrics.marketAccuracyPct}%`}
+                </div>
+                <div className="fai-kpi-lbl">Marchés officiels</div>
+              </div>
             </div>
           </div>
 
@@ -1740,11 +1854,6 @@ export default function FootballAI() {
               setActiveMatch({ home: m.home, away: m.away, league: m.league || "ucl" });
               setTab("inplay");
             }}
-            apiCfg={apiCfg}
-            onSaveApiCfg={(next) => {
-              setApiCfg(next);
-              saveExternalApiConfig(next);
-            }}
             onApplyOptaOverrides={(overrides, count) => {
               setOptaOverrides((prev) => ({ ...prev, ...overrides }));
               triggerToast(`📊 ${count} profils Opta xG intégrés à la mémoire IA !`);
@@ -1767,7 +1876,7 @@ export default function FootballAI() {
                     </span>
                   )}
                   <span style={{ color: "#7f89b2", fontFamily: "var(--font-mono)" }}>
-                    {CLUBS_DB.length} équipes calibrées
+                    {CLUBS_DB.length} référencées + {discoveredSoccerTeams.length} détectées
                   </span>
                 </div>
               </div>
@@ -1831,9 +1940,16 @@ export default function FootballAI() {
                         <span>
                           Atk ×{homeClubPreview.atk.toFixed(2)} • Déf ×{homeClubPreview.def.toFixed(2)}
                         </span>
+                        <span>
+                          {homeClubPreview.games > 0
+                            ? `${homeClubPreview.games} résultats intégrés`
+                            : resolveClub(form.home)
+                              ? "Base catalogue — pas de forme confirmée ici"
+                              : "Profil par défaut — historique insuffisant"}
+                        </span>
                       </>
                     ) : (
-                      <span>Club personnalisé • Elo standard 1690</span>
+                      <span>Équipe détectée ou personnalisée • profil neutre Elo 1690</span>
                     )}
                   </div>
                 </div>
@@ -1872,9 +1988,16 @@ export default function FootballAI() {
                         <span>
                           Atk ×{awayClubPreview.atk.toFixed(2)} • Déf ×{awayClubPreview.def.toFixed(2)}
                         </span>
+                        <span>
+                          {awayClubPreview.games > 0
+                            ? `${awayClubPreview.games} résultats intégrés`
+                            : resolveClub(form.away)
+                              ? "Base catalogue — pas de forme confirmée ici"
+                              : "Profil par défaut — historique insuffisant"}
+                        </span>
                       </>
                     ) : (
-                      <span>Club personnalisé • Elo standard 1690</span>
+                      <span>Équipe détectée ou personnalisée • profil neutre Elo 1690</span>
                     )}
                   </div>
                 </div>
@@ -2501,6 +2624,8 @@ export default function FootballAI() {
         {tab === "h2h" && (
           <HeadToHeadTab
             modelState={modelState}
+            predictions={predictions}
+            liveMatches={enrichedLiveFeed.matches}
             defaultHome={activeMatch.home}
             defaultAway={activeMatch.away}
             defaultLeague={activeMatch.league}
@@ -3020,10 +3145,10 @@ export default function FootballAI() {
               >
                 <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
                   {[
-                    ["all", `Tous (${predictions.length})`],
+                    ["all", `Tous (${historyRows.length})`],
                     [
                       "pending",
-                      `⏳ À valider (${predictions.filter((p) => !isValidated(p)).length})`,
+                      `⏳ À valider (${historyRows.filter((p) => !isValidated(p)).length})`,
                     ],
                     ["correct", `✓ IA Correcte (${modelState.metrics.correct})`],
                     ["wrong", `✗ Erreurs Apprises (${modelState.errorJournal.length})`],
@@ -3062,15 +3187,23 @@ export default function FootballAI() {
               <div className="fai-panel" style={{ textAlign: "center", padding: "44px 20px" }}>
                 <div style={{ fontSize: 36, marginBottom: 10 }}>📊</div>
                 <p style={{ color: "#9aa3c7", fontSize: 14, marginBottom: 16 }}>
-                  Aucune prédiction dans cette vue. Lancez l&apos;auto-apprentissage des résultats
-                  réels ou le jeu de calibration !
+                  Aucun pronostic enregistré ici. Pour mesurer la performance, créez un pronostic
+                  avant le coup d&apos;envoi depuis un événement officiel récent; les jeux de calibration
+                  rétrospectifs ne sont pas comptés.
                 </p>
                 <button
                   type="button"
                   className="fai-btn-secondary"
-                  onClick={handleRunCalibration}
+                  onClick={() => setTab("live")}
                 >
-                  ⚡ Charger &amp; Calibrer sur 24 matchs réels
+                  📅 Choisir un événement officiel
+                </button>
+                <button
+                  type="button"
+                  className="fai-btn-ghost"
+                  onClick={() => setTab("predict")}
+                >
+                  🎯 Créer un pronostic
                 </button>
               </div>
             ) : (
@@ -3114,9 +3247,10 @@ export default function FootballAI() {
                     <span>🧬 Centre Neuronal d&apos;Auto-Amélioration Continue — Génération #{genNumber}</span>
                   </div>
                   <p style={{ fontSize: 12.5, color: "#cbd2f5", maxWidth: 600 }}>
-                    À chaque match réel terminé ou validé, l&apos;IA autopsie ses erreurs (piège à
-                    domicile, match nul tactique, exploit d&apos;outsider), corrige ses coefficients
-                    spécifiques par club et recalibre ses hyperparamètres sur plusieurs époques.
+                    Les résultats officiels alimentent les profils d&apos;équipes et l&apos;apprentissage
+                    rétrospectif. La performance mesurée est séparée : elle ne compte que les
+                    pronostics enregistrés avant le coup d&apos;envoi puis reliés à un score officiel;
+                    un rejeu historique ne prouve pas une performance future.
                   </p>
                 </div>
 
@@ -3140,10 +3274,10 @@ export default function FootballAI() {
               </div>
             </div>
 
-            {/* 4 KPIs Scientifiques */}
+            {/* Indicateurs de performance prospective et apprentissage distinct */}
             <div className="fai-stats-grid">
               <div className="fai-stat-card">
-                <div className="fai-kpi-lbl">Précision 1X2 Sec</div>
+                <div className="fai-kpi-lbl">Performance 1X2 officielle</div>
                 <div
                   className="fai-kpi-val"
                   style={{ fontSize: 28, marginTop: 6, color: "#00e676" }}
@@ -3151,12 +3285,12 @@ export default function FootballAI() {
                   {acc !== null ? `${acc}%` : "—"}
                 </div>
                 <div style={{ fontSize: 11, color: "#7f89b2", marginTop: 4 }}>
-                  {modelState.metrics.correct} / {modelState.metrics.total} issues exactes
+                  {modelState.metrics.correct} / {modelState.metrics.total} pronostics évalués • minimum {MIN_PERFORMANCE_SAMPLE}
                 </div>
               </div>
 
               <div className="fai-stat-card">
-                <div className="fai-kpi-lbl">Précision Marchés Coupon</div>
+                <div className="fai-kpi-lbl">Réussite des marchés</div>
                 <div
                   className="fai-kpi-val"
                   style={{ fontSize: 28, marginTop: 6, color: "#00e5ff" }}
@@ -3166,12 +3300,12 @@ export default function FootballAI() {
                     : "—"}
                 </div>
                 <div style={{ fontSize: 11, color: "#7f89b2", marginTop: 4 }}>
-                  Couverture sécurisée IA
+                  {modelState.metrics.marketCorrect} / {modelState.metrics.total} sélections pré-match officielles
                 </div>
               </div>
 
               <div className="fai-stat-card">
-                <div className="fai-kpi-lbl">Brier Score (Calibration)</div>
+                <div className="fai-kpi-lbl">Brier Score pré-match (n ≥ {MIN_PERFORMANCE_SAMPLE})</div>
                 <div
                   className="fai-kpi-val"
                   style={{ fontSize: 28, marginTop: 6, color: "#9d7bff" }}
@@ -3181,12 +3315,12 @@ export default function FootballAI() {
                     : "—"}
                 </div>
                 <div style={{ fontSize: 11, color: "#7f89b2", marginTop: 4 }}>
-                  Plus proche de 0 = mieux calibré
+                  Calculé uniquement sur les prévisions officiellement évaluées
                 </div>
               </div>
 
               <div className="fai-stat-card">
-                <div className="fai-kpi-lbl">Erreurs Autopsiées</div>
+                <div className="fai-kpi-lbl">Écarts du rejeu historique</div>
                 <div
                   className="fai-kpi-val"
                   style={{ fontSize: 28, marginTop: 6, color: "#ffea00" }}
@@ -3194,12 +3328,48 @@ export default function FootballAI() {
                   {modelState.errorJournal.length}
                 </div>
                 <div style={{ fontSize: 11, color: "#7f89b2", marginTop: 4 }}>
-                  Converties en correctifs actifs
+                  Analyse rétrospective; distincte du taux mesuré ci-dessus
                 </div>
               </div>
             </div>
 
-            {/* Poids Appris + Courbe d'Évolution de la Précision */}
+            <div className="fai-panel" style={{ display: "grid", gap: 8 }}>
+              <div className="fai-section-title">
+                <span>📚 Volume d&apos;apprentissage (distinct de la performance)</span>
+              </div>
+              <div className="fai-stats-grid" style={{ marginBottom: 0 }}>
+                <div className="fai-stat-card">
+                  <div className="fai-kpi-lbl">Résultats officiels intégrés</div>
+                  <div className="fai-kpi-val" style={{ marginTop: 6, color: "#00e676" }}>
+                    {modelState.learning.officialResults}
+                  </div>
+                </div>
+                <div className="fai-stat-card">
+                  <div className="fai-kpi-lbl">Saisies / ancien historique</div>
+                  <div className="fai-kpi-val" style={{ marginTop: 6, color: "#ffea00" }}>
+                    {modelState.learning.unverifiedOrLegacyResults}
+                  </div>
+                </div>
+                <div className="fai-stat-card">
+                  <div className="fai-kpi-lbl">Équipes avec résultats officiels</div>
+                  <div className="fai-kpi-val" style={{ marginTop: 6, color: "#00e5ff" }}>
+                    {modelState.learning.teamsWithOfficialResults}
+                  </div>
+                </div>
+                <div className="fai-stat-card">
+                  <div className="fai-kpi-lbl">Pronostics mesurables</div>
+                  <div className="fai-kpi-val" style={{ marginTop: 6, color: "#9d7bff" }}>
+                    {modelState.metrics.total} / {MIN_PERFORMANCE_SAMPLE}
+                  </div>
+                </div>
+              </div>
+              <p style={{ fontSize: 11, color: "#7f89b2" }}>
+                Les lignes « saisies / ancien historique » peuvent contribuer au modèle, mais ne sont
+                ni annoncées comme résultats officiels ni incluses dans la performance mesurée.
+              </p>
+            </div>
+
+            {/* Rejeu historique d'apprentissage + métriques pré-match vérifiées */}
             <div className="fai-grid-2">
               <div className="fai-panel">
                 <div className="fai-section-title">
@@ -3259,7 +3429,7 @@ export default function FootballAI() {
 
               <div className="fai-panel">
                 <div className="fai-section-title">
-                  <span>📈 Courbe de Progression &amp; Précision par Confiance</span>
+                  <span>📈 Rejeu historique d&apos;apprentissage (non prospectif)</span>
                 </div>
                 <LearningCurveChart curve={modelState.learningCurve} />
                 {Object.values(modelState.metrics.buckets).map((b) => {
@@ -3306,9 +3476,7 @@ export default function FootballAI() {
 
               {modelState.errorJournal.length === 0 ? (
                 <p style={{ fontSize: 13, color: "#8e98c2" }}>
-                  Aucune erreur enregistrée pour le moment. Cliquez sur « Calibrer sur 24 matchs »
-                  ou validez des matchs pour observer comment l&apos;IA diagnostique ses erreurs et
-                  corrige ses coefficients d&apos;équipe !
+                  Aucune erreur n&apos;est documentée pour le moment. L&apos;analyse ne commence qu&apos;à partir des résultats intégrés; les exemples de calibration historiques ne sont pas présentés comme des matchs réels.
                 </p>
               ) : (
                 <div style={{ display: "grid", gap: 10 }}>
@@ -3360,8 +3528,7 @@ export default function FootballAI() {
 
               {learnedTeamsList.length === 0 ? (
                 <p style={{ fontSize: 13, color: "#8e98c2" }}>
-                  Chargez les 24 matchs de calibration ou auto-apprenez les résultats réels du jour
-                  pour peupler le classement dynamique.
+                  Aucun résultat n&apos;est encore intégré au classement. Importez ou auto-apprenez des scores officiels vérifiés pour construire les profils d&apos;équipe.
                 </p>
               ) : (
                 <div className="fai-table-wrap">
@@ -3491,9 +3658,9 @@ export default function FootballAI() {
                 <button
                   type="button"
                   className="fai-btn-secondary"
-                  onClick={handleRunCalibration}
+                  onClick={() => ingestFinishedMatches(false)}
                 >
-                  ⚡ Pré-entraîner sur 24 matchs réels
+                  📡 Importer les scores officiels récents
                 </button>
                 <button type="button" className="fai-btn-ghost" onClick={handleExportJSON}>
                   📤 Exporter Mémoire (.json)
@@ -3553,6 +3720,13 @@ export default function FootballAI() {
           </div>
         )}
       </main>
+
+      <LearningPerformanceBubble
+        metrics={modelState.metrics}
+        learning={modelState.learning}
+        generation={genNumber}
+        onOpenHistory={() => setTab("history")}
+      />
 
       {toast && <div className="fai-toast">{toast}</div>}
     </div>

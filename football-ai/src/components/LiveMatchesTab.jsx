@@ -1,6 +1,6 @@
-import { useState, useMemo } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { LEAGUES } from "../data/clubs.js";
-import { getOffsetDateStrings, OPTA_PRESET_PACK, parseOptaDataFeed } from "../services/liveMatchesApi.js";
+import { getOffsetDateStrings, OPTA_PRESET_PACK, parseOptaDataFeed, OMNI_SPORT_ENDPOINTS } from "../services/liveMatchesApi.js";
 import { OUTCOMES } from "../engine/predictor.js";
 import { SPORT_CATALOG } from "../engine/omniSportEngine.js";
 import { auditModelBiases } from "../engine/antiBiasEngine.js";
@@ -16,8 +16,6 @@ export default function LiveMatchesTab({
   onInspectMatch,
   onQuickAddCoupon,
   onOpenInPlay,
-  apiCfg,
-  onSaveApiCfg,
   onApplyOptaOverrides,
   predictionsHistory = [],
 }) {
@@ -28,9 +26,25 @@ export default function LiveMatchesTab({
   const [onlySmartValue, setOnlySmartValue] = useState(false);
   const [alertsEnabled, setAlertsEnabled] = useState(false);
   const [showConnectors, setShowConnectors] = useState(false);
+  const [serverProviders, setServerProviders] = useState(null);
   const [optaInput, setOptaInput] = useState("");
   const [optaStatus, setOptaStatus] = useState("");
   const [dossierMatch, setDossierMatch] = useState(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/health", { cache: "no-store" })
+      .then((response) => (response.ok ? response.json() : null))
+      .then((status) => {
+        if (!cancelled && status?.providers) setServerProviders(status.providers);
+      })
+      .catch(() => {
+        if (!cancelled) setServerProviders({ unavailable: true });
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const biasAudit = useMemo(
     () => auditModelBiases(predictionsHistory),
@@ -104,14 +118,14 @@ export default function LiveMatchesTab({
     [liveFeed.matches]
   );
 
-  // Top 3 Verrous Anti-Biais les plus fiables (tous sports confondus)
+  // Top 3 signaux pré-match autorisés par le portail strict de fiabilité
   const topPicksOfDay = useMemo(() => {
     return [...filteredMatches]
       .filter(
         (m) =>
           m.prediction &&
           !m.completed &&
-          m.prediction.reliabilityGate?.tier !== "NO_BET_PIEGE"
+          m.prediction.reliabilityGate?.allowAutoTicket === true
       )
       .sort(
         (a, b) =>
@@ -180,7 +194,7 @@ export default function LiveMatchesTab({
           <div>
             <div className="fai-section-title" style={{ marginBottom: 4 }}>
               <span>
-                🌐 Omni-Sport Live Internet v6.4 Certifiée Intégrale — 44 Compétitions, Dates &amp; Stades Exacts, H2H &amp; Anti-Biais
+                🌐 Omni-Sport Live Internet v6.4 — {OMNI_SPORT_ENDPOINTS.length} endpoints de compétitions, Dates &amp; Stades, H2H &amp; Anti-Biais
               </span>
             </div>
             <div style={{ fontSize: 12, color: "#9aa3c7" }}>
@@ -188,6 +202,9 @@ export default function LiveMatchesTab({
               <strong style={{ color: liveFeed.isLiveNetwork ? "#00e676" : "#ffea00" }}>
                 {liveFeed.providerUsed || "Connexion ultra-rapide..."}
               </strong>{" "}
+              {!liveFeed.isLiveNetwork && (
+                <span style={{ color: "#ffb74d" }}>• Données de secours : statut Live non certifié</span>
+              )}{" "}
               • <strong>{filteredMatches.length}</strong> rencontre(s) affichée(s) •{" "}
               <span style={{ color: "#00e5ff" }}>
                 🛡️ Zéro-Hallucination &amp; Anti-Clonage de Schéma Actifs
@@ -302,25 +319,41 @@ export default function LiveMatchesTab({
           >
             <div className="fai-grid-2">
               <div>
-                <div style={{ fontSize: 12, fontWeight: 800, color: "#00e5ff", marginBottom: 6 }}>
-                  🔑 Connecteur Additionnel API-Football v3 (Optionnel — ESPN Multi-Sport déjà actif sans clé)
+                <div style={{ fontSize: 12, fontWeight: 800, color: "#00e5ff", marginBottom: 8 }}>
+                  🔐 Connecteurs de données côté serveur
                 </div>
-                <div style={{ display: "flex", gap: 8 }}>
-                  <input
-                    type="password"
-                    className="fai-input"
-                    placeholder="Clé x-apisports-key optionnelle..."
-                    value={apiCfg.apiFootballKey || ""}
-                    onChange={(e) =>
-                      onSaveApiCfg({ ...apiCfg, apiFootballKey: e.target.value })
-                    }
-                  />
+                <div style={{ display: "grid", gap: 8, color: "#c4cbe6", fontSize: 12 }}>
+                  <div>
+                    <strong>Football-Data.org</strong> — matchs, résultats et classements :{" "}
+                    <span style={{ color: serverProviders?.footballDataConfigured ? "#00e676" : "#ffcc80" }}>
+                      {serverProviders?.footballDataConfigured
+                        ? "clé configurée côté serveur"
+                        : serverProviders?.unavailable
+                          ? "API serveur non reliée"
+                          : "connecteur serveur optionnel non configuré"}
+                    </span>
+                  </div>
+                  <div>
+                    <strong>API-Football</strong> — statistiques joueurs :{" "}
+                    <span style={{ color: serverProviders?.apiFootballConfigured ? "#00e676" : "#ffcc80" }}>
+                      {serverProviders?.apiFootballConfigured
+                        ? "clé configurée côté serveur"
+                        : serverProviders?.unavailable
+                          ? "API serveur non reliée"
+                          : "connecteur serveur optionnel non configuré"}
+                    </span>
+                  </div>
+                  <div style={{ color: "#91a0c8", lineHeight: 1.5 }}>
+                    Aucune clé n&apos;est demandée ni stockée dans ce navigateur. Sans connecteur,
+                    le calendrier public ESPN reste disponible.
+                  </div>
                   <button
                     type="button"
                     className="fai-btn-secondary"
+                    style={{ justifySelf: "start" }}
                     onClick={() => onRefreshLive(dayOffset)}
                   >
-                    Connecter
+                    Actualiser les matchs
                   </button>
                 </div>
               </div>
@@ -440,7 +473,7 @@ export default function LiveMatchesTab({
       {topPicksOfDay.length > 0 && (
         <div className="fai-panel" style={{ borderColor: "rgba(0, 230, 118, 0.4)" }}>
           <div className="fai-section-title">
-            <span>🏆 Top 3 Sélections Calibrées Haute Fiabilité (Anti-Biais Vérifié)</span>
+            <span>🏆 Top 3 sélections pré-match autorisées (portail strict de fiabilité)</span>
           </div>
           <div className="fai-grid-3">
             {topPicksOfDay.map((m) => (
@@ -495,7 +528,7 @@ export default function LiveMatchesTab({
         <div className="fai-panel" style={{ textAlign: "center", padding: 36 }}>
           <div style={{ fontSize: 28, marginBottom: 8 }}>⚡</div>
           <div style={{ color: "#00e5ff", fontWeight: 700 }}>
-            Synchronisation Internet multi-sports en parallèle (44 compétitions mondiales)...
+            Synchronisation Internet multi-sports en parallèle ({OMNI_SPORT_ENDPOINTS.length} endpoints)...
           </div>
         </div>
       ) : filteredMatches.length === 0 ? (

@@ -56,6 +56,10 @@ const tournaments = Object.keys(TOURNAMENT_PRESETS).reduce((acc, key) => {
 
 const dailyTickets = generateThreeDailyTickets([], modelState);
 
+const safeTicketSummary = dailyTickets[0]?.noBet
+  ? "Aucun ticket automatique proposé sans événements futurs, récents et vérifiés."
+  : `Ticket automatique estimé à la cote ${dailyTickets[0].totalOdd.toFixed(2)} (sans garantie).`;
+
 const payload = {
   engine: "Omni-Sport & Football AI Ultra v6.4 Certifiée Intégrale",
   version: "6.4.0",
@@ -73,7 +77,7 @@ const payload = {
     `Point Omni-Sport & Football AI Ultra v6.4 Certifiée Intégrale : ${teamsCount} clubs et nations actifs. ` +
     `Favori numéro 1 CAN sur 5 000 simulations : ${tournaments.can.topFavorites[0].team} (${tournaments.can.topFavorites[0].championPct}%). ` +
     `Favori Champions League : ${tournaments.ucl.topFavorites[0].team} (${tournaments.ucl.topFavorites[0].championPct}%). ` +
-    `Ticket Sécurité IA du jour prêt à cote totale ${dailyTickets[0].totalOdd.toFixed(2)}.`,
+    safeTicketSummary,
 };
 
 fs.mkdirSync(path.dirname(OUT_FILE), { recursive: true });

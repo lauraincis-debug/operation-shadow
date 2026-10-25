@@ -4,17 +4,17 @@
 // -> SORT UN SEUL « PARI DÉFINITIF » MATHÉMATIQUEMENT OPTIMAL (OU NO-BET STRICT)
 // ============================================================================
 
-import { CLUBS_DB, CALIBRATION_MATCHES, canonicalTeamName, normalizeKey } from "../data/clubs.js";
+import { CLUBS_DB, canonicalTeamName, normalizeKey } from "../data/clubs.js";
 import { computeFullPrediction, rebuildModelState } from "./predictor.js";
 import { computeProMatchMarkets } from "./proMarketsEngine.js";
 import { predictOmniSportMatch } from "./omniSportEngine.js";
 
-let __defaultCalibratedModel = null;
+let __defaultPriorModel = null;
 function getDefaultModelState() {
-  if (!__defaultCalibratedModel) {
-    __defaultCalibratedModel = rebuildModelState(CALIBRATION_MATCHES);
+  if (!__defaultPriorModel) {
+    __defaultPriorModel = rebuildModelState([]);
   }
-  return __defaultCalibratedModel;
+  return __defaultPriorModel;
 }
 
 function clamp(v, min, max) {

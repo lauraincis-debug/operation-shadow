@@ -7,7 +7,7 @@ import {
   computeHeadToHeadComparison,
   generateExpertAnalysis,
 } from "../engine/predictor.js";
-import { fetchScheduleForOffset, fetchDeepMatchDossier } from "./liveMatchesApi.js";
+import { fetchScheduleForOffset, fetchDeepMatchDossier, isMatchFeedFresh } from "./liveMatchesApi.js";
 import { computeProMatchMarkets } from "../engine/proMarketsEngine.js";
 import { generateThreeDailyTickets } from "../engine/ticketGenerator.js";
 import { auditCouponSlip } from "../engine/ticketAuditor.js";
@@ -43,11 +43,24 @@ try {
   // ignore
 }
 
+function isLegacyCalibrationRecord(item) {
+  return CALIBRATION_MATCHES.some(
+    (fixture) =>
+      fixture.league === item.league &&
+      normalizeKey(canonicalTeamName(fixture.home)) === normalizeKey(canonicalTeamName(item.home)) &&
+      normalizeKey(canonicalTeamName(fixture.away)) === normalizeKey(canonicalTeamName(item.away)) &&
+      fixture.date === item.date &&
+      fixture.scoreHome === item.scoreHome &&
+      fixture.scoreAway === item.scoreAway
+  );
+}
+
 function sanitizeSoccerPredictions(list = []) {
   if (!Array.isArray(list)) return [];
   return list.filter((item) => {
     if (!item || typeof item !== "object") return false;
     if (item.sport && item.sport !== "soccer") return false;
+    if (isLegacyCalibrationRecord(item)) return false;
     if (
       typeof item.scoreHome === "number" &&
       typeof item.scoreAway === "number" &&
@@ -111,31 +124,9 @@ export function extractTeamsFromQuestion(question) {
   return found.map((f) => f.team);
 }
 
-function buildSeededPredictions() {
-  const baseState = rebuildModelState([]);
-  return CALIBRATION_MATCHES.map((m, idx) => {
-    const p = computeFullPrediction(m.home, m.away, m.league, baseState, null);
-    const outcome = m.scoreHome > m.scoreAway ? 0 : m.scoreHome === m.scoreAway ? 1 : 2;
-    return {
-      id: idx + 1,
-      home: p.home,
-      away: p.away,
-      league: m.league,
-      probs: p.probs,
-      rawProbs: p.rawProbs,
-      fairOdds: p.fairOdds,
-      xg: p.xg,
-      selectedMarket: { ...p.recommendedMarket, bookOdd: p.recommendedMarket.marketOdd },
-      result: outcome,
-      scoreHome: m.scoreHome,
-      scoreAway: m.scoreAway,
-    };
-  });
-}
-
 export function createCloeFootballBrain(initialConfig = {}) {
   let state = {
-    predictions: buildSeededPredictions(),
+    predictions: [],
     optaOverrides: {},
     evolvedHyper: null,
     learnedExternalIds: [],
@@ -253,17 +244,34 @@ export function createCloeFootballBrain(initialConfig = {}) {
     const known = new Set(state.learnedExternalIds);
     for (const m of [...yMatches, ...tMatches]) {
       const isSoccer = !m.sport || m.sport === "soccer";
-      if (isSoccer && m.completed && typeof m.scoreHome === "number" && typeof m.scoreAway === "number") {
-        if (!known.has(m.externalId)) {
+      const hasVerifiedFinalScore =
+        isSoccer &&
+        m.isRealInternet === true &&
+        Boolean(m.externalId) &&
+        isMatchFeedFresh(m) &&
+        m.completed === true &&
+        typeof m.scoreHome === "number" &&
+        typeof m.scoreAway === "number" &&
+        m.scoreHome >= 0 && m.scoreHome <= 15 &&
+        m.scoreAway >= 0 && m.scoreAway <= 15;
+      if (hasVerifiedFinalScore && !known.has(m.externalId)) {
           known.add(m.externalId);
           const curModel = getModelState();
           const p = computeFullPrediction(m.home, m.away, m.league || "ucl", curModel, m.liveOdds);
           const outcome = m.scoreHome > m.scoreAway ? 0 : m.scoreHome === m.scoreAway ? 1 : 2;
+          const resultObservedAtIso = m.statusVerifiedAtIso || m.fetchedAtIso || new Date().toISOString();
           state.predictions = [
             {
               id: Date.now() + newlyLearned,
               externalId: m.externalId,
               autoLearned: true,
+              performanceEligible: false,
+              predictionPhase: "post-match-learning",
+              predictionOrigin: "post-match-ingestion",
+              resultSource: "official-feed",
+              verifiedResult: true,
+              verifiedResultExternalId: m.externalId,
+              resultObservedAtIso,
               home: p.home,
               away: p.away,
               league: m.league || "ucl",
@@ -279,8 +287,7 @@ export function createCloeFootballBrain(initialConfig = {}) {
             },
             ...state.predictions,
           ];
-          newlyLearned += 1;
-        }
+        newlyLearned += 1;
       }
     }
 
@@ -301,6 +308,14 @@ export function createCloeFootballBrain(initialConfig = {}) {
     const allUpcoming = [...todayMatches, ...tomorrowMatches];
 
     const topGems = [...allUpcoming]
+      .filter(
+        (match) =>
+          match.isRealInternet === true &&
+          Boolean(match.externalId) &&
+          isMatchFeedFresh(match) &&
+          match.sport === "soccer" &&
+          match.prediction?.reliabilityGate?.allowAutoTicket === true
+      )
       .sort((a, b) => (b.safestMarket?.pct || 0) - (a.safestMarket?.pct || 0))
       .slice(0, 5);
 
@@ -313,8 +328,8 @@ export function createCloeFootballBrain(initialConfig = {}) {
 
     const bestGem = topGems[0] || null;
     const voiceBriefing = bestGem
-      ? `Aujourd'hui ${todayMatches.length} matchs et demain ${tomorrowMatches.length} rencontres analysées. Pépite numéro un : ${bestGem.home} contre ${bestGem.away}, pari sûr ${bestGem.safestMarket.label} à ${bestGem.safestMarket.pct} pour cent.`
-      : `${state.predictions.length} matchs de football calibrés prêts en mémoire.`;
+      ? `Aujourd'hui ${todayMatches.length} matchs et demain ${tomorrowMatches.length} rencontres analysées. Sélection de modèle : ${bestGem.home} contre ${bestGem.away}, ${bestGem.safestMarket.label} à ${bestGem.safestMarket.pct} pour cent; l'estimation ne constitue pas une garantie.`
+      : `${model.learning?.officialResults || 0} résultats officiels intégrés. La performance prospective reste non mesurée tant que le seuil de 30 pronostics n'est pas atteint.`;
 
     const briefing = {
       generatedAt: new Date().toISOString(),
@@ -335,12 +350,17 @@ export function createCloeFootballBrain(initialConfig = {}) {
       },
       modelEvolution: {
         generation: model.hyper?.generation || model.hyper?.learningGeneration || 1,
-        accuracy1x2: model.metrics?.accuracy1x2Pct ?? model.metrics?.accuracyPct ?? 71,
-        accuracyPct: model.metrics?.accuracy1x2Pct ?? model.metrics?.accuracyPct ?? 71,
-        marketAccuracy: model.metrics?.marketHitPct ?? model.metrics?.marketAccuracyPct ?? 96,
-        marketAccuracyPct: model.metrics?.marketHitPct ?? model.metrics?.marketAccuracyPct ?? 96,
-        brierScore: model.metrics?.brierScore ?? 0.385,
-        memorizedCount: state.predictions.length,
+        accuracy1x2: model.metrics?.accuracyPct ?? null,
+        accuracyPct: model.metrics?.accuracyPct ?? null,
+        marketAccuracy: model.metrics?.marketAccuracyPct ?? null,
+        marketAccuracyPct: model.metrics?.marketAccuracyPct ?? null,
+        brierScore: model.metrics?.brierScore ?? null,
+        performanceSampleSize: model.metrics?.sampleSize ?? 0,
+        performanceMinimumSample: model.metrics?.minimumSample ?? 30,
+        performanceStatus: model.metrics?.status || "Échantillon prospectif insuffisant",
+        memorizedCount: model.learning?.officialResults ?? 0,
+        officialResultsCount: model.learning?.officialResults ?? 0,
+        unverifiedResultsCount: model.learning?.unverifiedOrLegacyResults ?? 0,
         recentLessons: (model.errorJournal || []).slice(0, 5).map((e) => ({
           ...e,
           matchTitle: e.matchTitle || `${e.home || ""} vs ${e.away || ""}`.trim(),
@@ -390,16 +410,21 @@ export function createCloeFootballBrain(initialConfig = {}) {
     state.lastBriefing = null;
     persistLocal();
     const model = getModelState();
-    const acc1x2 = model.metrics?.accuracy1x2Pct ?? model.metrics?.accuracyPct ?? 71;
-    const mktAcc = model.metrics?.marketHitPct ?? model.metrics?.marketAccuracyPct ?? 96;
+    const acc1x2 = model.metrics?.accuracyPct ?? null;
+    const mktAcc = model.metrics?.marketAccuracyPct ?? null;
     return {
       ...evo,
       accuracy1x2: acc1x2,
       accuracyPct: acc1x2,
       marketAccuracy: mktAcc,
       marketAccuracyPct: mktAcc,
-      brierScore: model.metrics?.brierScore ?? evo.afterBrier ?? 0.385,
-      memorizedCount: state.predictions.length,
+      brierScore: model.metrics?.brierScore ?? null,
+      performanceSampleSize: model.metrics?.sampleSize ?? 0,
+      performanceMinimumSample: model.metrics?.minimumSample ?? 30,
+      performanceStatus: model.metrics?.status || "Échantillon prospectif insuffisant",
+      trainingBrierScore: evo.afterBrier ?? null,
+      memorizedCount: model.learning?.officialResults ?? 0,
+      officialResultsCount: model.learning?.officialResults ?? 0,
     };
   }
 
@@ -425,26 +450,33 @@ export function createCloeFootballBrain(initialConfig = {}) {
         ? lessons
             .map(
               (l) =>
-                `• ${l.matchTitle || `${l.home || "Match"} vs ${l.away || ""}`} (${l.scoreText || `${l.scoreHome ?? "?"}-${l.scoreAway ?? "?"}`}) → ${l.diagnosis?.title || l.categoryLabel || "Diagnostic"} : ${l.diagnosis?.lesson || l.adjustmentApplied || l.lesson || "Ajustement Elo & xG appliqué"}`
+                `• ${l.matchTitle || `${l.home || "Match"} vs ${l.away || ""}`} (${l.scoreText || `${l.scoreHome ?? "?"}-${l.scoreAway ?? "?"}`}) → ${l.diagnosis?.title || l.categoryLabel || "Diagnostic"} : ${l.diagnosis?.lesson || l.adjustmentApplied || l.lesson || "Ajustement de paramètres appliqué"}`
             )
             .join("\n")
-        : "• Calibration stable sur l'ensemble des matchs validés.";
-      const gen = evo.evolvedHyper?.generation || 2;
-      const brierVal = typeof evo.afterBrier === "number" ? evo.afterBrier : 0.385;
-      const acc1x2 = model.metrics?.accuracy1x2Pct ?? model.metrics?.accuracyPct ?? 71;
-      const mktAcc = model.metrics?.marketHitPct ?? model.metrics?.marketAccuracyPct ?? 96;
+        : "• Aucune erreur documentée dans la mémoire actuelle. Ce constat ne mesure pas la performance prospective.";
+      const gen = evo.evolvedHyper?.generation || 1;
+      const performance = model.metrics || {};
+      const performanceLine = performance.accuracyPct === null || performance.accuracyPct === undefined
+        ? `• Performance 1X2 pré-match vérifiée : — (${performance.sampleSize || 0}/${performance.minimumSample || 30} pronostics officiels requis)\n• Marchés/Brier prospectifs : —`
+        : `• Performance 1X2 pré-match vérifiée : ${performance.accuracyPct}% (${performance.correct}/${performance.sampleSize}) | marchés : ${performance.marketAccuracyPct ?? "—"}% | Brier : ${performance.brierScore?.toFixed(3) ?? "—"}`;
+      const replayLine = typeof evo.afterBrier === "number"
+        ? `• Brier du rejeu historique d'apprentissage (non prospectif) : ${evo.afterBrier.toFixed(3)}`
+        : "• Rejeu historique d'apprentissage : non disponible";
       const answerText =
-        `🧠 Cerveau Évolutif Cloé × Football AI v6.4 (Génération #${gen})\n` +
-        `• Précision 1X2 : ${acc1x2}% | Marchés validés : ${mktAcc}% | Brier Score : ${brierVal.toFixed(3)}\n` +
-        `• Matchs mémorisés : ${state.predictions.length}\n\n` +
-        `Dernières corrections apprises de mes erreurs :\n${lessonsTxt}`;
-      const voiceText = `Mon cerveau prédictif est passé à la génération ${gen}, avec un score Brier amélioré à ${brierVal.toFixed(3)} et ${mktAcc} pour cent de réussite sur les marchés recommandés.`;
+        `🧠 Mémoire Cloé × Football AI v6.4 (Génération #${gen})\n` +
+        `${performanceLine}\n` +
+        `• Résultats officiels intégrés à l'apprentissage : ${model.learning?.officialResults || 0}\n` +
+        `${replayLine}\n\n` +
+        `Dernières corrections apprises :\n${lessonsTxt}`;
+      const voiceText = performance.accuracyPct === null || performance.accuracyPct === undefined
+        ? `La mémoire est à la génération ${gen}. La performance prospective n'est pas encore mesurable : ${performance.sampleSize || 0} sur ${performance.minimumSample || 30} pronostics officiels sont évalués.`
+        : `La performance prospective vérifiée est de ${performance.accuracyPct} pour cent sur ${performance.sampleSize} pronostics pré-match officiels. Les résultats du rejeu historique sont calculés séparément.`;
       return {
         intent: "memory_evolution",
-        confidence: mktAcc,
+        confidence: performance.accuracyPct ?? null,
         answerText,
         voiceText,
-        data: { evolution: evo, metrics: model.metrics, lessons },
+        data: { evolution: evo, metrics: performance, trainingMetrics: model.trainingMetrics, learning: model.learning, lessons },
       };
     }
 
@@ -750,16 +782,19 @@ export function createCloeFootballBrain(initialConfig = {}) {
     },
     getStateSummary: () => {
       const m = getModelState();
-      const acc1x2 = m.metrics?.accuracy1x2Pct ?? m.metrics?.accuracyPct ?? 71;
-      const mktHit = m.metrics?.marketHitPct ?? m.metrics?.marketAccuracyPct ?? 96;
       return {
         generation: m.hyper?.generation || m.hyper?.learningGeneration || 1,
-        memorizedMatches: state.predictions.length,
-        accuracy1x2: acc1x2,
-        accuracyPct: acc1x2,
-        marketAccuracy: mktHit,
-        marketAccuracyPct: mktHit,
-        brierScore: m.metrics?.brierScore ?? 0.385,
+        memorizedMatches: m.learning?.officialResults ?? 0,
+        officialResultsCount: m.learning?.officialResults ?? 0,
+        accuracy1x2: m.metrics?.accuracyPct ?? null,
+        accuracyPct: m.metrics?.accuracyPct ?? null,
+        marketAccuracy: m.metrics?.marketAccuracyPct ?? null,
+        marketAccuracyPct: m.metrics?.marketAccuracyPct ?? null,
+        brierScore: m.metrics?.brierScore ?? null,
+        performanceSampleSize: m.metrics?.sampleSize ?? 0,
+        performanceMinimumSample: m.metrics?.minimumSample ?? 30,
+        performanceStatus: m.metrics?.status || "Échantillon prospectif insuffisant",
+        unverifiedResultsCount: m.learning?.unverifiedOrLegacyResults ?? 0,
         lessonsCount: (m.errorJournal || []).length,
         cloeInteractions: state.cloeInteractions,
       };

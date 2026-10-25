@@ -313,19 +313,22 @@ export default function CloeApp() {
         const tickets = footBrain.generateTickets(livePool);
         const safe = tickets[0];
         const value = tickets[1];
-        const sourceNote =
-          livePool.length < 2
-            ? "ℹ️ Moins de 2 rencontres en direct actuellement : sélection calibrée sur les affiches de référence.\n\n"
-            : "";
+        if (safe?.noBet || !safe?.items?.length) {
+          const txt = `⛔ NO-BET — Aucun ticket automatique n'est proposé. ${safe?.noBetReason || "Aucun événement n'a satisfait les contrôles officiels de fraîcheur et de fiabilité."} Aucun match de démonstration n'est substitué aux rencontres réelles.`;
+          setMessages((prev) => [...prev, { role: "cloe", text: txt, rated: null }]);
+          speak("Abstention automatique : aucun combiné ne satisfait actuellement les critères de fraîcheur et de fiabilité.");
+          setLoading(false);
+          return;
+        }
         const txt =
-          `🎰 Voici mes 2 meilleurs Tickets IA calibrés aujourd'hui :\n${sourceNote}` +
-          `1) ${safe.badge} (@${safe.totalOdd.toFixed(2)} • Fiabilité ${safe.winProbPct}%)\n` +
+          `🎰 Sélections estimées par le modèle — elles ne garantissent aucun gain :\n` +
+          `1) ${safe.badge} (@${safe.totalOdd.toFixed(2)} • probabilité combinée estimée ${safe.winProbPct}%)\n` +
           safe.items.map((i) => `   • ${i.home} vs ${i.away} → ${i.selectedMarket.label} (${i.selectedMarket.pct}%)`).join("\n") +
-          `\n\n2) ${value.badge} (@${value.totalOdd.toFixed(2)} • Fiabilité ${value.winProbPct}%)\n` +
+          `\n\n2) ${value.badge} (@${value.totalOdd.toFixed(2)} • probabilité combinée estimée ${value.winProbPct}%)\n` +
           value.items.map((i) => `   • ${i.home} vs ${i.away} → ${i.selectedMarket.label} (${i.selectedMarket.pct}%)`).join("\n");
         setMessages((prev) => [...prev, { role: "cloe", text: txt, rated: null }]);
         speak(
-          `J'ai préparé ton ticket sécurité à une cote totale de ${safe.totalOdd.toFixed(2)} avec ${safe.winProbPct} pour cent de réussite estimée.`
+          `J'ai calculé des sélections à partir d'événements vérifiés. La probabilité combinée est une estimation, pas une garantie de gain.`
         );
         setLoading(false);
         return;
@@ -362,8 +365,8 @@ export default function CloeApp() {
         `──────────────────────────────\n` +
         `📡 Matchs analysés : ${b.todayCount} aujourd'hui • ${b.tomorrowCount} demain (${b.newlyLearnedMatches} résultat(s) appris)\n` +
         (topGem
-          ? `🔥 Pépite n°1 : ${topGem.home} vs ${topGem.away} → ${topGem.safestMarket.label} (${topGem.safestMarket.pct}%)\n`
-          : `🔥 Cerveau calibré sur ${b.modelEvolution.memorizedCount} matchs (Marchés validés : ${b.modelEvolution.marketAccuracy}%)\n`) +
+          ? `📊 Sélection de modèle n°1 (non garantie) : ${topGem.home} vs ${topGem.away} → ${topGem.safestMarket.label} (${topGem.safestMarket.pct}%)\n`
+          : `🧠 Résultats officiels intégrés : ${b.modelEvolution.officialResultsCount} • Performance pré-match : ${b.modelEvolution.accuracyPct === null ? "—" : `${b.modelEvolution.accuracyPct}%`} (${b.modelEvolution.performanceSampleSize}/${b.modelEvolution.performanceMinimumSample})\n`) +
         (cap ? `👑 Capitaine Fantasy ×2 : ${cap.name} (${cap.club})\n` : "") +
         `📝 Objectifs personnels actifs : ${activeNotes.length} (${activeNotes.map((n) => n.text).join(" • ") || "Aucun en attente"})`;
 
@@ -372,7 +375,7 @@ export default function CloeApp() {
       speak(
         `Bonjour ${mem.userName} ! Voici ton briefing du jour. J'ai analysé ${b.todayCount} matchs aujourd'hui et ${b.tomorrowCount} demain. ` +
           (topGem
-            ? `Ma pépite la plus fiable est ${topGem.home} contre ${topGem.away}, option ${topGem.safestMarket.label} à ${topGem.safestMarket.pct} pour cent. `
+            ? `Selon les filtres actuels, une sélection de modèle est ${topGem.home} contre ${topGem.away}, option ${topGem.safestMarket.label} à ${topGem.safestMarket.pct} pour cent, sans garantie de résultat. `
             : "") +
           (cap ? `En Fantasy, je te recommande ${cap.name} comme capitaine. ` : "") +
           `Tu as aussi ${activeNotes.length} objectif actif dans ton carnet.`
@@ -1045,7 +1048,7 @@ export default function CloeApp() {
 
             {dailyBriefing && (
               <div style={{ fontSize: 12, color: "#6ee7b7" }}>
-                ✓ Synchronisation active avec Omni-Sport &amp; Football AI Ultra v6.4 Certifiée Intégrale ({dailyBriefing.modelEvolution.memorizedCount} matchs calibrés).
+                ✓ Synchronisation active avec Omni-Sport &amp; Football AI Ultra v6.4 Certifiée Intégrale ({dailyBriefing.modelEvolution.officialResultsCount} résultats officiels intégrés · performance {dailyBriefing.modelEvolution.accuracyPct === null ? "—" : `${dailyBriefing.modelEvolution.accuracyPct}%`} · échantillon {dailyBriefing.modelEvolution.performanceSampleSize}/{dailyBriefing.modelEvolution.performanceMinimumSample}).
               </div>
             )}
           </div>

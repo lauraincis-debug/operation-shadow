@@ -1,14 +1,22 @@
 import { useEffect, useState } from "react";
-import { fetchDeepMatchDossier } from "../services/liveMatchesApi.js";
+import {
+  fetchApiFootballPlayerStats,
+  fetchDeepMatchDossier,
+} from "../services/liveMatchesApi.js";
 import { buildTruthCertificate } from "../engine/antiBiasEngine.js";
 
 export default function MatchTruthDossierModal({ match, onClose, onAddCoupon, onInspectPredict }) {
   const [dossier, setDossier] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [supplementalPlayerStats, setSupplementalPlayerStats] = useState({});
+  const [playerStatsLoading, setPlayerStatsLoading] = useState({});
+  const [playerStatsError, setPlayerStatsError] = useState("");
 
   useEffect(() => {
     let alive = true;
     setLoading(true);
+    setSupplementalPlayerStats({});
+    setPlayerStatsError("");
     fetchDeepMatchDossier(match)
       .then((res) => {
         if (alive) {
@@ -23,6 +31,18 @@ export default function MatchTruthDossierModal({ match, onClose, onAddCoupon, on
       alive = false;
     };
   }, [match]);
+
+  async function loadSupplementalPlayerStats(teamName) {
+    setPlayerStatsLoading((previous) => ({ ...previous, [teamName]: true }));
+    setPlayerStatsError("");
+    const result = await fetchApiFootballPlayerStats(match, teamName);
+    setPlayerStatsLoading((previous) => ({ ...previous, [teamName]: false }));
+    if (result?.available && result?.matched) {
+      setSupplementalPlayerStats((previous) => ({ ...previous, [teamName]: result }));
+    } else {
+      setPlayerStatsError(result?.reason || "Statistiques API-Football indisponibles.");
+    }
+  }
 
   if (!match) return null;
 
@@ -376,6 +396,60 @@ export default function MatchTruthDossierModal({ match, onClose, onAddCoupon, on
               ) : (
                 <div style={{ fontSize: 11.5, color: "#9aa3c7" }}>
                   ⚪ Statistiques individuelles publiées à l&apos;annonce des compositions officielles.
+                </div>
+              )}
+
+              {match.sport === "soccer" && (
+                <div style={{ marginTop: 13, paddingTop: 10, borderTop: "1px solid rgba(255,255,255,0.08)" }}>
+                  <div style={{ fontSize: 11.5, fontWeight: 800, color: "#00e5ff", marginBottom: 6 }}>
+                    📊 Statistiques de saison API-Football (complément prototype)
+                  </div>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                    {[match.homeRaw || match.home, match.awayRaw || match.away].map((teamName) => (
+                      <button
+                        key={teamName}
+                        type="button"
+                        className="fai-btn-ghost"
+                        disabled={playerStatsLoading[teamName]}
+                        onClick={() => loadSupplementalPlayerStats(teamName)}
+                        style={{ padding: "6px 9px", fontSize: 10.5 }}
+                      >
+                        {playerStatsLoading[teamName] ? "Chargement…" : `Charger ${teamName}`}
+                      </button>
+                    ))}
+                  </div>
+                  <div style={{ marginTop: 5, fontSize: 10, color: "#8590b7" }}>
+                    Connecteur facultatif, clé côté serveur; aucun rapprochement approximatif des équipes.
+                  </div>
+                  {playerStatsError && (
+                    <div role="status" style={{ marginTop: 6, fontSize: 10.5, color: "#ffcc80" }}>
+                      {playerStatsError}
+                    </div>
+                  )}
+                  {Object.entries(supplementalPlayerStats).map(([teamName, result]) => (
+                    <div key={teamName} style={{ marginTop: 8, padding: 8, borderRadius: 8, background: "rgba(0,229,255,0.045)" }}>
+                      <strong style={{ color: "#e8ebff", fontSize: 11 }}>
+                        {result.resolvedTeam?.name || teamName}
+                      </strong>
+                      <span style={{ color: "#8590b7", fontSize: 9.5 }}> — données de saison fournisseur</span>
+                      {result.isSnapshot && <div style={{ color: "#ffcc80", fontSize: 9.5 }}>Cache ancien; à interpréter comme historique.</div>}
+                      {(result.players || []).slice(0, 8).map((item, index) => {
+                        const player = item.player || {};
+                        const stats = item.statistics?.[0] || {};
+                        const games = stats.games || {};
+                        const goals = stats.goals || {};
+                        return (
+                          <div key={player.id || `${player.name}-${index}`} style={{ display: "flex", justifyContent: "space-between", gap: 8, padding: "4px 0", borderBottom: "1px solid rgba(255,255,255,0.045)", fontSize: 10.5 }}>
+                            <span><strong>{player.name || "Joueur"}</strong>{games.position ? ` · ${games.position}` : ""}</span>
+                            <span style={{ color: "#9aa3c7", whiteSpace: "nowrap" }}>
+                              {games.appearences ?? games.appearances ?? "—"} app · {goals.total ?? "—"} buts · {goals.assists ?? "—"} passes
+                            </span>
+                          </div>
+                        );
+                      })}
+                      {!result.players?.length && <div style={{ color: "#9aa3c7", fontSize: 10 }}>Aucune statistique joueur publiée pour cette recherche.</div>}
+                    </div>
+                  ))}
                 </div>
               )}
 

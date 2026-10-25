@@ -1,6 +1,7 @@
 import { computeFullPrediction } from "./predictor.js";
 import { predictOmniSportMatch } from "./omniSportEngine.js";
 import { resolveClub } from "../data/clubs.js";
+import { isMatchFeedFresh } from "../services/liveMatchesApi.js";
 
 /**
  * 🎰 GÉNÉRATEUR AUTOMATIQUE DES 3 TICKETS IA DU JOUR + SMART MONEY EDGE + EXPORT PNG HD (v6.4 Certifiée Intégrale)
@@ -9,18 +10,24 @@ import { resolveClub } from "../data/clubs.js";
  * 3) 🚀 Ticket Cote 10+ / Fun (Cote >= 8.50+, grosses opportunités ciblées)
  */
 
-const FALLBACK_SHOWCASE_FIXTURES = [
-  { home: "PSG", away: "Marseille", league: "ligue1", sport: "soccer", timeFr: "21:00" },
-  { home: "Real Madrid", away: "Barcelone", league: "liga", sport: "soccer", timeFr: "21:00" },
-  { home: "Arsenal", away: "Liverpool", league: "premier", sport: "soccer", timeFr: "17:30" },
-  { home: "Bayern Munich", away: "Bayer Leverkusen", league: "bundesliga", sport: "soccer", timeFr: "18:30" },
-  { home: "Inter Milan", away: "Naples", league: "seriea", sport: "soccer", timeFr: "20:45" },
-  { home: "Côte d'Ivoire", away: "Maroc", league: "international", sport: "soccer", timeFr: "20:00" },
-];
+export function isEligibleTicketFixture(fixture, now = Date.now()) {
+  if (
+    !fixture ||
+    fixture.isRealInternet !== true ||
+    !fixture.externalId ||
+    !fixture.kickoffIso ||
+    fixture.completed === true ||
+    fixture.state !== "pre" ||
+    !isMatchFeedFresh(fixture, now)
+  ) return false;
+  const kickoff = new Date(fixture.kickoffIso).getTime();
+  return Number.isFinite(kickoff) && kickoff > now;
+}
 
 export function scanSmartMoneyOpportunities(fixtures = [], modelState) {
-  const sourceList =
-    Array.isArray(fixtures) && fixtures.length >= 2 ? fixtures : FALLBACK_SHOWCASE_FIXTURES;
+  const sourceList = Array.isArray(fixtures)
+    ? fixtures.filter((fixture) => isEligibleTicketFixture(fixture))
+    : [];
   const schemaCounts = {};
 
   const analyzed = sourceList.map((fx) => {
@@ -87,7 +94,7 @@ export function scanSmartMoneyOpportunities(fixtures = [], modelState) {
     };
   });
 
-  return analyzed;
+  return analyzed.filter((entry) => entry.pred?.reliabilityGate?.allowAutoTicket === true);
 }
 
 function buildCouponItemsFromPicks(picks) {
@@ -125,6 +132,16 @@ function buildCouponItemsFromPicks(picks) {
 
 export function generateThreeDailyTickets(fixtures = [], modelState) {
   const pool = scanSmartMoneyOpportunities(fixtures, modelState);
+  if (pool.length < 2) {
+    const reason = pool.length === 1
+      ? "Une seule affiche répond aux critères stricts; aucun combiné n'est généré."
+      : "Aucune paire de matchs à venir, fraîchement vérifiés et autorisés par le portail de fiabilité.";
+    return [
+      { id: "safe", badge: "⛔ NO-BET", title: "Ticket sécurité indisponible", subtitle: reason, recommendedBankrollPct: 0, accent: "#ff1744", items: [], totalOdd: null, winProbPct: null, noBet: true, noBetReason: reason },
+      { id: "value", badge: "⛔ NO-BET", title: "Ticket value indisponible", subtitle: reason, recommendedBankrollPct: 0, accent: "#ff1744", items: [], totalOdd: null, winProbPct: null, noBet: true, noBetReason: reason },
+      { id: "jackpot", badge: "⛔ NO-BET", title: "Ticket cote boost indisponible", subtitle: reason, recommendedBankrollPct: 0, accent: "#ff1744", items: [], totalOdd: null, winProbPct: null, noBet: true, noBetReason: reason },
+    ];
+  }
 
   // 1. 🛡️ Ticket Sécurité IA (2 à 3 sélections très hautes probabilités)
   const safeSorted = [...pool]

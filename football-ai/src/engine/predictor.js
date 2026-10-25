@@ -57,6 +57,8 @@ for (let i = 2; i <= MAX_GOAL_GRID; i++) {
 const DEFAULT_PRIOR_ELO = 1690;
 const BASE_K_FACTOR = 26;
 
+export const MIN_PERFORMANCE_SAMPLE = 30;
+
 export function isValidated(pred) {
   return (
     pred !== null &&
@@ -64,6 +66,150 @@ export function isValidated(pred) {
     typeof pred.result === "number" &&
     (pred.result === 0 || pred.result === 1 || pred.result === 2)
   );
+}
+
+function isLearningEligible(pred) {
+  return isValidated(pred) && pred.isCalibrationFixture !== true && pred.trainingOnly !== true;
+}
+
+export function isPerformanceEligible(pred) {
+  if (
+    !isValidated(pred) ||
+    pred.performanceEligible !== true ||
+    pred.autoLearned === true ||
+    pred.isCalibrationFixture === true ||
+    pred.trainingOnly === true ||
+    pred.predictionPhase !== "pre-match" ||
+    pred.resultSource !== "official-feed" ||
+    pred.verifiedResult !== true ||
+    !pred.externalId ||
+    pred.verifiedResultExternalId !== pred.externalId ||
+    !Number.isInteger(pred.scoreHome) ||
+    !Number.isInteger(pred.scoreAway) ||
+    pred.scoreHome < 0 ||
+    pred.scoreAway < 0
+  ) {
+    return false;
+  }
+
+  const issuedAt = new Date(pred.forecastIssuedAtIso || "").getTime();
+  const kickoffAt = new Date(pred.kickoffIso || "").getTime();
+  const resultObservedAt = new Date(pred.resultObservedAtIso || "").getTime();
+  const scoredOutcome = pred.scoreHome > pred.scoreAway ? 0 : pred.scoreHome === pred.scoreAway ? 1 : 2;
+  return (
+    Number.isFinite(issuedAt) &&
+    Number.isFinite(kickoffAt) &&
+    Number.isFinite(resultObservedAt) &&
+    issuedAt < kickoffAt &&
+    kickoffAt < resultObservedAt &&
+    pred.result === scoredOutcome
+  );
+}
+
+function getForecastProbabilityVector(pred) {
+  const raw = Array.isArray(pred?.rawProbs) && pred.rawProbs.length === 3
+    ? pred.rawProbs.map(Number)
+    : Array.isArray(pred?.probs) && pred.probs.length === 3
+      ? pred.probs.map((value) => Number(value) / 100)
+      : null;
+  if (!raw || raw.some((value) => !Number.isFinite(value) || value < 0 || value > 1)) return null;
+  const total = raw.reduce((sum, value) => sum + value, 0);
+  return total > 0 ? raw.map((value) => value / total) : null;
+}
+
+export function computeForecastPerformance(predictions = [], minSample = MIN_PERFORMANCE_SAMPLE) {
+  const eligibleForecasts = predictions
+    .filter(isPerformanceEligible)
+    .slice()
+    .sort((a, b) => {
+      const kickoffDifference = new Date(a.kickoffIso).getTime() - new Date(b.kickoffIso).getTime();
+      if (kickoffDifference !== 0) return kickoffDifference;
+      const issuedDifference =
+        new Date(a.forecastIssuedAtIso).getTime() - new Date(b.forecastIssuedAtIso).getTime();
+      if (issuedDifference !== 0) return issuedDifference;
+      return String(a.externalId).localeCompare(String(b.externalId));
+    });
+  const seenEvents = new Set();
+  const evaluated = [];
+  let duplicateForecastRowsExcluded = 0;
+  for (const prediction of eligibleForecasts) {
+    const probabilityVector = getForecastProbabilityVector(prediction);
+    if (!probabilityVector) continue;
+    const eventId = String(prediction.externalId);
+    if (seenEvents.has(eventId)) {
+      duplicateForecastRowsExcluded += 1;
+      continue;
+    }
+    seenEvents.add(eventId);
+    evaluated.push({ prediction, probabilityVector });
+  }
+  let correct = 0;
+  let marketCorrect = 0;
+  let brierSum = 0;
+  let logLossSum = 0;
+  const buckets = {
+    high: { label: "Haute (≥ 58%)", total: 0, correct: 0 },
+    medium: { label: "Modérée (46–57%)", total: 0, correct: 0 },
+    tight: { label: "Match serré (< 46%)", total: 0, correct: 0 },
+  };
+
+  for (const { prediction, probabilityVector } of evaluated) {
+    const predictedOutcome = probabilityVector.indexOf(Math.max(...probabilityVector));
+    const isHit = predictedOutcome === prediction.result;
+    if (isHit) correct += 1;
+    if (checkPickResult(prediction) === true) marketCorrect += 1;
+    const confidenceBucket = Math.max(...probabilityVector) >= 0.58
+      ? buckets.high
+      : Math.max(...probabilityVector) >= 0.46
+        ? buckets.medium
+        : buckets.tight;
+    confidenceBucket.total += 1;
+    if (isHit) confidenceBucket.correct += 1;
+    for (let outcome = 0; outcome < 3; outcome += 1) {
+      const target = prediction.result === outcome ? 1 : 0;
+      brierSum += (probabilityVector[outcome] - target) ** 2;
+    }
+    logLossSum += -Math.log(clamp(probabilityVector[prediction.result], 0.02, 0.99));
+  }
+
+  const total = evaluated.length;
+  const enoughData = total >= minSample;
+  return {
+    total,
+    sampleSize: total,
+    uniqueMatches: total,
+    duplicateForecastRowsExcluded,
+    minimumSample: minSample,
+    correct,
+    errors: total - correct,
+    marketCorrect,
+    accuracyPct: enoughData ? Math.round((correct / total) * 100) : null,
+    marketAccuracyPct: enoughData ? Math.round((marketCorrect / total) * 100) : null,
+    brierScore: enoughData ? Math.round((brierSum / total) * 1000) / 1000 : null,
+    logLoss: enoughData ? Math.round((logLossSum / total) * 1000) / 1000 : null,
+    buckets,
+    status: enoughData ? "Échantillon prospectif suffisant" : "Échantillon insuffisant — performance non mesurée",
+  };
+}
+
+function parseMatchDate(match) {
+  const dateValues = [match?.kickoffIso, match?.matchDateIso, match?.eventDateIso, match?.dateTimeIso];
+  for (const value of dateValues) {
+    const parsed = value ? new Date(value).getTime() : NaN;
+    if (Number.isFinite(parsed)) return parsed;
+  }
+
+  const localDate = String(match?.date || "").trim();
+  const matchFr = localDate.match(/^(\d{1,2})[/.](\d{1,2})[/.](\d{4})$/);
+  if (matchFr) {
+    const [, day, month, year] = matchFr;
+    return new Date(Number(year), Number(month) - 1, Number(day)).getTime();
+  }
+
+  const fallback = new Date(match?.createdAtIso || match?.forecastIssuedAtIso || "").getTime();
+  if (Number.isFinite(fallback)) return fallback;
+  const id = Number(match?.id);
+  return Number.isFinite(id) ? id : 0;
 }
 
 function clamp(val, min, max) {
@@ -297,10 +443,11 @@ export function rebuildModelState(predictions = [], extraConfig = {}) {
     learningGeneration: evolvedHyper?.generation ?? 1,
   };
 
-  const validated = predictions
-    .filter(isValidated)
+  const allValidated = predictions.filter(isValidated);
+  const validated = allValidated
+    .filter(isLearningEligible)
     .slice()
-    .sort((a, b) => (a.id || 0) - (b.id || 0));
+    .sort((a, b) => parseMatchDate(a) - parseMatchDate(b) || Number(a.id || 0) - Number(b.id || 0));
 
   let correctCount = 0;
   let marketCorrectCount = 0;
@@ -614,6 +761,45 @@ export function rebuildModelState(predictions = [], extraConfig = {}) {
   }
 
   const totalValidated = validated.length;
+  const trainingMetrics = {
+    total: totalValidated,
+    correct: correctCount,
+    errors: totalValidated - correctCount,
+    marketCorrect: marketCorrectCount,
+    accuracyPct: totalValidated > 0 ? Math.round((correctCount / totalValidated) * 100) : null,
+    marketAccuracyPct:
+      totalValidated > 0 ? Math.round((marketCorrectCount / totalValidated) * 100) : null,
+    brierScore: totalValidated > 0 ? Math.round((brierSum / totalValidated) * 1000) / 1000 : null,
+    liveBrierScore:
+      totalValidated > 0
+        ? Math.round((dynamicModelBrierSum / totalValidated) * 1000) / 1000
+        : null,
+    logLoss: totalValidated > 0 ? Math.round((logLossSum / totalValidated) * 1000) / 1000 : null,
+    buckets,
+  };
+  const performanceMetrics = computeForecastPerformance(predictions);
+  const verifiedResults = validated.filter(
+    (match) =>
+      match.verifiedResult === true &&
+      match.resultSource === "official-feed" &&
+      typeof match.scoreHome === "number" &&
+      typeof match.scoreAway === "number"
+  );
+  const verifiedTeams = new Set(
+    verifiedResults.flatMap((match) => [
+      normalizeKey(canonicalTeamName(match.home)),
+      normalizeKey(canonicalTeamName(match.away)),
+    ])
+  );
+  const learning = {
+    totalOutcomes: totalValidated,
+    officialResults: verifiedResults.length,
+    unverifiedOrLegacyResults: Math.max(0, totalValidated - verifiedResults.length),
+    teamsWithOfficialResults: verifiedTeams.size,
+    teamsWithAnyLearnedResult: Object.values(teams).filter((team) => team.games > 0).length,
+    excludedCalibrationRows: Math.max(0, allValidated.length - totalValidated),
+  };
+
   return {
     teams,
     leagueStats: leagueEmpirical,
@@ -623,22 +809,10 @@ export function rebuildModelState(predictions = [], extraConfig = {}) {
     errorJournal,
     errorBreakdown,
     learningCurve,
-    metrics: {
-      total: totalValidated,
-      correct: correctCount,
-      errors: totalValidated - correctCount,
-      marketCorrect: marketCorrectCount,
-      accuracyPct: totalValidated > 0 ? Math.round((correctCount / totalValidated) * 100) : null,
-      marketAccuracyPct:
-        totalValidated > 0 ? Math.round((marketCorrectCount / totalValidated) * 100) : null,
-      brierScore: totalValidated > 0 ? Math.round((brierSum / totalValidated) * 1000) / 1000 : null,
-      liveBrierScore:
-        totalValidated > 0
-          ? Math.round((dynamicModelBrierSum / totalValidated) * 1000) / 1000
-          : null,
-      logLoss: totalValidated > 0 ? Math.round((logLossSum / totalValidated) * 1000) / 1000 : null,
-      buckets,
-    },
+    metrics: performanceMetrics,
+    performanceMetrics,
+    trainingMetrics,
+    learning,
   };
 }
 
@@ -648,7 +822,7 @@ export function rebuildModelState(predictions = [], extraConfig = {}) {
  * la configuration qui minimise simultanément le Brier Score et le Log-Loss !
  */
 export function runContinuousEvolution(predictions = [], currentHyper = {}, optaOverrides = {}) {
-  const validated = predictions.filter(isValidated);
+  const validated = predictions.filter(isLearningEligible);
   if (validated.length === 0) {
     return {
       evolvedHyper: {
@@ -682,9 +856,9 @@ export function runContinuousEvolution(predictions = [], currentHyper = {}, opta
     eloTemperature: currentHyper.eloTemperature ?? 1.0,
   };
   let bestObjective =
-    (baseEval.metrics.brierScore || 1) + 0.35 * (baseEval.metrics.logLoss || 1);
-  let bestBrier = baseEval.metrics.brierScore;
-  let bestAcc = baseEval.metrics.accuracyPct;
+    (baseEval.trainingMetrics.brierScore || 1) + 0.35 * (baseEval.trainingMetrics.logLoss || 1);
+  let bestBrier = baseEval.trainingMetrics.brierScore;
+  let bestAcc = baseEval.trainingMetrics.accuracyPct;
 
   const PRIOR_HYPER = {
     dcWeight: 0.64,
@@ -692,7 +866,7 @@ export function runContinuousEvolution(predictions = [], currentHyper = {}, opta
     homeAdvScale: 1.0,
     eloTemperature: 1.0,
   };
-  const validatedCount = predictions.filter((p) => isValidated(p)).length;
+  const validatedCount = predictions.filter(isLearningEligible).length;
   // GARDE ANTI-SURAPPRENTISSAGE : interdit formellement de déformer les hyperparamètres
   // sur seulement 1 à 5 matchs (élimine l'illusion d'un schéma qui a passé 1 ou 2 fois !)
   if (validatedCount < 6) {
@@ -701,9 +875,9 @@ export function runContinuousEvolution(predictions = [], currentHyper = {}, opta
         ...PRIOR_HYPER,
         generation: (currentHyper?.generation || 1) + 1,
       },
-      beforeBrier: baseEval.metrics.brierScore,
-      afterBrier: baseEval.metrics.brierScore,
-      newAccuracyPct: baseEval.metrics.accuracyPct,
+      beforeBrier: baseEval.trainingMetrics.brierScore,
+      afterBrier: baseEval.trainingMetrics.brierScore,
+      newAccuracyPct: baseEval.trainingMetrics.accuracyPct,
       improvementPct: 0,
       antiOverfitNote: `Protection Bayésienne active (${validatedCount}/6 matchs validés minimum requis avant dérive d'hyperparamètres).`,
     };
@@ -739,12 +913,12 @@ export function runContinuousEvolution(predictions = [], currentHyper = {}, opta
           optaOverrides,
           evolvedHyper: candidate,
         });
-        const obj = st.metrics.brierScore + 0.35 * st.metrics.logLoss + ridgePenalty(candidate);
+        const obj = st.trainingMetrics.brierScore + 0.35 * st.trainingMetrics.logLoss + ridgePenalty(candidate);
         if (obj < bestObjective - 1e-6) {
           bestObjective = obj;
           bestParams = candidate;
-          bestBrier = st.metrics.brierScore;
-          bestAcc = st.metrics.accuracyPct;
+          bestBrier = st.trainingMetrics.brierScore;
+          bestAcc = st.trainingMetrics.accuracyPct;
         }
       }
     }
@@ -762,7 +936,7 @@ export function runContinuousEvolution(predictions = [], currentHyper = {}, opta
   };
   bestParams = shrunkParams;
 
-  const beforeB = baseEval.metrics.brierScore;
+  const beforeB = baseEval.trainingMetrics.brierScore;
   const improvementPct =
     beforeB > 0 ? Math.max(0, Math.round(((beforeB - bestBrier) / beforeB) * 1000) / 10) : 0;
 
@@ -885,7 +1059,7 @@ export function computeFullPrediction(
       : leagueCfg.avgAwayGoals;
 
   const h2hMatches = allPredictions.filter((p) => {
-    if (!isValidated(p)) return false;
+    if (!isLearningEligible(p)) return false;
     const pH = normalizeKey(canonicalTeamName(p.home));
     const pA = normalizeKey(canonicalTeamName(p.away));
     return (pH === homeKey && pA === awayKey) || (pH === awayKey && pA === homeKey);
@@ -1150,8 +1324,45 @@ export function computeFullPrediction(
     }
   }
 
-  const truthCertificate = buildTruthCertificate(liveIntel);
-  const reliabilityGate = evaluateStrictReliabilityGate({
+  const officialTeamGames = new Map();
+  const countedOfficialResults = new Set();
+  for (const record of modelState?.predictions || []) {
+    if (
+      record.verifiedResult !== true ||
+      record.resultSource !== "official-feed" ||
+      record.isCalibrationFixture === true ||
+      record.trainingOnly === true ||
+      typeof record.result !== "number" ||
+      typeof record.scoreHome !== "number" ||
+      typeof record.scoreAway !== "number"
+    ) continue;
+    const recordId = record.externalId || record.id;
+    if (recordId && countedOfficialResults.has(recordId)) continue;
+    if (recordId) countedOfficialResults.add(recordId);
+    for (const team of [record.home, record.away]) {
+      const key = normalizeKey(canonicalTeamName(team));
+      if (key) officialTeamGames.set(key, (officialTeamGames.get(key) || 0) + 1);
+    }
+  }
+  const teamEvidenceScore = (name, profile, liveStats) => {
+    const verifiedGames = officialTeamGames.get(normalizeKey(canonicalTeamName(name))) || 0;
+    const recentForm = liveStats.cleanForm.length;
+    if (verifiedGames >= 5 || recentForm >= 5) return 90;
+    if (verifiedGames >= 3 || recentForm >= 3 || liveStats.gamesPlayed >= 5) return 75;
+    if (verifiedGames > 0 || recentForm > 0 || liveStats.seasonWinRate !== null) return 60;
+    return profile.knownClub ? 45 : 20;
+  };
+  const profileCoveragePct = Math.round(
+    (teamEvidenceScore(homeCanon, homeProfile, liveHomeStats) +
+      teamEvidenceScore(awayCanon, awayProfile, liveAwayStats)) / 2
+  );
+  const baseTruthCertificate = buildTruthCertificate(liveIntel);
+  const truthCertificate = {
+    ...baseTruthCertificate,
+    completenessPct: Math.min(baseTruthCertificate.completenessPct, profileCoveragePct),
+    teamProfileCoveragePct: profileCoveragePct,
+  };
+  let reliabilityGate = evaluateStrictReliabilityGate({
     confidenceScore: confidence.score,
     maxOutcomeProb: Math.max(...rawProbs),
     recommendedProb: recommendedMarket.prob,
@@ -1160,6 +1371,30 @@ export function computeFullPrediction(
     hotHandTrap: liveHomeStats.hotHandTrap || liveAwayStats.hotHandTrap,
     isFriendlyOrLowStakes: /friendly|amical/i.test(String(liveIntel.leagueSlug || "")),
   });
+  if (profileCoveragePct < 40) {
+    reliabilityGate = {
+      ...reliabilityGate,
+      tier: "NO_BET_PIEGE",
+      badge: "⛔ NO-BET • PROFILS D'ÉQUIPE INSUFFISANTS",
+      color: "#ff1744",
+      allowAutoTicket: false,
+      compositeScore: Math.min(reliabilityGate.compositeScore, 49),
+      stakeMultiplier: 0,
+      verdict: "Abstention : aucune couverture récente suffisante pour les deux équipes. L'historique réel doit être complété avant de produire un signal exploitable.",
+      reasons: ["Couverture officielle des équipes insuffisante", ...reliabilityGate.reasons],
+    };
+  } else if (profileCoveragePct < 70 && reliabilityGate.tier !== "NO_BET_PIEGE") {
+    reliabilityGate = {
+      ...reliabilityGate,
+      tier: "PRUDENT",
+      badge: "⚠️ MATCH DISPUTÉ (HISTORIQUE LIMITÉ)",
+      color: "#ffea00",
+      allowAutoTicket: false,
+      stakeMultiplier: 0.25,
+      verdict: "Couverture de résultats vérifiés encore limitée pour au moins une équipe : sélection exclue des tickets automatiques.",
+      reasons: ["Couverture officielle des équipes limitée", ...reliabilityGate.reasons],
+    };
+  }
 
   let valueAnalysis = null;
   if (bookmakerOdds) {
@@ -1398,7 +1633,12 @@ export function generateExpertAnalysis(pred, modelState, videoInsight = null) {
     maxIdx === 0 ? pred.home : maxIdx === 2 ? pred.away : "l'équilibre tactique entre les deux blocs";
   const topScore = pred.topScores[0];
   const secondScore = pred.topScores[1];
-  const totalValidated = modelState?.metrics?.total || 0;
+  const totalLearned = modelState?.trainingMetrics?.total || 0;
+  const performance = modelState?.metrics || {};
+  const performanceNote =
+    performance.accuracyPct === null || performance.accuracyPct === undefined
+      ? `performance officielle non mesurée (${performance.total || 0}/${MIN_PERFORMANCE_SAMPLE} pronostics évalués)`
+      : `performance pré-match ${performance.accuracyPct}% (${performance.correct}/${performance.total})`;
   const gen = modelState?.hyper?.learningGeneration || 1;
 
   const eloSentence =
@@ -1411,8 +1651,8 @@ export function generateExpertAnalysis(pred, modelState, videoInsight = null) {
   const xgSentence = `Côté occasions, l'IA projette ${pred.xg.home.toFixed(2)} xG pour ${pred.home} contre ${pred.xg.away.toFixed(2)} xG pour ${pred.away} (total ${pred.xg.total.toFixed(2)} xG, Clean Sheet ${pred.home} : ${pred.goals.cleanSheetHomePct}%), avec ${topScore.score} (${topScore.pct}%) puis ${secondScore.score} (${secondScore.pct}%) en scores exacts majeurs.`;
 
   const memSentence = videoInsight
-    ? `L'analyse vidéo Vision IA active (${videoInsight.fileName} — pressing ${videoInsight.pressingScore}/100, domination ${videoInsight.territorialTiltHome}%/${100 - videoInsight.territorialTiltHome}%) a été injectée dans les xG, en complément de la mémoire adaptative Génération #${gen} (${totalValidated} matchs appris).`
-    : `La mémoire auto-correctrice Génération #${gen} (${totalValidated} match(s) validé(s), affinité nul ${pred.elo.homeDrawAffinity.toFixed(2)} / ${pred.elo.awayDrawAffinity.toFixed(2)}) indique ${pred.goals.over15Pct}% sur le +1,5 buts et ${pred.goals.bttsYesPct}% sur le BTTS.`;
+    ? `Le signal Live vérifié (${videoInsight.fileName} — pressing ${videoInsight.pressingScore}/100, domination ${videoInsight.territorialTiltHome}%/${100 - videoInsight.territorialTiltHome}%) complète les données du match. La mémoire contient ${totalLearned} résultat(s) d'apprentissage; ${performanceNote}.`
+    : `La mémoire d'apprentissage Génération #${gen} contient ${totalLearned} résultat(s) intégré(s); ${performanceNote}. Les probabilités du match restent des estimations, avec ${pred.goals.over15Pct}% sur le +1,5 buts et ${pred.goals.bttsYesPct}% sur le BTTS.`;
 
   const bestVal = pred.valueAnalysis?.bestValue;
   let verdictSentence = "";

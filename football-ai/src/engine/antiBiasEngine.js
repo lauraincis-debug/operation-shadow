@@ -286,12 +286,22 @@ export function evaluateStrictReliabilityGate({
 /**
  * Certificat de Vérité Zéro-Hallucination attaché à chaque match / dossier.
  */
-export function buildTruthCertificate(rawMatch = {}, dossier = null) {
+export function buildTruthCertificate(rawMatch = {}, dossier = null, now = Date.now()) {
+  const verifiedAt = new Date(rawMatch.statusVerifiedAtIso || rawMatch.fetchedAtIso || "").getTime();
+  const allowedVerificationSources = [
+    "ESPN scoreboard",
+    "ESPN event summary",
+    "Football-Data.org",
+  ];
   const isLiveVerified = Boolean(
-    rawMatch.isRealInternet ||
-      (rawMatch.externalId &&
-        (String(rawMatch.externalId).startsWith("espn-") ||
-          String(rawMatch.externalId).startsWith("apifb-")))
+    rawMatch.isRealInternet === true &&
+      rawMatch.isLiveNetwork === true &&
+      rawMatch.isSnapshot !== true &&
+      rawMatch.isCached !== true &&
+      allowedVerificationSources.includes(rawMatch.statusVerificationSource) &&
+      Number.isFinite(verifiedAt) &&
+      now - verifiedAt >= -2 * 60 * 1000 &&
+      now - verifiedAt <= 3 * 60 * 1000
   );
 
   const fields = {
@@ -320,7 +330,7 @@ export function buildTruthCertificate(rawMatch = {}, dossier = null) {
       ? `🟢 VÉRIFIÉ INTERNET (${rawMatch.source || "Live API"})`
       : "🟡 SIMULATION PARAMÉTRIQUE LOCALE",
     officialEventId: rawMatch.externalId || null,
-    fetchedAtIso: rawMatch.fetchedAtIso || new Date().toISOString(),
+    fetchedAtIso: rawMatch.statusVerifiedAtIso || rawMatch.fetchedAtIso || null,
     completenessPct,
     verifiedFields: fields,
     strictPolicyNote:

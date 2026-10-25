@@ -1,6 +1,7 @@
-import { useState, useMemo } from "react";
-import { LEAGUES } from "../data/clubs.js";
+import { useEffect, useState, useMemo } from "react";
+import { LEAGUES, canonicalTeamName, normalizeKey } from "../data/clubs.js";
 import { computeHeadToHeadComparison } from "../engine/predictor.js";
+import { fetchDeepMatchDossier } from "../services/liveMatchesApi.js";
 
 function RadarChartSVG({ axes, nameA, nameB }) {
   const size = 270;
@@ -90,15 +91,108 @@ function RadarChartSVG({ axes, nameA, nameB }) {
   );
 }
 
-export default function HeadToHeadTab({ modelState, defaultHome, defaultAway, defaultLeague, onSendToPredict }) {
+export default function HeadToHeadTab({
+  modelState,
+  predictions = [],
+  liveMatches = [],
+  defaultHome,
+  defaultAway,
+  defaultLeague,
+  onSendToPredict,
+}) {
   const [teamA, setTeamA] = useState(defaultHome || "PSG");
   const [teamB, setTeamB] = useState(defaultAway || "Real Madrid");
   const [league, setLeague] = useState(defaultLeague || "ucl");
+  const [historyDossier, setHistoryDossier] = useState(null);
+  const [historyLoading, setHistoryLoading] = useState(false);
 
   const h2hData = useMemo(() => {
     if (!teamA.trim() || !teamB.trim()) return null;
     return computeHeadToHeadComparison(teamA, teamB, league, modelState);
   }, [teamA, teamB, league, modelState]);
+
+  const teamAKey = normalizeKey(canonicalTeamName(teamA));
+  const teamBKey = normalizeKey(canonicalTeamName(teamB));
+  const matchingFixture = useMemo(
+    () =>
+      liveMatches.find((match) => {
+        if ((match.sport || "soccer") !== "soccer" || !match.rawEventId || !match.sportPath) return false;
+        const homeKey = normalizeKey(canonicalTeamName(match.home));
+        const awayKey = normalizeKey(canonicalTeamName(match.away));
+        return (
+          (homeKey === teamAKey && awayKey === teamBKey) ||
+          (homeKey === teamBKey && awayKey === teamAKey)
+        );
+      }) || null,
+    [liveMatches, teamAKey, teamBKey]
+  );
+
+  useEffect(() => {
+    if (!matchingFixture) {
+      setHistoryDossier(null);
+      setHistoryLoading(false);
+      return undefined;
+    }
+    let active = true;
+    setHistoryLoading(true);
+    fetchDeepMatchDossier(matchingFixture)
+      .then((dossier) => {
+        if (active) setHistoryDossier(dossier || null);
+      })
+      .catch(() => {
+        if (active) setHistoryDossier(null);
+      })
+      .finally(() => {
+        if (active) setHistoryLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [matchingFixture?.externalId, matchingFixture?.rawEventId]);
+
+  const officialHistory = useMemo(() => {
+    const localRows = predictions
+      .filter(
+        (prediction) =>
+          prediction.verifiedResult === true &&
+          prediction.resultSource === "official-feed" &&
+          typeof prediction.scoreHome === "number" &&
+          typeof prediction.scoreAway === "number" &&
+          ((normalizeKey(canonicalTeamName(prediction.home)) === teamAKey &&
+            normalizeKey(canonicalTeamName(prediction.away)) === teamBKey) ||
+            (normalizeKey(canonicalTeamName(prediction.home)) === teamBKey &&
+              normalizeKey(canonicalTeamName(prediction.away)) === teamAKey))
+      )
+      .map((prediction) => ({
+        id: `memory-${prediction.externalId || prediction.id}`,
+        dateIso: prediction.kickoffIso || prediction.date,
+        dateLabel: prediction.date || "Date officielle disponible",
+        homeTeam: prediction.home,
+        awayTeam: prediction.away,
+        score: `${prediction.scoreHome} - ${prediction.scoreAway}`,
+        competition: LEAGUES[prediction.league]?.name || prediction.league || "Football",
+        sourceLabel: "Score officiel intégré",
+      }));
+    const dossierRows = (historyDossier?.h2hGames || [])
+      .filter((game) => {
+        const exactScore = /^\s*\d+\s*[-–:]\s*\d+\s*$/.test(String(game.score || ""));
+        const playedAt = new Date(game.dateIso || "").getTime();
+        return Boolean(game.homeTeam && game.awayTeam && exactScore && Number.isFinite(playedAt) && playedAt <= Date.now());
+      })
+      .map((game) => ({
+        ...game,
+        dateLabel: game.dateExactFr || game.dateIso || "Date non fournie",
+        sourceLabel: "Dossier ESPN · score et date publiés",
+      }));
+    const unique = new Map();
+    for (const row of [...dossierRows, ...localRows]) {
+      const key = `${normalizeKey(row.homeTeam)}|${normalizeKey(row.awayTeam)}|${row.dateIso || row.dateLabel}|${row.score}`;
+      if (!unique.has(key)) unique.set(key, row);
+    }
+    return Array.from(unique.values())
+      .sort((a, b) => String(b.dateIso || "").localeCompare(String(a.dateIso || "")))
+      .slice(0, 10);
+  }, [predictions, historyDossier, teamAKey, teamBKey]);
 
   const classicRivalries = [
     ["Real Madrid", "FC Barcelone", "liga"],
@@ -179,6 +273,84 @@ export default function HeadToHeadTab({ modelState, defaultHome, defaultAway, de
             🎯 Envoyer ce duel vers le Prédicteur Coupon
           </button>
         </div>
+      </div>
+
+      <div className="fai-panel">
+        <div className="fai-section-title" style={{ justifyContent: "space-between", flexWrap: "wrap" }}>
+          <span>📚 Historique vérifié — confrontations &amp; derniers résultats</span>
+          <span style={{ color: "#8790b8", fontSize: 10 }}>
+            {matchingFixture ? `Dossier lié à ${matchingFixture.leagueLabel || matchingFixture.league}` : "Sources officielles disponibles si un événement correspondant est identifié"}
+          </span>
+        </div>
+
+        {historyLoading && (
+          <p style={{ color: "#9aa3c7", fontSize: 12, marginBottom: 10 }}>
+            Chargement du dossier officiel ESPN pour cette affiche…
+          </p>
+        )}
+
+        {officialHistory.length > 0 ? (
+          <div style={{ display: "grid", gap: 7 }}>
+            {officialHistory.map((game, index) => (
+              <div
+                key={`${game.id || index}-${index}`}
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "minmax(90px, 0.7fr) minmax(150px, 1.7fr) auto",
+                  alignItems: "center",
+                  gap: 10,
+                  padding: "9px 10px",
+                  borderRadius: 10,
+                  background: "rgba(255,255,255,0.035)",
+                  border: "1px solid rgba(255,255,255,0.06)",
+                }}
+              >
+                <span style={{ color: "#9aa3c7", fontSize: 10 }}>{game.dateLabel}</span>
+                <span style={{ color: "#e9ecff", fontSize: 11 }}>
+                  {game.homeTeam} <strong style={{ color: "#00e5ff" }}>{game.score}</strong> {game.awayTeam}
+                  <small style={{ display: "block", color: "#7f89b2", marginTop: 2 }}>
+                    {game.competition || "Compétition non fournie"} · {game.sourceLabel}
+                  </small>
+                </span>
+                <span style={{ color: "#00e676", fontFamily: "var(--font-mono)", fontSize: 10 }}>
+                  OFFICIEL
+                </span>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p style={{ color: "#9aa3c7", fontSize: 12, lineHeight: 1.55 }}>
+            {matchingFixture
+              ? "Aucun score H2H officiel publié dans le dossier obtenu. Aucun résultat n'est inventé; les derniers matchs confirmés apparaîtront lorsqu'ESPN les fournit."
+              : "Aucun événement officiel de cette paire n'est actuellement lié au calendrier chargé et aucun score officiel correspondant n'est enregistré localement. Les simulations ci-dessous restent paramétriques, pas un historique réel."}
+          </p>
+        )}
+
+        {(historyDossier?.homeRecent?.length > 0 || historyDossier?.awayRecent?.length > 0) && (
+          <div className="fai-grid-2" style={{ marginTop: 12 }}>
+            {[
+              [matchingFixture?.home || teamA, historyDossier?.homeRecent || []],
+              [matchingFixture?.away || teamB, historyDossier?.awayRecent || []],
+            ].map(([club, recentGames]) => (
+              <div key={club} className="fai-stat-card" style={{ padding: 11 }}>
+                <div style={{ color: "#00e5ff", fontSize: 11, fontWeight: 800, marginBottom: 7 }}>
+                  5–6 derniers matchs publiés · {club}
+                </div>
+                {recentGames.length > 0 ? recentGames.map((game, index) => (
+                  <div key={`${game.id || index}-${index}`} style={{ display: "flex", justifyContent: "space-between", gap: 8, padding: "5px 0", borderBottom: "1px solid rgba(255,255,255,0.05)", fontSize: 10 }}>
+                    <span style={{ color: "#9aa3c7" }}>{game.dateExactFr || game.dateIso || "Date non fournie"}</span>
+                    <span style={{ textAlign: "right", color: "#dfe5ff" }}>{game.opponent || "Adversaire non fourni"} · {game.score || "Score non fourni"}</span>
+                  </div>
+                )) : <span style={{ color: "#8790b8", fontSize: 10 }}>Aucun résultat récent publié.</span>}
+              </div>
+            ))}
+          </div>
+        )}
+        {historyDossier?.fetchedAtIso && (
+          <div style={{ color: "#68729b", fontSize: 9, marginTop: 8 }}>
+            Dossier chargé le {new Date(historyDossier.fetchedAtIso).toLocaleString("fr-FR")} · historique fourni par le flux, sans extrapolation.
+          </div>
+        )}
       </div>
 
       {h2hData && (

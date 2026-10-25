@@ -1,47 +1,87 @@
-# ⚡ FOOTBALL AI ULTRA v3
+# ⚡ FOOTBALL AI ULTRA v6.4
 
-🌐 **Application en production :** **[https://football-ai-43e33.web.app](https://football-ai-43e33.web.app)**
+🌐 **Application en production :** [https://football-ai-43e33.web.app](https://football-ai-43e33.web.app)
 
-[![Ouvrir dans Google Cloud Shell](https://gstatic.com/cloudssh/images/open-btn.svg)](https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com/lauraincis-debug/football-ai.git&tutorial=CLOUD_SHELL_GUIDE.md&page=shell)
+Application web & PWA d'analyse tactique, de prédiction footballistique et d'apprentissage. Le site statique est construit dans `www/` et hébergé sur Firebase Hosting (`football-ai-43e33`).
 
-Application web & PWA installable d'analyse tactique, de prédiction footballistique hybride et d'auto-apprentissage continu, pré-compilée dans `www/` et déployée sur **Firebase Hosting (`football-ai-43e33`)**.
-
----
-
-## 🚀 Les 8 Modules de Football AI Ultra v3
-
-1. **📡 `Matchs Live` (`Hier` · `Aujourd'hui` · `Demain` · `J+2`) + Vraies APIs Football** (`src/services/liveMatchesApi.js`) :
-   - Récupération temps réel sans clé requise (Ligue 1, Premier League, LaLiga, Serie A, Bundesliga, Champions League, Europa League, CAN / FIFA).
-   - Connecteur officiel **`API-Football v3`** (`v3.football.api-sports.io`) + importateur **`Opta / FBref xG`** (CSV, JSON ou *Pack Opta Top Clubs* en 1 clic).
-2. **⚽ `Prédire`** (`src/engine/predictor.js`) :
-   - +110 clubs & sélections internationales, **Poisson Bivarié + Correction de Dixon-Coles** (`8×8`), **Elo Dynamique (Margin-of-Victory)**, **10 marchés cohérents**, **Value Bet + Critère de Kelly ¼**.
-3. **⚔️ `Face-à-Face`** (`src/components/HeadToHeadTab.jsx`) :
-   - Radar SVG interactif sur **6 axes**, option terrain neutre et **10 000 simulations Monte-Carlo** en direct.
-4. **🎥 `Vidéo IA`** (`src/engine/videoAnalyzer.js` & `src/components/VideoAnalysisTab.jsx`) :
-   - Upload vidéo local (`.mp4`, `.webm`, `.mov`) analysé image par image sur Canvas 2D : détection pelouse, **heatmap tactique 3 zones**, **indice de pressing haut**, **vitesse de transition** et modificateurs xG injectables dans le prédicteur.
-5. **👑 `Fantasy IA`** (`src/data/players.js` & `src/components/FantasyTab.jsx`) :
-   - Base de **50 stars mondiales** notées dynamiquement selon les vrais matchs du jour/lendemain et optimiseur de **11 titulaire optimal sous budget `100 M€`** (`4-3-3`, `4-4-2`, `3-4-3`, `3-5-2` + Capitaine `×2`).
-6. **🎯 `Coupon`** : Simulateur de combiné multi-matchs (`FCFA` / `€`), EV mathématique et partage direct WhatsApp / Telegram.
-7. **📋 `Historique`** : Saisie des scores réels et synchronisation Cloud Firebase temps réel.
-8. **📊 `Modèle` (Mémoire Ultra-Développée & Auto-Amélioration Continue)** :
-   - Absorption automatique des matchs terminés (`FT`), **Journal d'Autopsie Post-Mortem des Erreurs**, ajustement individuel des clubs et **Auto-Évolution Multi-Époques** (*Brier Score : `0.640` → `0.407` → `0.385`*).
+> Les estimations de probabilité ne garantissent aucun résultat ni gain. La performance prospective reste affichée « — » avant 30 pronostics admissibles, horodatés avant le match et résolus par un résultat officiel.
 
 ---
 
-## ⚡ Mise à jour en 1 commande via Google Cloud Shell
+## Modules
+
+1. **📡 Matchs Live** (`src/services/liveMatchesApi.js`) : catalogue de 42 flux ESPN couvrant 7 sports, disponible sans clé, complété par Football-Data.org quand son connecteur serveur est configuré. Les snapshots et caches sont identifiés et ne valident jamais un statut Live.
+2. **⚽ Prédire** (`src/engine/predictor.js`) : 167 équipes, Poisson bivarié/Dixon-Coles, Elo dynamique et marchés cohérents. Les données de calibration synthétiques sont exclues de la performance publiée.
+3. **⚔️ Face-à-Face** (`src/components/HeadToHeadTab.jsx`) : comparaisons et historique uniquement lorsque des résultats sourcés sont disponibles.
+4. **🎥 Vidéo IA** (`src/engine/videoAnalyzer.js`) : recherche et analyse vidéo bloquées sans revalidation récente du statut officiel « en cours »; toute rencontre terminée est rejetée.
+5. **👑 Fantasy IA** : simulation d'équipe sous budget, sans garantie de résultat.
+6. **🎯 Coupon** : un ticket automatique n'est proposé que si au moins deux rencontres officielles, fraîches, futures et admissibles sont présentes; sinon le système s'abstient (NO-BET). Aucune mise n'est automatisée.
+7. **📋 Historique / 📊 Performance** : seules les prédictions pré-match évaluables et les données officielles sont comptées. Le rejeu d'apprentissage est séparé du taux prospectif.
+8. **Bulle Performance & apprentissage** : accessible depuis toutes les pages; elle distingue le taux réellement mesuré, la taille d'échantillon et les résultats intégrés à l'apprentissage.
+
+---
+
+## Architecture des données et secrets
+
+Le backend FastAPI est dans `backend/`. Les appels Football-Data.org et API-Football ne partent jamais de React : les clés sont lues exclusivement dans l'environnement du serveur. Aucun champ de clé n'est conservé dans l'interface; une ancienne clé éventuellement enregistrée dans le stockage local est supprimée au prochain chargement.
+
+Routes principales :
+
+- `GET /api/health` — état des fournisseurs et du cache, sans révéler de secret;
+- `GET /api/football/fixtures?date=AAAA-MM-JJ` — matchs Football-Data.org;
+- `GET /api/football/results?dateFrom=AAAA-MM-JJ&dateTo=AAAA-MM-JJ` — résultats terminés;
+- `GET /api/football/standings/{code}` — classement Football-Data.org;
+- `GET /api/football/matches/{id}?revalidate=true` — revalidation à la demande pour une vérification Live;
+- `GET /api/football/player-stats?team_name=…&season=…&league_id=…` — résolution du nom d'équipe exacte côté serveur puis statistiques joueurs API-Football, si configuré; `team_id` peut aussi être fourni directement.
+
+Les réponses fournisseurs sont mises en cache dans PostgreSQL/JSONB avec TTL différenciés (fixtures, résultats, classements et joueurs). En absence de `DATABASE_URL`, le backend démarre avec un cache mémoire de repli : il ne faut pas le confondre avec le cache PostgreSQL de production. En cas d'erreur fournisseur, une réponse périmée peut être rendue comme archive, mais elle est explicitement marquée `isSnapshot`/`isCached`; elle ne peut ni certifier le direct ni autoriser une vidéo. Le Service Worker contourne entièrement le cache et le mode hors ligne pour `/api/*`.
+
+**Connecteurs optionnels :** `FOOTBALL_DATA_API_KEY`, `API_FOOTBALL_KEY`, `DATABASE_URL`. L'usage de base reste sans compte ni clé grâce aux flux ESPN publics. Les quotas des fournisseurs à clé restent soumis aux offres de ces fournisseurs; le cache PostgreSQL réduit les requêtes répétées.
+
+---
+
+## Développement local
+
+Lancer le backend dans un premier terminal :
 
 ```bash
-rm -rf ~/f && git clone -b arena/4139cd07-operation-shadow --depth 1 https://github.com/lauraincis-debug/operation-shadow.git ~/f && bash ~/f/football-ai/go.sh
+cd backend
+python -m venv .venv
+source .venv/bin/activate
+pip install -r requirements-dev.txt
+uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```
+
+Lancer l'interface dans un second terminal, depuis `football-ai/` :
+
+```bash
+npm install
+npm run dev
+```
+
+Vite relaie `/api/*` vers `http://127.0.0.1:8000` côté serveur de développement; le navigateur utilise uniquement des URL relatives. Pour modifier la cible du proxy, définir `VITE_API_TARGET` (ce n'est pas une clé API).
+
+Pour activer les fournisseurs en local, définir les variables dans l'environnement du processus Uvicorn. `backend/.env.example` est un modèle sans secret; l'application ne lit pas automatiquement les fichiers `.env`.
+
+```bash
+npm run test:model
+npm run build
+(cd backend && pytest -q)
+```
+
+Le build écrit dans `www/` et `cloe-www/` et génère les données Cloé. Un avertissement de taille de bundle Vite n'empêche pas la compilation.
 
 ---
 
-## 🛠️ Développement local
+## Déploiement
 
-```bash
-npm install          # Installer les dépendances
-npm run dev          # Lancer le serveur de développement
-npm run test:model   # Lancer les tests mathématiques & le benchmark v3
-npm run build        # Recompiler la production vers ./www
-npm run deploy       # Déployer sur Firebase Hosting
-```
+`firebase.json` relaie `/api/**` vers le service Cloud Run `football-ai-api` en `europe-west1`; le reste du trafic va au site statique. Cette règle ne crée ni ne déploie le service Cloud Run. **Le backend n'est pas encore déployé** : les routes `/api` de production ne seront opérationnelles qu'après provisionnement de ce service, de ses secrets côté serveur et d'une base PostgreSQL accessible. Aucun déploiement n'est effectué par les commandes de test/build.
+
+Procédure d'exploitation attendue :
+
+1. Créer une instance PostgreSQL et la base `football_ai`; configurer l'accès réseau Cloud Run et fournir `DATABASE_URL` via Secret Manager.
+2. Enregistrer les clés optionnelles dans Secret Manager (`FOOTBALL_DATA_API_KEY`, `API_FOOTBALL_KEY`), sans les inscrire dans le dépôt, Firebase Hosting ou des variables `VITE_*`.
+3. Construire et déployer `backend/Dockerfile` sous le nom de service `football-ai-api`, région `europe-west1`, avec accès non authentifié pour préserver l'accès public; appliquer les restrictions réseau/quota adaptées.
+4. Déployer ensuite le site Firebase. Vérifier `/api/health`, les tests de connecteur et la disponibilité PostgreSQL avant d'annoncer le service opérationnel.
+
+Le site web principal est `football-ai-43e33.web.app`; Cloé reste séparée et conserve ses URL/identités visuelles existantes. Le pont Express Betclic reste indépendant et en attente de confirmation.

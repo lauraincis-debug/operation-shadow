@@ -1,19 +1,131 @@
 import { canonicalTeamName, normalizeKey } from "../data/clubs.js";
 
 // ============================================================================
-// OMNI-SPORT LIVE INTERNET HARVESTER & ZERO-HALLUCINATION CONNECTOR v6.4 Certifiée Intégrale
-// 1. 44 Compétitions Live Temps Réel sur 7 Sports (Football, NBA/Basket,
-//    Tennis ATP/WTA, NFL, Hockey NHL, Baseball MLB, MMA/UFC)
-// 2. Cache Stale-While-Revalidate Ultra-Vif (< 25 ms) + Snapshot Cloud Vérifié
-// 3. Inspection Profonde /summary?event={id} : H2H exacts avec dates & lieux,
-//    forme récente, jours de repos, leaders joueurs, blessés & arbitres !
+// OMNI-SPORT LIVE INTERNET HARVESTER & ZERO-HALLUCINATION CONNECTOR v6.4
+// 1. 42 endpoints de compétitions sur 7 sports (compteur dérivé du catalogue)
+// 2. Cache SWR explicitement marqué comme cache + contrôle d'âge du snapshot
+// 3. Dossiers ESPN : H2H, résultats récents, jours de repos et données publiées
 // ============================================================================
 
-const API_KEYS_STORAGE = "football_ai_external_apis_v3";
+const API_SETTINGS_STORAGE = "football_ai_server_connectors_v1";
+const LEGACY_API_KEYS_STORAGE = "football_ai_external_apis_v3";
 const SWR_CACHE_PREFIX = "fai_v6_swr_day_";
 const DOSSIER_CACHE = new Map();
 const MEMORY_DAY_CACHE = new Map();
 let CLOUD_SNAPSHOT_PROMISE = null;
+
+export const LIVE_SNAPSHOT_MAX_AGE_MS = 6 * 60 * 60 * 1000;
+export const LIVE_FEED_MAX_AGE_MS = 3 * 60 * 1000;
+const LIVE_STATUS_MAX_AGE_MS = 5 * 60 * 1000;
+const CLOCK_SKEW_TOLERANCE_MS = 2 * 60 * 1000;
+
+function parseTimestamp(value) {
+  const time = value ? new Date(value).getTime() : NaN;
+  return Number.isFinite(time) ? time : null;
+}
+
+export function isCloudSnapshotFresh(snapshot, now = Date.now(), maxAgeMs = LIVE_SNAPSHOT_MAX_AGE_MS) {
+  const generatedAt = parseTimestamp(
+    snapshot?.generatedAtIso || snapshot?.generatedAt || snapshot?.updatedAtIso
+  );
+  if (generatedAt === null) return false;
+  const ageMs = now - generatedAt;
+  return ageMs >= -CLOCK_SKEW_TOLERANCE_MS && ageMs <= maxAgeMs;
+}
+
+export function getCloudSnapshotAgeMs(snapshot, now = Date.now()) {
+  const generatedAt = parseTimestamp(
+    snapshot?.generatedAtIso || snapshot?.generatedAt || snapshot?.updatedAtIso
+  );
+  return generatedAt === null ? null : Math.max(0, now - generatedAt);
+}
+
+export function isMatchFeedFresh(match, now = Date.now(), maxAgeMs = LIVE_FEED_MAX_AGE_MS) {
+  if (
+    match?.isRealInternet !== true ||
+    match?.isLiveNetwork !== true ||
+    match?.isSnapshot === true ||
+    match?.isCached === true
+  ) {
+    return false;
+  }
+  const verifiedAt = parseTimestamp(match?.statusVerifiedAtIso || match?.fetchedAtIso);
+  if (verifiedAt === null) return false;
+  const ageMs = now - verifiedAt;
+  return ageMs >= -CLOCK_SKEW_TOLERANCE_MS && ageMs <= maxAgeMs;
+}
+
+function maxLiveDurationMs(sport = "soccer") {
+  const hoursBySport = {
+    soccer: 4.5,
+    basketball: 4.5,
+    football: 6,
+    hockey: 4.5,
+    baseball: 6.5,
+    tennis: 8,
+    mma: 8,
+  };
+  return (hoursBySport[sport] || 5) * 60 * 60 * 1000;
+}
+
+/** Un statut « en cours » n'est exploitable que s'il vient d'un flux officiel récent. */
+export function isVerifiedCurrentlyLiveMatch(match, now = Date.now()) {
+  if (
+    !match ||
+    match.completed === true ||
+    match.state !== "in" ||
+    match.isRealInternet !== true ||
+    match.isLiveNetwork !== true ||
+    match.isSnapshot === true ||
+    match.isCached === true ||
+    !match.statusVerifiedAtIso ||
+    !["ESPN scoreboard", "ESPN event summary", "Football-Data.org"].includes(
+      match.statusVerificationSource
+    )
+  ) {
+    return false;
+  }
+  if (!match.externalId || !match.kickoffIso) return false;
+
+  const kickoff = parseTimestamp(match.kickoffIso);
+  if (kickoff === null) return false;
+  const sinceKickoff = now - kickoff;
+  if (
+    sinceKickoff < -CLOCK_SKEW_TOLERANCE_MS ||
+    sinceKickoff > maxLiveDurationMs(match.sport)
+  ) {
+    return false;
+  }
+
+  const maxAge = match.statusVerifiedAtIso ? LIVE_STATUS_MAX_AGE_MS : LIVE_FEED_MAX_AGE_MS;
+  return isMatchFeedFresh(match, now, maxAge);
+}
+
+function localDateKey(timestamp) {
+  const date = new Date(timestamp);
+  if (Number.isNaN(date.getTime())) return "";
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+/** Extrait uniquement la journée demandée, jamais le snapshot multi-jours entier. */
+export function getSnapshotMatchesForDate(snapshot, isoDate) {
+  const all = [
+    ...Object.values(snapshot?.days || {}).flat(),
+    ...(Array.isArray(snapshot?.allMatches) ? snapshot.allMatches : []),
+  ];
+  const seen = new Set();
+  return all.filter((match) => {
+    if (!match?.externalId || !match?.kickoffIso || localDateKey(match.kickoffIso) !== isoDate) {
+      return false;
+    }
+    if (seen.has(match.externalId)) return false;
+    seen.add(match.externalId);
+    return true;
+  });
+}
 
 export const OMNI_SPORT_ENDPOINTS = [
   // ==================== ⚽ FOOTBALL MONDIAL (32 COMPÉTITIONS) ====================
@@ -75,41 +187,31 @@ export const OMNI_SPORT_ENDPOINTS = [
 
 export const ESPN_LEAGUE_ENDPOINTS = OMNI_SPORT_ENDPOINTS.filter((e) => e.sport === "soccer");
 
-const API_FOOTBALL_LEAGUE_MAP = {
-  2: "ucl",
-  3: "europa",
-  848: "europa",
-  61: "ligue1",
-  62: "ligue1",
-  39: "premier",
-  40: "premier",
-  140: "liga",
-  78: "bundesliga",
-  135: "seriea",
-  6: "international",
-  12: "caf",
-  307: "saudi",
-  253: "world",
-  71: "world",
-};
-
 export function loadExternalApiConfig() {
+  const safeConfig = { provider: "auto", autoLearnResults: true };
   try {
-    const raw = localStorage.getItem(API_KEYS_STORAGE);
-    if (raw) return JSON.parse(raw);
+    // Supprime toute ancienne clé API qui aurait été enregistrée dans le navigateur.
+    localStorage.removeItem(LEGACY_API_KEYS_STORAGE);
+    const raw = localStorage.getItem(API_SETTINGS_STORAGE);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      safeConfig.autoLearnResults = parsed?.autoLearnResults !== false;
+    }
+    localStorage.setItem(API_SETTINGS_STORAGE, JSON.stringify(safeConfig));
   } catch {
-    // ignore
+    // Le mode public reste utilisable même si le stockage local est indisponible.
   }
-  return {
-    provider: "auto",
-    apiFootballKey: "",
-    autoLearnResults: true,
-  };
+  return safeConfig;
 }
 
-export function saveExternalApiConfig(cfg) {
+export function saveExternalApiConfig(cfg = {}) {
+  const safeConfig = {
+    provider: "auto",
+    autoLearnResults: cfg.autoLearnResults !== false,
+  };
   try {
-    localStorage.setItem(API_KEYS_STORAGE, JSON.stringify(cfg));
+    localStorage.setItem(API_SETTINGS_STORAGE, JSON.stringify(safeConfig));
+    localStorage.removeItem(LEGACY_API_KEYS_STORAGE);
   } catch {
     // ignore
   }
@@ -184,6 +286,10 @@ function extractCompetitorLeaders(comp) {
  */
 export function parseOmniEspnEvent(ev, endpointMeta) {
   const results = [];
+  const sourceFetchedAtIso = endpointMeta.fetchedAtIso || new Date().toISOString();
+  const isLiveNetwork = endpointMeta.isLiveNetwork !== false;
+  const statusVerifiedAtIso = endpointMeta.statusVerifiedAtIso ||
+    (isLiveNetwork ? sourceFetchedAtIso : null);
   const tournamentTitle = ev.name || ev.shortName || endpointMeta.label;
   const tournamentVenue = ev.venue || null;
 
@@ -312,7 +418,14 @@ export function parseOmniEspnEvent(ev, endpointMeta) {
       rawEventId: String(ev.id),
       rawCompId: String(comp.id || ev.id),
       isRealInternet: true,
-      fetchedAtIso: new Date().toISOString(),
+      isLiveNetwork,
+      isCached: endpointMeta.isCached === true,
+      isSnapshot: endpointMeta.isSnapshot === true,
+      fetchedAtIso: sourceFetchedAtIso,
+      ...(statusVerifiedAtIso ? { statusVerifiedAtIso } : {}),
+      ...(isLiveNetwork
+        ? { statusVerificationSource: endpointMeta.statusVerificationSource || "ESPN scoreboard" }
+        : {}),
       source: "ESPN Live API",
       sport: endpointMeta.sport,
       sportPath: endpointMeta.sportPath,
@@ -369,79 +482,86 @@ async function fetchWithTimeout(url, options = {}, timeoutMs = 6500) {
   const ctrl = new AbortController();
   const id = setTimeout(() => ctrl.abort(), timeoutMs);
   try {
-    return await fetch(url, { ...options, signal: ctrl.signal });
+    return await fetch(url, { cache: "no-store", ...options, signal: ctrl.signal });
   } finally {
     clearTimeout(id);
   }
 }
 
-async function fetchFromApiFootball(isoDate, apiKey) {
-  const res = await fetchWithTimeout(`https://v3.football.api-sports.io/fixtures?date=${isoDate}`, {
-    headers: { "x-apisports-key": apiKey.trim() },
-  });
-  if (!res.ok) throw new Error(`API-Football HTTP ${res.status}`);
-  const data = await res.json();
-  const list = data?.response || [];
-  return list
-    .filter((item) => API_FOOTBALL_LEAGUE_MAP[item.league?.id])
-    .map((item) => {
-      const leagueId = API_FOOTBALL_LEAGUE_MAP[item.league.id];
-      const statusShort = item.fixture?.status?.short || "NS";
-      const completed = ["FT", "AET", "PEN"].includes(statusShort);
-      const isLive = ["1H", "HT", "2H", "ET", "LIVE"].includes(statusShort);
-      const dt = item.fixture?.date ? new Date(item.fixture.date) : null;
-      const timeStr = dt
-        ? dt.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })
-        : "--:--";
-      const venueName = item.fixture?.venue?.name || "";
-      const venueCity = item.fixture?.venue?.city || "";
+async function fetchFootballDataForDay(isoDate) {
+  try {
+    const res = await fetchWithTimeout(
+      `/api/football/fixtures?date=${encodeURIComponent(isoDate)}`,
+      { cache: "no-store" },
+      6500
+    );
+    if (!res.ok) return null;
+    const payload = await res.json();
+    const matches = Array.isArray(payload?.matches) ? payload.matches : [];
+    return {
+      ...payload,
+      matches: matches.map((match) => {
+        const homeRaw = match.homeRaw || match.home || "";
+        const awayRaw = match.awayRaw || match.away || "";
+        return {
+          ...match,
+          homeRaw,
+          awayRaw,
+          home: canonicalTeamName(homeRaw),
+          away: canonicalTeamName(awayRaw),
+          sport: "soccer",
+          source: "Football-Data.org",
+        };
+      }),
+    };
+  } catch {
+    return null;
+  }
+}
+
+export async function fetchApiFootballPlayerStats(match, teamName) {
+  if (!match || !String(teamName || "").trim()) {
+    return { available: false, matched: false, reason: "Nom d'équipe manquant", players: [] };
+  }
+  const leagueIds = {
+    premier: 39,
+    liga: 140,
+    bundesliga: 78,
+    seriea: 135,
+    ligue1: 61,
+    ucl: 2,
+    europa: 3,
+    saudi: 307,
+  };
+  const kickoff = match.kickoffIso ? new Date(match.kickoffIso) : new Date();
+  const season = Number.isFinite(kickoff.getTime()) ? kickoff.getUTCFullYear() : new Date().getUTCFullYear();
+  const params = new URLSearchParams({ team_name: String(teamName).trim(), season: String(season) });
+  const leagueId = leagueIds[match.league];
+  if (leagueId) params.set("league_id", String(leagueId));
+  try {
+    const response = await fetchWithTimeout(
+      `/api/football/player-stats?${params.toString()}`,
+      { cache: "no-store" },
+      9000
+    );
+    let payload = null;
+    try {
+      payload = await response.json();
+    } catch {
+      payload = null;
+    }
+    if (!response.ok) {
       return {
-        externalId: `apifb-${item.fixture?.id}`,
-        rawEventId: String(item.fixture?.id || ""),
-        isRealInternet: true,
-        fetchedAtIso: new Date().toISOString(),
-        source: "API-Football Pro v3",
-        sport: "soccer",
-        sportPath: "soccer/api-football",
-        leagueSlug: String(item.league?.name || ""),
-        league: leagueId,
-        leagueLabel: `${item.league?.name || "Football"} 🌍`,
-        homeRaw: item.teams?.home?.name || "",
-        awayRaw: item.teams?.away?.name || "",
-        home: canonicalTeamName(item.teams?.home?.name || ""),
-        away: canonicalTeamName(item.teams?.away?.name || ""),
-        homeLogo: item.teams?.home?.logo || "",
-        awayLogo: item.teams?.away?.logo || "",
-        homeForm: "",
-        awayForm: "",
-        homeRecord: "",
-        awayRecord: "",
-        kickoffIso: item.fixture?.date || "",
-        timeStr,
-        dateFr: dt ? dt.toLocaleDateString("fr-FR") : "",
-        fullDateFr: dt
-          ? dt.toLocaleDateString("fr-FR", {
-              weekday: "short",
-              day: "2-digit",
-              month: "short",
-              year: "numeric",
-            })
-          : "",
-        venue: venueName,
-        venueCity,
-        venueFull: [venueName, venueCity].filter(Boolean).join(", "),
-        state: completed ? "post" : isLive ? "in" : "pre",
-        completed,
-        statusText: isLive
-          ? `🔴 ${item.fixture?.status?.elapsed || ""}'`
-          : completed
-            ? "Terminé"
-            : `🕒 ${timeStr}`,
-        scoreHome: item.goals?.home ?? null,
-        scoreAway: item.goals?.away ?? null,
-        liveOdds: null,
+        available: false,
+        matched: false,
+        reason: payload?.detail || "Connecteur API-Football non disponible",
+        players: [],
       };
-    });
+    }
+    return payload || { available: false, matched: false, players: [] };
+  } catch {
+    return { available: false, matched: false, reason: "Service de données indisponible", players: [] };
+  }
 }
 
 async function fetchOmniEspnForDay(offsetDays) {
@@ -449,23 +569,113 @@ async function fetchOmniEspnForDay(offsetDays) {
   const settled = await Promise.allSettled(
     OMNI_SPORT_ENDPOINTS.map(async (ep) => {
       const url = `https://site.api.espn.com/apis/site/v2/sports/${ep.sportPath}/scoreboard?dates=${compact}`;
-      const res = await fetchWithTimeout(url, {}, 6500);
-      if (!res.ok) return [];
+      const res = await fetchWithTimeout(url, { cache: "no-store" }, 6500);
+      if (!res.ok) throw new Error(`ESPN scoreboard HTTP ${res.status}`);
       const json = await res.json();
-      return (json.events || []).flatMap((ev) => parseOmniEspnEvent(ev, ep));
+      const verifiedAtIso = new Date().toISOString();
+      const sourceMeta = {
+        ...ep,
+        fetchedAtIso: verifiedAtIso,
+        statusVerifiedAtIso: verifiedAtIso,
+        statusVerificationSource: "ESPN scoreboard",
+        isLiveNetwork: true,
+      };
+      return (json.events || []).flatMap((ev) => parseOmniEspnEvent(ev, sourceMeta));
     })
   );
 
+  const successfulEndpoints = settled.filter((result) => result.status === "fulfilled").length;
   const flat = settled
-    .filter((r) => r.status === "fulfilled")
-    .flatMap((r) => r.value);
+    .filter((result) => result.status === "fulfilled")
+    .flatMap((result) => result.value);
 
   const seen = new Set();
-  return flat.filter((m) => {
-    const k = `${m.sport}__${normalizeKey(m.home)}__${normalizeKey(m.away)}__${m.dateFr}`;
-    if (seen.has(k)) return false;
-    seen.add(k);
+  const matches = flat.filter((match) => {
+    const key = `${match.sport}__${normalizeKey(match.home)}__${normalizeKey(match.away)}__${match.dateFr}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
     return true;
+  });
+  return { matches, successfulEndpoints };
+}
+
+function sameFixtureAcrossProviders(a, b) {
+  if (!a || !b || (a.sport || "soccer") !== (b.sport || "soccer")) return false;
+  const sameTeams =
+    normalizeKey(canonicalTeamName(a.homeRaw || a.home)) ===
+      normalizeKey(canonicalTeamName(b.homeRaw || b.home)) &&
+    normalizeKey(canonicalTeamName(a.awayRaw || a.away)) ===
+      normalizeKey(canonicalTeamName(b.awayRaw || b.away));
+  if (!sameTeams) return false;
+  const kickoffA = parseTimestamp(a.kickoffIso);
+  const kickoffB = parseTimestamp(b.kickoffIso);
+  return kickoffA !== null && kickoffB !== null
+    ? Math.abs(kickoffA - kickoffB) <= 90 * 60 * 1000
+    : a.dateFr === b.dateFr;
+}
+
+function mergeFootballSources(footballDataMatches = [], espnMatches = []) {
+  const usedEspn = new Set();
+  const merged = footballDataMatches.map((officialMatch) => {
+    const espnIndex = espnMatches.findIndex(
+      (match, index) => !usedEspn.has(index) && sameFixtureAcrossProviders(officialMatch, match)
+    );
+    if (espnIndex < 0) return officialMatch;
+    usedEspn.add(espnIndex);
+    const espnMatch = espnMatches[espnIndex];
+    const primary =
+      espnMatch.isLiveNetwork === true && espnMatch.isCached !== true
+        ? espnMatch
+        : officialMatch;
+    const finalScoreAvailable =
+      officialMatch.completed === true &&
+      typeof officialMatch.scoreHome === "number" &&
+      typeof officialMatch.scoreAway === "number";
+    return {
+      ...primary,
+      footballDataExternalId: officialMatch.externalId,
+      footballDataStatus: officialMatch.officialStatus || null,
+      ...(finalScoreAvailable
+        ? {
+            completed: true,
+            state: "post",
+            scoreHome: officialMatch.scoreHome,
+            scoreAway: officialMatch.scoreAway,
+            statusText: "Terminé — résultat Football-Data.org",
+            resultSource: "Football-Data.org",
+            statusVerifiedAtIso: officialMatch.statusVerifiedAtIso || primary.statusVerifiedAtIso,
+            statusVerificationSource:
+              officialMatch.statusVerificationSource || primary.statusVerificationSource,
+          }
+        : {}),
+      source: primary === espnMatch ? "ESPN + Football-Data.org" : "Football-Data.org + ESPN",
+    };
+  });
+
+  espnMatches.forEach((match, index) => {
+    if (!usedEspn.has(index)) merged.push(match);
+  });
+  return merged;
+}
+
+function markScheduleAsUnverified(matches = [], { snapshot = false } = {}) {
+  return matches.map((match) => {
+    const mustSuppressLive = match.state === "in" && match.completed !== true;
+    const { statusVerifiedAtIso, statusVerificationSource, ...rest } = match;
+    return {
+      ...rest,
+      ...(mustSuppressLive
+        ? {
+            state: "unknown",
+            statusText: "Statut Live historique non revalidé — actualisez le flux",
+          }
+        : {}),
+      isLiveNetwork: false,
+      isCached: true,
+      isSnapshot: snapshot,
+      statusVerifiedAtIso: undefined,
+      statusVerificationSource: undefined,
+    };
   });
 }
 
@@ -475,7 +685,7 @@ async function fetchOmniEspnForDay(offsetDays) {
  */
 export async function loadCloudVerifiedSnapshot() {
   if (!CLOUD_SNAPSHOT_PROMISE) {
-    CLOUD_SNAPSHOT_PROMISE = fetchWithTimeout("./live-omni-snapshot.json", {}, 3500)
+    CLOUD_SNAPSHOT_PROMISE = fetchWithTimeout("./live-omni-snapshot.json", { cache: "no-store" }, 3500)
       .then((r) => (r.ok ? r.json() : null))
       .catch(() => null);
   }
@@ -483,24 +693,33 @@ export async function loadCloudVerifiedSnapshot() {
 }
 
 /**
- * Lecture synchrone immédiate (0 ms) depuis la mémoire vive ou localStorage (Stale-While-Revalidate)
+ * Lecture synchrone du cache SWR. Un cache n'est jamais présenté comme un flux Live réseau.
  */
 export function peekCachedScheduleForOffset(offsetDays = 0) {
   const { iso } = getOffsetDateStrings(offsetDays);
-  if (MEMORY_DAY_CACHE.has(iso)) return MEMORY_DAY_CACHE.get(iso);
-  try {
-    const raw = localStorage.getItem(SWR_CACHE_PREFIX + iso);
-    if (raw) {
-      const parsed = JSON.parse(raw);
-      if (parsed?.matches?.length > 0) {
-        MEMORY_DAY_CACHE.set(iso, parsed);
-        return parsed;
-      }
+  let cached = MEMORY_DAY_CACHE.get(iso) || null;
+  if (!cached) {
+    try {
+      const raw = localStorage.getItem(SWR_CACHE_PREFIX + iso);
+      if (raw) cached = JSON.parse(raw);
+    } catch {
+      // ignore
     }
-  } catch {
-    // ignore
   }
-  return null;
+  if (!cached?.matches?.length) return null;
+
+  const cachedAt = parseTimestamp(cached.fetchedAtIso);
+  const cacheAgeMs = cachedAt === null ? null : Math.max(0, Date.now() - cachedAt);
+  return {
+    ...cached,
+    matches: markScheduleAsUnverified(cached.matches, { snapshot: cached.isSnapshot === true }),
+    providerUsed: `${cached.providerUsed || "Données précédemment chargées"} • cache${cacheAgeMs === null ? " d'âge inconnu" : ` · ${Math.round(cacheAgeMs / 60000)} min`}`,
+    isLiveNetwork: false,
+    isSnapshot: cached.isSnapshot === true,
+    isCached: true,
+    isTrustedResults: false,
+    cacheAgeMs,
+  };
 }
 
 function saveDayCache(iso, payload) {
@@ -513,72 +732,91 @@ function saveDayCache(iso, payload) {
 }
 
 /**
- * Récupère sur Internet TOUS les matchs Football (32 ligues) + TOUS les autres sports
- * (NBA, Tennis ATP/WTA, NFL, NHL, MLB, UFC) pour la journée demandée.
+ * Combine les rencontres Football-Data.org (FastAPI) avec le flux ESPN public multi-sport.
+ * Les clés fournisseurs ne sont jamais lues ni envoyées depuis le navigateur.
  */
 export async function fetchScheduleForOffset(offsetDays = 0, apiCfg = {}) {
   const { iso } = getOffsetDateStrings(offsetDays);
+  const [footballDataPayload, espnPayload] = await Promise.all([
+    fetchFootballDataForDay(iso),
+    fetchOmniEspnForDay(offsetDays).catch(() => ({ matches: [], successfulEndpoints: 0 })),
+  ]);
+  const footballDataMatches = footballDataPayload?.matches || [];
+  const espnMatches = espnPayload?.matches || [];
+  const matches = mergeFootballSources(footballDataMatches, espnMatches);
+  const hasFreshProviderResponse =
+    footballDataPayload?.isLiveNetwork === true || (espnPayload?.successfulEndpoints || 0) > 0;
+  const hasAnyProviderData =
+    matches.length > 0 || hasFreshProviderResponse || footballDataPayload?.isSnapshot === true;
 
-  let apiFbMatches = [];
-  if (apiCfg?.apiFootballKey?.trim()) {
-    try {
-      apiFbMatches = await fetchFromApiFootball(iso, apiCfg.apiFootballKey);
-    } catch {
-      // bascule automatique
+  if (hasAnyProviderData) {
+    const providers = [];
+    if (footballDataPayload?.available) providers.push("Football-Data.org v4");
+    if ((espnPayload?.successfulEndpoints || 0) > 0) {
+      providers.push(`ESPN multi-sport (${espnPayload.successfulEndpoints}/${OMNI_SPORT_ENDPOINTS.length} flux)`);
+    }
+    const cachedOnly = !hasFreshProviderResponse;
+    const fetchedAtIso = hasFreshProviderResponse
+      ? new Date().toISOString()
+      : footballDataPayload?.fetchedAtIso || new Date().toISOString();
+    const result = {
+      matches,
+      providerUsed: providers.length
+        ? `${providers.join(" + ")} • ${matches.length} rencontre(s)`
+        : `Cache Football-Data.org • ${matches.length} rencontre(s) — statut non revalidé`,
+      fetchedAtIso,
+      isLiveNetwork: hasFreshProviderResponse,
+      isSnapshot: !hasFreshProviderResponse && footballDataPayload?.isSnapshot === true,
+      isCached: cachedOnly,
+      isTrustedResults: hasFreshProviderResponse,
+    };
+    saveDayCache(iso, result);
+    return result;
+  }
+
+  // Un snapshot de déploiement sert uniquement d'archive d'affichage; il ne certifie
+  // ni l'état Live, ni un score exploitable pour l'apprentissage.
+  const snap = await loadCloudVerifiedSnapshot();
+  if (isCloudSnapshotFresh(snap)) {
+    const rawSnapshotMatches = getSnapshotMatchesForDate(snap, iso);
+    if (rawSnapshotMatches.length > 0) {
+      const ageMs = getCloudSnapshotAgeMs(snap);
+      return {
+        matches: markScheduleAsUnverified(rawSnapshotMatches, { snapshot: true }),
+        providerUsed: `Snapshot historique • ${snap.generatedAtFr || snap.generatedAtIso || "date inconnue"} (${Math.round((ageMs || 0) / 60000)} min) — non revalidé`,
+        fetchedAtIso: snap.generatedAtIso || snap.generatedAt || null,
+        snapshotGeneratedAtIso: snap.generatedAtIso || snap.generatedAt || null,
+        isLiveNetwork: false,
+        isSnapshot: true,
+        isCached: true,
+        isTrustedResults: false,
+      };
     }
   }
 
-  let omniMatches = await fetchOmniEspnForDay(offsetDays);
-
-  if (apiFbMatches.length > 0) {
-    const nonSoccer = omniMatches.filter((m) => m.sport !== "soccer");
-    const merged = [...apiFbMatches, ...nonSoccer];
-    const result = {
-      matches: merged,
-      providerUsed: `API-Football v3 + Multi-Sport Live (${merged.length} matchs)`,
-      isLiveNetwork: true,
-    };
-    saveDayCache(iso, result);
-    return result;
-  }
-
-  if (omniMatches.length > 0) {
-    const sportsFound = new Set(omniMatches.map((m) => m.sport)).size;
-    const result = {
-      matches: omniMatches,
-      providerUsed: `Internet Direct Temps Réel • ${sportsFound} Sports (${omniMatches.length} rencontres)`,
-      isLiveNetwork: true,
-    };
-    saveDayCache(iso, result);
-    return result;
-  }
-
-  // Fallback sur le Snapshot Cloud Vérifié (récolté sur Internet par nos serveurs GitHub)
-  const snap = await loadCloudVerifiedSnapshot();
-  if (snap?.days?.[String(offsetDays)]?.length > 0) {
-    const snapMatches = snap.days[String(offsetDays)];
-    return {
-      matches: snapMatches,
-      providerUsed: `Snapshot Cloud Vérifié (${snap.generatedAtFr || "Récent"})`,
-      isLiveNetwork: true,
-    };
-  }
-  if (snap?.allMatches?.length > 0) {
-    return {
-      matches: snap.allMatches,
-      providerUsed: `Snapshot Cloud Vérifié (${snap.generatedAtFr || "Récent"})`,
-      isLiveNetwork: true,
-    };
-  }
-
-  // Dernier filet hors-ligne total (clairement marqué Hors-Ligne, zéro hallucination)
+  // Cache local conservé pour lecture, avec tout statut Live invalidé.
   const cached = peekCachedScheduleForOffset(offsetDays);
-  if (cached) return cached;
+  if (cached) {
+    return {
+      ...cached,
+      providerUsed: `${cached.providerUsed} • flux officiel indisponible`,
+      isLiveNetwork: false,
+      isTrustedResults: false,
+    };
+  }
 
+  const snapshotAgeMs = getCloudSnapshotAgeMs(snap);
   return {
     matches: [],
-    providerUsed: "Mode Hors-Ligne (Aucun accès Internet détecté)",
+    providerUsed:
+      snap && snapshotAgeMs !== null
+        ? `Snapshot trop ancien (${Math.round(snapshotAgeMs / 3600000)} h) — ignoré; flux officiel indisponible`
+        : "Aucun flux officiel récent détecté — abstention",
+    fetchedAtIso: null,
     isLiveNetwork: false,
+    isSnapshot: false,
+    isCached: false,
+    isTrustedResults: false,
   };
 }
 
@@ -593,11 +831,43 @@ export async function fetchScheduleForOffset(offsetDays = 0, apiCfg = {}) {
 export async function fetchDeepMatchDossier(match) {
   if (!match) return null;
   const cacheKey = `${match.sportPath || "soccer"}:${match.rawEventId || match.externalId}`;
-  if (DOSSIER_CACHE.has(cacheKey)) return DOSSIER_CACHE.get(cacheKey);
+  const cachedDossier = DOSSIER_CACHE.get(cacheKey);
+  if (cachedDossier && Date.now() - cachedDossier.cachedAtMs <= 5 * 60 * 1000) {
+    return cachedDossier.dossier;
+  }
+  if (cachedDossier) DOSSIER_CACHE.delete(cacheKey);
 
-  // Vérifier si un dossier pré-récolté existe dans le snapshot cloud en secours
+  // Les dossiers de snapshot sont archivistiques; un snapshot trop vieux est ignoré.
   const snap = await loadCloudVerifiedSnapshot();
-  const cloudDossier = snap?.dossiers?.[match.externalId] || null;
+  const cloudDossier = isCloudSnapshotFresh(snap)
+    ? snap?.dossiers?.[match.externalId] || null
+    : null;
+
+  if (match.sportPath === "soccer/football-data") {
+    const dossier = {
+      fetchedAtIso: match.fetchedAtIso || null,
+      sourceUrl: "Football-Data.org",
+      venueExact: {
+        name: match.venue || "Non communiqué par le fournisseur",
+        city: match.venueCity || "",
+        country: match.venueCountry || "",
+        capacity: null,
+        attendance: null,
+        officials: [],
+      },
+      h2hGames: [],
+      homeRecent: [],
+      awayRecent: [],
+      restDaysHome: null,
+      restDaysAway: null,
+      injuries: [],
+      playerLeaders: [...(match.leaders || [])],
+      espnPredictor: null,
+      pickcenter: null,
+    };
+    DOSSIER_CACHE.set(cacheKey, { dossier, cachedAtMs: Date.now() });
+    return dossier;
+  }
 
   if (!match.sportPath || !match.rawEventId || match.sportPath === "soccer/api-football") {
     return cloudDossier;
@@ -811,7 +1081,7 @@ export async function fetchDeepMatchDossier(match) {
         : null,
     };
 
-    DOSSIER_CACHE.set(cacheKey, dossier);
+    DOSSIER_CACHE.set(cacheKey, { dossier, cachedAtMs: Date.now() });
     return dossier;
   } catch {
     return cloudDossier;

@@ -1,4 +1,4 @@
-const CACHE_NAME = "football-ai-ultra-v6.4";
+const CACHE_NAME = "football-ai-ultra-v6.4-live-cache-guard";
 const CORE_ASSETS = ["/", "/index.html", "/manifest.webmanifest", "/icon.svg"];
 
 self.addEventListener("install", (event) => {
@@ -21,6 +21,12 @@ self.addEventListener("fetch", (event) => {
   if (event.request.method !== "GET") return;
   const url = new URL(event.request.url);
   if (url.origin !== self.location.origin) return;
+
+  // API : ne jamais cacher ni servir une réponse hors ligne, en particulier un ancien statut Live.
+  if (url.pathname === "/api" || url.pathname.startsWith("/api/")) {
+    event.respondWith(fetch(event.request, { cache: "no-store" }));
+    return;
+  }
 
   const isFreshFirst =
     event.request.mode === "navigate" ||

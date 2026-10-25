@@ -449,7 +449,8 @@ export function getClubsForLeague(leagueId) {
   return CLUBS_DB.filter((c) => c.leagues.includes(leagueId)).sort((a, b) => b.elo - a.elo);
 }
 
-// Jeu de calibration réaliste (24 matchs multi-championnats) pour pré-entraîner et tester l'IA en 1 clic
+// Fixtures synthétiques historiques conservées uniquement pour la non-régression locale.
+// Elles ne proviennent pas d'un flux officiel et ne doivent jamais alimenter une performance affichée.
 export const CALIBRATION_MATCHES = [
   { league: "ligue1", home: "PSG", away: "Marseille", scoreHome: 3, scoreAway: 1, date: "08/09/2026" },
   { league: "ligue1", home: "Monaco", away: "Lille", scoreHome: 1, scoreAway: 1, date: "12/09/2026" },

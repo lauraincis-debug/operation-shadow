@@ -46,7 +46,6 @@ export default function CloeBridgeTab({
     {
       role: "cloe",
       text: "Bonjour ! Je suis connectée au moteur Omni-Sport & Football AI Ultra v6.4 Certifiée Intégrale. Pose-moi une question sur les matchs en direct (7 sports), un duel, les vidéos Live en cours, le scanner Betclic, ton 11 Fantasy ou la synchronisation avec Cloé Abidjan !",
-      confidence: 96,
     },
   ]);
   const [input, setInput] = useState("");
@@ -155,7 +154,7 @@ const briefing = await window.CloeFootballAI.getDailyBriefing();
 // briefing.tomorrowMatches -> tous les matchs de demain analysés
 // briefing.topGems        -> les 5 pronostics les plus sûrs
 // briefing.fantasyBestXI  -> le 11 optimal sous 100M€ + Capitaine
-// briefing.modelEvolution -> précision, Brier Score & erreurs apprises`;
+// briefing.modelEvolution -> performance prospective vérifiée (avec taille d'échantillon) & erreurs apprises`;
 
   return (
     <div style={{ display: "grid", gap: 14 }}>
@@ -243,17 +242,28 @@ const briefing = await window.CloeFootballAI.getDailyBriefing();
             <div style={{ fontSize: 16, fontWeight: 900, color: "#c084fc" }}>Gén. #{summary.generation}</div>
           </div>
           <div style={{ background: "rgba(9,11,30,0.65)", borderRadius: 10, padding: "8px 10px" }}>
-            <div style={{ fontSize: 10, color: "#94a3b8" }}>MATCHS EN MÉMOIRE</div>
-            <div style={{ fontSize: 16, fontWeight: 900, color: "#38bdf8" }}>{summary.memorizedMatches}</div>
+            <div style={{ fontSize: 10, color: "#94a3b8" }}>RÉSULTATS OFFICIELS APPRIS</div>
+            <div style={{ fontSize: 16, fontWeight: 900, color: "#38bdf8" }}>{summary.officialResultsCount}</div>
           </div>
           <div style={{ background: "rgba(9,11,30,0.65)", borderRadius: 10, padding: "8px 10px" }}>
-            <div style={{ fontSize: 10, color: "#94a3b8" }}>MARCHÉS VALIDÉS</div>
-            <div style={{ fontSize: 16, fontWeight: 900, color: "#10b981" }}>{summary.marketAccuracy}%</div>
+            <div style={{ fontSize: 10, color: "#94a3b8" }}>PERFORMANCE 1X2</div>
+            <div style={{ fontSize: 16, fontWeight: 900, color: summary.accuracyPct === null ? "#94a3b8" : "#10b981" }}>
+              {summary.accuracyPct === null ? "—" : `${summary.accuracyPct}%`}
+            </div>
+          </div>
+          <div style={{ background: "rgba(9,11,30,0.65)", borderRadius: 10, padding: "8px 10px" }}>
+            <div style={{ fontSize: 10, color: "#94a3b8" }}>MARCHÉS PRÉ-MATCH</div>
+            <div style={{ fontSize: 16, fontWeight: 900, color: summary.marketAccuracyPct === null ? "#94a3b8" : "#10b981" }}>
+              {summary.marketAccuracyPct === null ? "—" : `${summary.marketAccuracyPct}%`}
+            </div>
           </div>
           <div style={{ background: "rgba(9,11,30,0.65)", borderRadius: 10, padding: "8px 10px" }}>
             <div style={{ fontSize: 10, color: "#94a3b8" }}>LEÇONS D'ERREURS</div>
             <div style={{ fontSize: 16, fontWeight: 900, color: "#fbbf24" }}>{summary.lessonsCount}</div>
           </div>
+        </div>
+        <div style={{ color: "#94a3b8", fontSize: 10.5, marginTop: 8 }}>
+          {summary.performanceStatus} · Échantillon : {summary.performanceSampleSize}/{summary.performanceMinimumSample} pronostics pré-match officiellement évalués. Les résultats d'apprentissage et les jeux de calibration sont exclus de cette mesure.
         </div>
       </div>
 

@@ -9,13 +9,22 @@ import {
   computeFullPrediction,
   computeHeadToHeadComparison,
   generateExpertAnalysis,
+  computeForecastPerformance,
+  isPerformanceEligible,
 } from "../src/engine/predictor.js";
 import { scoreFantasyPlayers, optimizeFantasySquad } from "../src/data/players.js";
-import { parseOptaDataFeed, OPTA_PRESET_PACK } from "../src/services/liveMatchesApi.js";
+import {
+  parseOptaDataFeed,
+  OPTA_PRESET_PACK,
+  fetchScheduleForOffset,
+  getOffsetDateStrings,
+  isMatchFeedFresh,
+  isVerifiedCurrentlyLiveMatch,
+} from "../src/services/liveMatchesApi.js";
 import { buildSyntheticVideoDemo } from "../src/engine/videoAnalyzer.js";
 import { computeLiveInPlayPrediction } from "../src/engine/inPlayEngine.js";
 import { evaluateMatchContextModifiers } from "../src/engine/contextModifiers.js";
-import { generateThreeDailyTickets } from "../src/engine/ticketGenerator.js";
+import { generateThreeDailyTickets, isEligibleTicketFixture } from "../src/engine/ticketGenerator.js";
 import { computeProMatchMarkets } from "../src/engine/proMarketsEngine.js";
 import { auditCouponSlip } from "../src/engine/ticketAuditor.js";
 import { TOURNAMENT_PRESETS, simulateKnockoutTournament } from "../src/engine/tournamentSimulator.js";
@@ -116,7 +125,66 @@ assert.ok(psgLyon.valueAnalysis !== null, "Analyse Value Bet calculée");
 assert.ok(generateExpertAnalysis(psgLyon, cleanState).length > 150, "Synthèse tactique générée");
 console.log("✓ Correction du bug critique H2H (undefined !== null) validée.");
 
-// 4. Benchmark comparatif séquentiel sur les 24 matchs multi-championnats
+// 3b. Performance prospective : seules les prévisions pré-match officiellement vérifiées sont admissibles.
+const makeEligibleForecast = (index = 0) => {
+  const kickoff = new Date(Date.UTC(2026, 0, 1 + index, 13));
+  return {
+    id: `forecast-${index}`,
+    externalId: `official-event-${index}`,
+    forecastIssuedAtIso: new Date(kickoff.getTime() - 60 * 60 * 1000).toISOString(),
+    kickoffIso: kickoff.toISOString(),
+    resultObservedAtIso: new Date(kickoff.getTime() + 60 * 60 * 1000).toISOString(),
+    predictionPhase: "pre-match",
+    performanceEligible: true,
+    resultSource: "official-feed",
+    verifiedResult: true,
+    verifiedResultExternalId: `official-event-${index}`,
+    probs: [60, 25, 15],
+    rawProbs: [0.6, 0.25, 0.15],
+    result: 0,
+    scoreHome: 1,
+    scoreAway: 0,
+    selectedMarket: { code: "1", pct: 60 },
+  };
+};
+const oneOfficialForecast = makeEligibleForecast();
+assert.equal(isPerformanceEligible(oneOfficialForecast), true);
+assert.equal(isPerformanceEligible({ ...oneOfficialForecast, autoLearned: true }), false);
+assert.equal(isPerformanceEligible({ ...oneOfficialForecast, isCalibrationFixture: true }), false);
+assert.equal(isPerformanceEligible({ ...oneOfficialForecast, predictionPhase: "post-match-learning" }), false);
+assert.equal(isPerformanceEligible({ ...oneOfficialForecast, verifiedResultExternalId: "different-event" }), false);
+assert.equal(isPerformanceEligible({ ...oneOfficialForecast, result: 2 }), false, "Le résultat doit correspondre au score officiel");
+const smallPerformance = computeForecastPerformance([oneOfficialForecast]);
+assert.equal(smallPerformance.sampleSize, 1);
+assert.equal(smallPerformance.accuracyPct, null, "Ne pas afficher de taux sous le minimum statistique");
+const thirtyOfficialForecasts = Array.from({ length: 30 }, (_, index) => makeEligibleForecast(index));
+const measuredPerformance = computeForecastPerformance(thirtyOfficialForecasts);
+assert.equal(measuredPerformance.accuracyPct, 100);
+assert.equal(measuredPerformance.sampleSize, 30);
+assert.equal(measuredPerformance.brierScore, 0.245);
+const duplicateLaterForecast = {
+  ...thirtyOfficialForecasts[0],
+  id: "duplicate-later-forecast",
+  forecastIssuedAtIso: new Date(Date.parse(thirtyOfficialForecasts[0].kickoffIso) - 10 * 60 * 1000).toISOString(),
+  probs: [10, 20, 70],
+  rawProbs: [0.1, 0.2, 0.7],
+};
+const deduplicatedPerformance = computeForecastPerformance([
+  ...thirtyOfficialForecasts.slice(1),
+  duplicateLaterForecast,
+  thirtyOfficialForecasts[0],
+]);
+assert.equal(deduplicatedPerformance.sampleSize, 30, "Un match ne peut compter qu'une fois dans l'échantillon");
+assert.equal(deduplicatedPerformance.duplicateForecastRowsExcluded, 1);
+assert.equal(deduplicatedPerformance.accuracyPct, 100, "La première prévision chronologique du match est retenue");
+console.log("✓ Portail de performance prospective : 30 rencontres uniques, score officiel lié, prévision pré-match et ordre chronologique validés.");
+const unknownTeamsPrediction = computeFullPrediction("Club Test Inconnu A", "Club Test Inconnu B", "ucl", cleanState);
+assert.equal(unknownTeamsPrediction.truthCertificate.teamProfileCoveragePct, 20);
+assert.equal(unknownTeamsPrediction.reliabilityGate.tier, "NO_BET_PIEGE");
+assert.equal(unknownTeamsPrediction.reliabilityGate.allowAutoTicket, false);
+console.log("✓ Couverture d'équipe nulle : la fiabilité est plafonnée et le portail impose NO-BET.");
+
+// 4. Benchmark de non-régression synthétique (jeu de test uniquement, jamais une mesure de performance réelle)
 let legacyCorrect = 0;
 let legacyBrier = 0;
 let legacyLogLoss = 0;
@@ -152,18 +220,19 @@ for (let i = 0; i < CALIBRATION_MATCHES.length; i++) {
 }
 
 const finalUltra = rebuildModelState(ultraHistory);
+const benchmarkMetrics = finalUltra.trainingMetrics;
 const n = CALIBRATION_MATCHES.length;
 
-console.log("\n--- RÉSULTATS COMPARATIFS SUR 24 MATCHS EUROPÉENS & INTERNATIONAUX ---");
+console.log("\n--- BENCHMARK SYNTHÉTIQUE DE NON-RÉGRESSION (24 FIXTURES, NON REPRÉSENTATIF D'UNE PERFORMANCE RÉELLE) ---");
 console.log(
   `Ancien Modèle (Original) -> Précision 1X2: ${Math.round((legacyCorrect / n) * 100)}% (${legacyCorrect}/${n}) | Brier: ${(legacyBrier / n).toFixed(3)} | Log-Loss: ${(legacyLogLoss / n).toFixed(3)}`
 );
 console.log(
-  `Nouveau Modèle Ultra v2  -> Précision 1X2: ${finalUltra.metrics.accuracyPct}% (${finalUltra.metrics.correct}/${n}) | Marchés Coupon: ${finalUltra.metrics.marketAccuracyPct}% | Brier: ${finalUltra.metrics.brierScore.toFixed(3)} | Log-Loss: ${finalUltra.metrics.logLoss.toFixed(3)}`
+  `Rejeu d'apprentissage Ultra v2 -> Précision 1X2: ${benchmarkMetrics.accuracyPct}% (${benchmarkMetrics.correct}/${n}) | Marchés Coupon: ${benchmarkMetrics.marketAccuracyPct}% | Brier: ${benchmarkMetrics.brierScore.toFixed(3)} | Log-Loss: ${benchmarkMetrics.logLoss.toFixed(3)}`
 );
 
-assert.ok(finalUltra.metrics.brierScore < legacyBrier / n, "Le Brier Score Ultra v2 doit surpasser l'ancien modèle");
-assert.ok(finalUltra.metrics.logLoss < legacyLogLoss / n, "Le Log-Loss Ultra v2 doit surpasser l'ancien modèle");
+assert.ok(benchmarkMetrics.brierScore < legacyBrier / n, "Le Brier du rejeu de non-régression Ultra v2 doit surpasser l'ancien modèle");
+assert.ok(benchmarkMetrics.logLoss < legacyLogLoss / n, "Le Log-Loss du rejeu Ultra v2 doit surpasser l'ancien modèle");
 
 // 5. Mesure de performance CPU (Débit en prédictions / seconde)
 const t0 = performance.now();
@@ -238,15 +307,119 @@ const ctxTest = evaluateMatchContextModifiers("PSG", "Marseille", {
 });
 assert.ok(ctxTest.active && ctxTest.xgHomeMult < 1, "Impact absence star + fatigue < 72h bien calculé");
 const threeTickets = generateThreeDailyTickets([], finalUltra);
-assert.equal(threeTickets.length, 3, "3 Tickets IA automatiques générés (Sécurité, Value, Cote Boost)");
-console.log(
-  `✓ Moteur v4 Pro validé : Live In-Play (${inPlay.liveProbs.join("/")}%), Absences/Fatigue (xG ×${ctxTest.xgHomeMult}) & 3 Tickets Auto (@${threeTickets.map((t) => t.totalOdd.toFixed(2)).join(", @")}) !`
+assert.equal(threeTickets.length, 3, "Les trois profils de ticket restent disponibles en UI");
+assert.ok(threeTickets.every((ticket) => ticket.noBet && ticket.items.length === 0), "Sans événements réels récents et autorisés, le générateur doit s'abstenir");
+const freshFixture = {
+  externalId: "test-upcoming-event",
+  isRealInternet: true,
+  isLiveNetwork: true,
+  state: "pre",
+  completed: false,
+  kickoffIso: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
+  fetchedAtIso: new Date().toISOString(),
+  statusVerifiedAtIso: new Date().toISOString(),
+  statusVerificationSource: "ESPN scoreboard",
+};
+assert.equal(isEligibleTicketFixture(freshFixture), true);
+assert.equal(isEligibleTicketFixture({ ...freshFixture, state: "post", completed: true }), false);
+assert.equal(
+  isEligibleTicketFixture({
+    ...freshFixture,
+    fetchedAtIso: "2020-01-01T00:00:00.000Z",
+    statusVerifiedAtIso: "2020-01-01T00:00:00.000Z",
+  }),
+  false
 );
+const currentLiveFixture = {
+  ...freshFixture,
+  state: "in",
+  kickoffIso: new Date(Date.now() - 30 * 60 * 1000).toISOString(),
+  statusVerifiedAtIso: new Date().toISOString(),
+  statusVerificationSource: "ESPN scoreboard",
+};
+assert.equal(isVerifiedCurrentlyLiveMatch(currentLiveFixture), true);
+assert.equal(isVerifiedCurrentlyLiveMatch({ ...currentLiveFixture, isSnapshot: true, isLiveNetwork: false }), false);
+assert.equal(isVerifiedCurrentlyLiveMatch({ ...currentLiveFixture, isCached: true }), false);
+assert.equal(
+  isMatchFeedFresh({ ...freshFixture, isSnapshot: true, isLiveNetwork: false }),
+  false,
+  "Un snapshot historique ne devient pas frais en étant relu dans l'interface"
+);
+
+// Reproduction d'un snapshot périmé contenant à tort un ancien statut « en cours ».
+const originalFetch = globalThis.fetch;
+try {
+  globalThis.fetch = async (input) => {
+    const url = String(input);
+    if (url.startsWith("/api/football/fixtures")) {
+      if (url.includes(`date=${getOffsetDateStrings(0).iso}`)) {
+        return new Response("provider unavailable", { status: 503 });
+      }
+      return new Response(JSON.stringify({
+        available: true,
+        provider: "Football-Data.org",
+        fetchedAtIso: new Date().toISOString(),
+        isLiveNetwork: true,
+        matches: [{
+          ...freshFixture,
+          externalId: "backend-fixture-test",
+          kickoffIso: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+          homeRaw: "Arsenal FC",
+          awayRaw: "Chelsea FC",
+          league: "premier",
+          sport: "soccer",
+          source: "Football-Data.org",
+        }],
+      }), { status: 200, headers: { "Content-Type": "application/json" } });
+    }
+    if (url.includes("site.api.espn.com")) return new Response("unavailable", { status: 503 });
+    if (url.includes("live-omni-snapshot.json")) {
+      const today = getOffsetDateStrings(0).iso;
+      return new Response(JSON.stringify({
+        generatedAtIso: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000).toISOString(),
+        days: {
+          [today]: [{
+            externalId: "expired-snapshot-live",
+            sport: "soccer",
+            home: "Arsenal",
+            away: "Liverpool",
+            kickoffIso: new Date(Date.now() - 40 * 60 * 1000).toISOString(),
+            fetchedAtIso: new Date().toISOString(),
+            isRealInternet: true,
+            state: "in",
+            completed: false,
+            statusText: "🔴 DIRECT 40'",
+          }],
+        },
+      }), { status: 200, headers: { "Content-Type": "application/json" } });
+    }
+    return new Response("not found", { status: 404 });
+  };
+  const backendDay = await fetchScheduleForOffset(1);
+  assert.equal(backendDay.matches[0]?.externalId, "backend-fixture-test");
+  assert.equal(backendDay.matches[0]?.isLiveNetwork, true);
+  assert.equal(backendDay.isTrustedResults, true);
+  const expiredSnapshotDay = await fetchScheduleForOffset(0);
+  assert.equal(expiredSnapshotDay.isLiveNetwork, false);
+  assert.equal(expiredSnapshotDay.isTrustedResults, false);
+  assert.equal(expiredSnapshotDay.matches.length, 0, "Le snapshot vieux de 4 jours est ignoré");
+} finally {
+  globalThis.fetch = originalFetch;
+}
+console.log("✓ Générateur de tickets : aucun événement fictif, statut Live refusé depuis cache/snapshot, fraîcheur et NO-BET validés.");
 
 // 11. Vérification v5 Légende : Buteurs/Corners/Cartons + Audit Ticket + 10 000x CAN
 const proMkts = computeProMatchMarkets(predWithVid);
 assert.ok(proMkts.topScorers.length > 0 && proMkts.corners.total > 0, "Marchés Pros Buteurs/Corners/Cartons validés");
-const slipAudit = auditCouponSlip(threeTickets[1].items, finalUltra);
+const auditInputTicket = [{
+  id: "test-audit-ticket",
+  sport: "soccer",
+  home: "PSG",
+  away: "Marseille",
+  league: "ligue1",
+  selectedMarket: { code: "1X", label: "Double Chance 1N", pct: 75, prob: 0.75, bookOdd: 1.35 },
+}];
+const slipAudit = auditCouponSlip(auditInputTicket, finalUltra);
 assert.ok(slipAudit && slipAudit.auditScore > 0, "Audit IA du Maillon Faible validé");
 const canSim = simulateKnockoutTournament(TOURNAMENT_PRESETS.can.roundOf16, "international", finalUltra, 2000);
 assert.equal(canSim.leaderboard.length, 16, "Simulation 16 nations CAN validée");
@@ -296,8 +469,22 @@ for (const sp of sportSamples) {
   assert.ok(sp.recommendedMarket && sp.reliabilityGate, `Marché & ReliabilityGate actifs pour ${sp.sport}`);
 }
 
-const certCheck = buildTruthCertificate({ isRealInternet: true, source: "ESPN Live API", kickoffIso: "2026-10-21T19:00Z", venue: "Santiago Bernabéu" });
-assert.equal(certCheck.status, "VERIFIED_LIVE_INTERNET", "Certificat Zéro-Hallucination actif");
+const certNow = Date.now();
+const certCheck = buildTruthCertificate({
+  isRealInternet: true,
+  isLiveNetwork: true,
+  statusVerificationSource: "ESPN scoreboard",
+  statusVerifiedAtIso: new Date(certNow).toISOString(),
+  source: "ESPN Live API",
+  kickoffIso: "2026-10-21T19:00Z",
+  venue: "Santiago Bernabéu",
+}, null, certNow);
+assert.equal(certCheck.status, "VERIFIED_LIVE_INTERNET", "Certificat de flux officiel frais actif");
+assert.equal(
+  buildTruthCertificate({ ...certCheck, isRealInternet: true, isLiveNetwork: false, isSnapshot: true }, null, certNow).status,
+  "OFFLINE_PARAMETRIC_FALLBACK",
+  "Un snapshot ne peut jamais se certifier comme flux direct"
+);
 console.log(
   `✓ Moteur v6.0 Omni-Sport & Anti-Biais validé : 7 Sports (NBA ${sportSamples[0].probs[0]}%, Tennis ${sportSamples[1].probs[0]}%, NFL ${sportSamples[2].probs[0]}%, NHL, MLB, UFC), Garde Anti-Clonage & Protection 2-Matchs validés !`
 );
@@ -307,22 +494,33 @@ const { verifyOfficialVideoCandidate, analyzeOfficialInternetMatchClip } = await
   "../src/engine/videoAnalyzer.js"
 );
 
+const videoNow = Date.now();
+const liveKickoffIso = new Date(videoNow - 42 * 60 * 1000).toISOString();
 const targetLiveMatch = {
   home: "PSG",
   away: "Real Madrid",
-  kickoffIso: "2026-10-21T19:00:00Z",
+  sport: "soccer",
+  externalId: "espn-test-live-event",
+  rawEventId: "test-live-event",
+  isRealInternet: true,
+  isLiveNetwork: true,
+  fetchedAtIso: new Date(videoNow).toISOString(),
+  statusVerifiedAtIso: new Date(videoNow).toISOString(),
+  statusVerificationSource: "ESPN scoreboard",
+  kickoffIso: liveKickoffIso,
   state: "in",
+  completed: false,
 };
 
 // 13a. Clip officiel exact du bon match et de la bonne date -> ACCEPTÉ & CERTIFIÉ
 const validClip = {
   homeTeam: "PSG",
   awayTeam: "Real Madrid",
-  dateIso: "2026-10-21T19:42:00Z",
+  dateIso: new Date(videoNow - 2 * 60 * 1000).toISOString(),
   title: "PSG vs Real Madrid — But & Pressing Haut (42e)",
-  mp4Url: "https://media.video-cdn.espn.com/motion/2026/1021/clip.mp4",
+  mp4Url: "https://media.video-cdn.espn.com/motion/test-live-clip.mp4",
 };
-const okVideoCheck = verifyOfficialVideoCandidate(validClip, targetLiveMatch);
+const okVideoCheck = verifyOfficialVideoCandidate(validClip, targetLiveMatch, { now: videoNow });
 assert.equal(okVideoCheck.verified, true, "Vidéo officielle du bon match & bonne date DOIT être certifiée");
 assert.ok(okVideoCheck.deltaHours <= 2, "Écart horaire exact contrôlé");
 
@@ -330,7 +528,7 @@ assert.ok(okVideoCheck.deltaHours <= 2, "Écart horaire exact contrôlé");
 const wrongDateClip = {
   homeTeam: "PSG",
   awayTeam: "Real Madrid",
-  dateIso: "2026-09-05T19:00:00Z",
+  dateIso: new Date(videoNow - 45 * 24 * 60 * 60 * 1000).toISOString(),
   title: "PSG vs Real Madrid — Ancien match",
 };
 const oldDateCheck = verifyOfficialVideoCandidate(wrongDateClip, targetLiveMatch);
@@ -340,7 +538,7 @@ assert.equal(oldDateCheck.verified, false, "Vidéo d'une ancienne date DOIT êtr
 const wrongOpponentClip = {
   homeTeam: "PSG",
   awayTeam: "Lyon",
-  dateIso: "2026-10-21T19:30:00Z",
+  dateIso: new Date(videoNow - 10 * 60 * 1000).toISOString(),
   title: "PSG vs Lyon",
 };
 const wrongTeamCheck = verifyOfficialVideoCandidate(wrongOpponentClip, targetLiveMatch);
@@ -350,7 +548,7 @@ assert.equal(wrongTeamCheck.verified, false, "Vidéo d'un autre adversaire DOIT 
 const preMatchCheck = verifyOfficialVideoCandidate(validClip, {
   ...targetLiveMatch,
   state: "pre",
-  kickoffIso: "2026-10-22T20:00:00Z",
+  kickoffIso: new Date(videoNow + 60 * 60 * 1000).toISOString(),
 });
 assert.equal(preMatchCheck.verified, false, "Match non commencé DOIT refuser toute fausse vidéo live !");
 
@@ -530,7 +728,23 @@ const mixedBriefing = await testBrain.getDailyBriefing({
   externalFixtures: {
     yesterday: [
       { externalId: "nba-test-1", sport: "basketball", home: "Celtics", away: "Lakers", completed: true, scoreHome: 118, scoreAway: 112 },
-      { externalId: "soc-test-1", sport: "soccer", home: "PSG", away: "Lyon", league: "ligue1", completed: true, scoreHome: 2, scoreAway: 1 },
+      {
+        externalId: "soc-test-1",
+        sport: "soccer",
+        home: "PSG",
+        away: "Lyon",
+        league: "ligue1",
+        isRealInternet: true,
+        isLiveNetwork: true,
+        fetchedAtIso: new Date().toISOString(),
+        statusVerifiedAtIso: new Date().toISOString(),
+        statusVerificationSource: "ESPN scoreboard",
+        kickoffIso: new Date(Date.now() - 60 * 60 * 1000).toISOString(),
+        state: "post",
+        completed: true,
+        scoreHome: 2,
+        scoreAway: 1,
+      },
     ],
     today: [
       { externalId: "nhl-test-1", sport: "hockey", home: "Senators", away: "Sharks", state: "pre", completed: false },
@@ -575,6 +789,9 @@ const otherMatchVideoInsight = {
   targetAway: "Bayern Munich",
   homeXgMult: 1.18,
   awayXgMult: 0.88,
+  sourceType: "official_live_telemetry",
+  isLiveOngoing: true,
+  verifiedAtIso: new Date().toISOString(),
 };
 assert.equal(
   doesVideoInsightMatchTeams(otherMatchVideoInsight, "PSG", "Barcelone"),
@@ -605,11 +822,19 @@ assert.equal(
 );
 
 // 15c. [AUDIT3-P2-01] Match EN COURS à 0-0 sans clip vidéo -> génère immédiatement un Pari Live Télémétrique !
+const telemetryNow = Date.now();
 const liveZeroZeroInsight = analyzeLiveMatchTelemetryWithoutClip(
   {
     home: "Arsenal",
     away: "Liverpool",
     sport: "soccer",
+    externalId: "espn-test-arsenal-liverpool",
+    isRealInternet: true,
+    isLiveNetwork: true,
+    fetchedAtIso: new Date(telemetryNow).toISOString(),
+    statusVerifiedAtIso: new Date(telemetryNow).toISOString(),
+    statusVerificationSource: "ESPN scoreboard",
+    kickoffIso: new Date(telemetryNow - 34 * 60 * 1000).toISOString(),
     state: "in",
     completed: false,
     scoreHome: 0,
@@ -647,6 +872,15 @@ for (const [cfgName, rawCfg] of [["firebase.json", fbCfgText], ["firebase-auto-d
     `${cfgName} DOIT autoriser https://api.frankfurter.dev dans connect-src sur tous les sites !`
   );
 }
+const appServiceWorker = fsNode.readFileSync(pathNode.resolve("public/sw.js"), "utf8");
+const apiBypassStart = appServiceWorker.indexOf("// API : ne jamais cacher");
+const generalCacheStart = appServiceWorker.indexOf("const isFreshFirst");
+assert.ok(apiBypassStart >= 0 && apiBypassStart < generalCacheStart);
+assert.ok(
+  appServiceWorker.includes('url.pathname.startsWith("/api/")') &&
+    appServiceWorker.includes('fetch(event.request, { cache: "no-store" })'),
+  "Le Service Worker doit contourner tout cache et tout fallback hors ligne pour /api/*"
+);
 
 // 15e. [AUDIT3-P1-04 + AUDIT4-P2-05] Vérification physique de 100 % des fichiers précachés par `cloe-abidjan/sw.js` (y compris javis-voice.js & fonts.css)
 const abjSw = fsNode.readFileSync(pathNode.resolve("../cloe-abidjan/sw.js"), "utf8");
@@ -786,10 +1020,11 @@ assert.ok(
   `Total NBA 224.5 pts évalué via loi Normale (${nbaEval.analyzedOptions[0].trueProbPct}%) et NON à 0 % Poisson football !`
 );
 
-// 16e. [P1-01 + P1-03 + P2-04] Pont Cloé v6.4 (accuracyPct réel, errorJournal complet, tickets <2 matchs, Fantasy unicité 100%)
+// 16e. Pont Cloé v6.4 : performance réellement mesurée ou abstention, jamais de fixtures de démonstration.
 const v64Evolution = testBrain.getModelEvolution();
-assert.ok(Number.isFinite(v64Evolution.accuracyPct), "getModelEvolution().accuracyPct est un nombre fini (zéro undefined%) !");
-assert.ok(Number.isFinite(v64Evolution.marketAccuracyPct), "getModelEvolution().marketAccuracyPct est un nombre fini !");
+assert.equal(v64Evolution.accuracyPct, null, "La performance reste non mesurée avant 30 pronostics pré-match officiels.");
+assert.equal(v64Evolution.marketAccuracyPct, null);
+assert.equal(v64Evolution.performanceSampleSize, 0);
 const singleMatchTickets = testBrain.generateTickets([
   {
     sport: "basketball",
@@ -799,8 +1034,8 @@ const singleMatchTickets = testBrain.generateTickets([
     odds: { home: 1.62, away: 2.35 },
   },
 ]);
-assert.equal(singleMatchTickets.length, 3, "generateTickets fonctionne même avec 1 seul match live (NBA inclus) !");
-assert.ok(singleMatchTickets[0].items.length >= 2, "Le Ticket Sécurité contient toujours au moins 2 jambes !");
+assert.equal(singleMatchTickets.length, 3, "Les trois profils de ticket restent disponibles en UI.");
+assert.ok(singleMatchTickets.every((ticket) => ticket.noBet && ticket.items.length === 0), "Un seul événement non vérifié doit entraîner NO-BET.");
 
 const playersModV64 = await import("../src/data/players.js");
 const playerIds = playersModV64.FANTASY_PLAYERS.map((p) => p.id);

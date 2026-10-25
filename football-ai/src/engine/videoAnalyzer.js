@@ -16,6 +16,7 @@
 // ============================================================================
 
 import { canonicalTeamName, normalizeKey } from "../data/clubs.js";
+import { isVerifiedCurrentlyLiveMatch } from "../services/liveMatchesApi.js";
 
 function clamp(v, min, max) {
   return v < min ? min : v > max ? max : v;
@@ -104,14 +105,13 @@ export function teamsMatchStrictly(
  * 5) Date/Heure exacte du match en cours vérifiée (`[-15 min, +4h]` en Live, ou `<= 36h` en archive).
  */
 export function verifyOfficialVideoCandidate(candidate, targetMatch, options = {}) {
-  const { liveOnly = true } = options;
+  const now = Number.isFinite(options.now) ? options.now : Date.now();
   const reasons = [];
 
   if (!candidate || !targetMatch) {
     return { verified: false, rejectionReason: "Données de match ou de séquence manquantes." };
   }
 
-  // 1. Verrou Anti-Homonymie (Féminines / Jeunes U19-U21 vs Équipe A)
   const candCat = detectTeamCategoryFlags(
     `${candidate.homeTeam || ""} ${candidate.awayTeam || ""} ${candidate.competition || ""} ${candidate.title || ""}`
   );
@@ -131,7 +131,6 @@ export function verifyOfficialVideoCandidate(candidate, targetMatch, options = {
     };
   }
 
-  // 2. Verrou ID d'événement officiel (ne remplace JAMAIS le test d'équipes !)
   if (candidate.officialEventId && targetMatch.rawEventId) {
     if (String(candidate.officialEventId) !== String(targetMatch.rawEventId)) {
       return {
@@ -141,7 +140,6 @@ export function verifyOfficialVideoCandidate(candidate, targetMatch, options = {
     }
   }
 
-  // 3. Verrou OBLIGATOIRE des 2 équipes exactes (Zéro court-circuit !)
   const teamsOk = teamsMatchStrictly(
     candidate.homeTeam,
     candidate.awayTeam,
@@ -158,70 +156,74 @@ export function verifyOfficialVideoCandidate(candidate, targetMatch, options = {
   }
   reasons.push(`Adversaires certifiés : ${targetMatch.home} vs ${targetMatch.away}`);
 
-  // 4. Verrou Temps Réel : UNIQUEMENT LES MATCHS EN COURS pour parier en Direct !
-  if (targetMatch.state === "pre") {
+  // Le paramètre d'archive historique est volontairement ignoré : ce module ne certifie que le direct actuel.
+  if (targetMatch.completed === true || targetMatch.state === "post") {
     return {
       verified: false,
-      rejectionReason: `Match non commencé (${targetMatch.home} vs ${targetMatch.away}) — coup d'envoi prévu à ${targetMatch.timeStr || "venir"}.`,
+      rejectionReason: `🏁 Match terminé (${targetMatch.home} ${targetMatch.scoreHome ?? ""}-${targetMatch.scoreAway ?? ""} ${targetMatch.away}) — aucun clip post-match n'est admissible au Live.`,
+    };
+  }
+  if (targetMatch.state !== "in") {
+    return {
+      verified: false,
+      rejectionReason:
+        targetMatch.state === "pre"
+          ? `Match non commencé (${targetMatch.home} vs ${targetMatch.away}) — le direct n'est pas ouvert.`
+          : "Statut officiel du match absent ou inconnu — la vidéo Live est refusée.",
+    };
+  }
+  if (!isVerifiedCurrentlyLiveMatch(targetMatch, now)) {
+    return {
+      verified: false,
+      rejectionReason:
+        "Statut Live périmé ou non vérifiable : actualisez le flux officiel; aucune vidéo n'est retenue sans statut « en cours » récent.",
     };
   }
 
-  if (liveOnly && (targetMatch.completed === true || targetMatch.state === "post")) {
-    return {
-      verified: false,
-      rejectionReason: `🏁 Match déjà terminé (${targetMatch.home} ${targetMatch.scoreHome ?? ""}-${targetMatch.scoreAway ?? ""} ${targetMatch.away}) — marchés fermés : seules les vidéos de matchs ACTUELLEMENT EN COURS sont retenues pour parier en direct.`,
-    };
-  }
-
-  // 5. Verrou Temporel Exact (Date + Heure UTC de l'action en direct)
   const videoDate = candidate.dateIso ? new Date(candidate.dateIso) : null;
   const matchDate = targetMatch.kickoffIso ? new Date(targetMatch.kickoffIso) : null;
-
   if (!videoDate || Number.isNaN(videoDate.getTime())) {
     return {
       verified: false,
       rejectionReason: "Horodatage officiel absent sur la vidéo — rejet par sécurité.",
     };
   }
-
-  const maxWindowHours = liveOnly ? 4.5 : 36;
-  let computedDeltaHours = 0;
-
-  if (matchDate && !Number.isNaN(matchDate.getTime())) {
-    const signedHours = (videoDate.getTime() - matchDate.getTime()) / 3600000;
-    if (signedHours < -0.25) {
-      return {
-        verified: false,
-        rejectionReason: `Séquence antérieure au coup d'envoi (${Math.abs(Math.round(signedHours * 10) / 10)}h avant) — interview/aperçu avant-match écarté.`,
-      };
-    }
-    if (signedHours > maxWindowHours) {
-      return {
-        verified: false,
-        rejectionReason: `Date/heure hors direct : séquence publiée ${Math.round(signedHours * 10) / 10}h après le coup d'envoi (limite Live : ${maxWindowHours}h).`,
-      };
-    }
-    computedDeltaHours = Math.round(signedHours * 10) / 10;
-    reasons.push(
-      `Action Live du jour certifiée : ${videoDate.toLocaleDateString("fr-FR")} (+${computedDeltaHours}h depuis le coup d'envoi)`
-    );
-  } else {
-    const ageHours = Math.abs(Date.now() - videoDate.getTime()) / 3600000;
-    const maxRecent = liveOnly ? 3.5 : 48;
-    if (ageHours > maxRecent) {
-      return {
-        verified: false,
-        rejectionReason: `Séquence trop ancienne (${Math.round(ageHours)}h) — non éligible au pari Live immédiat.`,
-      };
-    }
-    computedDeltaHours = Math.round(ageHours * 10) / 10;
-    reasons.push(`Action Live récente vérifiée (il y a ${Math.round(ageHours * 60)} min)`);
+  if (!matchDate || Number.isNaN(matchDate.getTime())) {
+    return {
+      verified: false,
+      rejectionReason: "Heure officielle du coup d'envoi absente — impossible de certifier le direct.",
+    };
+  }
+  if (videoDate.getTime() > now + 2 * 60 * 1000) {
+    return {
+      verified: false,
+      rejectionReason: "Horodatage vidéo situé dans le futur — rejet par sécurité.",
+    };
   }
 
+  const maxWindowHours = targetMatch.sport === "soccer" ? 4.5 : 8;
+  const signedHours = (videoDate.getTime() - matchDate.getTime()) / 3600000;
+  if (signedHours < -0.25) {
+    return {
+      verified: false,
+      rejectionReason: `Séquence antérieure au coup d'envoi (${Math.abs(Math.round(signedHours * 10) / 10)} h avant) — aperçu pré-match écarté.`,
+    };
+  }
+  if (signedHours > maxWindowHours) {
+    return {
+      verified: false,
+      rejectionReason: `Séquence publiée ${Math.round(signedHours * 10) / 10} h après le coup d'envoi — hors fenêtre Live (${maxWindowHours} h).`,
+    };
+  }
+
+  reasons.push(
+    `Action Live horodatée : ${videoDate.toLocaleDateString("fr-FR")} (+${Math.round(signedHours * 10) / 10} h depuis le coup d'envoi)`
+  );
   return {
     verified: true,
-    isLiveOngoing: targetMatch.state === "in" && !targetMatch.completed,
-    deltaHours: computedDeltaHours,
+    isLiveOngoing: true,
+    verifiedAtIso: new Date(now).toISOString(),
+    deltaHours: Math.round(signedHours * 10) / 10,
     videoDateFr: videoDate.toLocaleString("fr-FR", {
       weekday: "short",
       day: "2-digit",
@@ -238,7 +240,7 @@ async function fetchWithTimeout(url, timeoutMs = 6500) {
   const ctrl = new AbortController();
   const id = setTimeout(() => ctrl.abort(), timeoutMs);
   try {
-    const res = await fetch(url, { signal: ctrl.signal });
+    const res = await fetch(url, { cache: "no-store", signal: ctrl.signal });
     if (!res.ok) return null;
     return await res.json();
   } catch {
@@ -357,172 +359,239 @@ export function buildLiveInPlayBetRecommendation(match, liveMetrics) {
  * RECHERCHE AUTOMATIQUE SUR INTERNET DES MATCHS & VIDÉOS EN COURS DE JEU UNIQUEMENT (`state === "in"`).
  * Permet de parier EN DIRECT pendant le match — jamais après le coup de sifflet final !
  */
+export function extractOfficialLiveStatus(summary, targetEventId = "") {
+  const competitions = [
+    ...(Array.isArray(summary?.header?.competitions) ? summary.header.competitions : []),
+    ...(Array.isArray(summary?.competitions) ? summary.competitions : []),
+  ];
+  const competition =
+    competitions.find((item) => targetEventId && String(item.id) === String(targetEventId)) ||
+    competitions[0] ||
+    null;
+  const status = competition?.status || summary?.header?.status || summary?.status || null;
+  const statusType = status?.type || status || {};
+  const state = String(statusType.state || status?.state || "").toLowerCase();
+  const completed = Boolean(statusType.completed ?? status?.completed ?? state === "post");
+  if (!state && !completed) return null;
+  return {
+    state: completed ? "post" : state,
+    completed,
+    statusText: statusType.detail || statusType.shortDetail || status?.displayClock || "",
+  };
+}
+
+/** Recherche des vidéos uniquement après confirmation récente d'un match officiellement EN COURS. */
 export async function fetchVerifiedMatchVideosFromInternet(
   targetMatch,
   allLiveMatches = [],
   options = { liveOnly: true }
 ) {
-  const liveOnly = options?.liveOnly !== false;
   const auditLog = [];
   const verifiedClips = [];
   let espnSummaryJson = null;
-
-  // Charger aussi le snapshot multi-jours afin de toujours connaître le vrai statut officiel du match
-  let fullSchedulePool = Array.isArray(allLiveMatches) ? [...allLiveMatches] : [];
-  if (typeof fetch === "function") {
-    for (const snapUrl of ["/live-omni-snapshot.json", "https://football-ai-43e33.web.app/live-omni-snapshot.json"]) {
-      const snap = await fetchWithTimeout(snapUrl, 3000);
-      if (snap?.days) {
-        const snapFlat = Object.values(snap.days).flat();
-        const existingIds = new Set(fullSchedulePool.map((m) => m.externalId));
-        for (const sm of snapFlat) {
-          if (!existingIds.has(sm.externalId)) fullSchedulePool.push(sm);
-        }
-        break;
-      }
-    }
-  }
-
-  // Prioriser tous les matchs ACTUELLEMENT EN DIRECT (`state === "in" && !completed`) !
-  const currentlyLiveMatches = fullSchedulePool.filter(
-    (m) => m.state === "in" && !m.completed
+  const fullSchedulePool = Array.isArray(allLiveMatches) ? [...allLiveMatches] : [];
+  const currentlyLiveMatches = fullSchedulePool.filter((match) =>
+    isVerifiedCurrentlyLiveMatch(match)
   );
 
-  let resolvedMatch = targetMatch;
+  let resolvedMatch = targetMatch || null;
   if (targetMatch?.home && targetMatch?.away) {
-    // Chercher d'abord en direct ("in"), sinon dans l'ensemble du calendrier officiel
-    const foundLive = currentlyLiveMatches.find((m) =>
-      teamsMatchStrictly(m.home, m.away, targetMatch.home, targetMatch.away, targetMatch.homeRaw, targetMatch.awayRaw)
+    const matchesTarget = (match) =>
+      teamsMatchStrictly(
+        match.home,
+        match.away,
+        targetMatch.home,
+        targetMatch.away,
+        targetMatch.homeRaw,
+        targetMatch.awayRaw
+      );
+    const directLiveMatch = currentlyLiveMatches.find(matchesTarget);
+    const knownOfficialEvent = fullSchedulePool.find(
+      (match) => match.isRealInternet === true && match.rawEventId && matchesTarget(match)
     );
-    const foundAny = fullSchedulePool.find((m) =>
-      teamsMatchStrictly(m.home, m.away, targetMatch.home, targetMatch.away, targetMatch.homeRaw, targetMatch.awayRaw)
-    );
-    if (foundLive) resolvedMatch = foundLive;
-    else if (foundAny && !resolvedMatch?.rawEventId) resolvedMatch = foundAny;
+    if (directLiveMatch) resolvedMatch = directLiveMatch;
+    else if (knownOfficialEvent && !resolvedMatch.rawEventId) resolvedMatch = knownOfficialEvent;
   }
 
-  const isTargetLiveNow = resolvedMatch?.state === "in" && !resolvedMatch?.completed;
-  const isTargetFinished = resolvedMatch?.completed === true || resolvedMatch?.state === "post";
-  const preKickoff = resolvedMatch?.state === "pre";
+  const archiveRequested = options?.liveOnly === false;
+  if (archiveRequested) {
+    auditLog.push("Mode archive désactivé : seules les rencontres actuellement en cours sont admissibles.");
+  }
+
+  let isTargetLiveNow = isVerifiedCurrentlyLiveMatch(resolvedMatch);
+  let isTargetFinished = resolvedMatch?.completed === true || resolvedMatch?.state === "post";
+  let preKickoff = resolvedMatch?.state === "pre";
+
+  if (resolvedMatch?.sportPath && resolvedMatch?.rawEventId) {
+    // Le statut du calendrier, même récent, ne suffit pas : une seconde vérification
+    // sans cache est obligatoire avant d'ouvrir la recherche vidéo.
+    isTargetLiveNow = false;
+    let currentStatus = null;
+    let verificationSource = "";
+
+    if (resolvedMatch.sportPath === "soccer/football-data") {
+      const statusPayload = await fetchWithTimeout(
+        `/api/football/matches/${encodeURIComponent(resolvedMatch.rawEventId)}?revalidate=true`,
+        6500
+      );
+      const verifiedMatch = statusPayload?.match;
+      if (
+        statusPayload?.isLiveNetwork === true &&
+        verifiedMatch?.isLiveNetwork === true &&
+        verifiedMatch?.statusVerificationSource === "Football-Data.org"
+      ) {
+        currentStatus = {
+          state: verifiedMatch.state,
+          completed: verifiedMatch.completed === true,
+          statusText: verifiedMatch.statusText || "",
+          statusVerifiedAtIso: verifiedMatch.statusVerifiedAtIso,
+        };
+        verificationSource = "Football-Data.org";
+      }
+    } else if (resolvedMatch.sportPath !== "soccer/api-football") {
+      const summaryUrl = `https://site.api.espn.com/apis/site/v2/sports/${resolvedMatch.sportPath}/summary?event=${encodeURIComponent(resolvedMatch.rawEventId)}`;
+      espnSummaryJson = await fetchWithTimeout(summaryUrl, 6500);
+      currentStatus = extractOfficialLiveStatus(espnSummaryJson, resolvedMatch.rawEventId);
+      if (currentStatus) verificationSource = "ESPN event summary";
+    }
+
+    if (!currentStatus || !verificationSource) {
+      isTargetLiveNow = false;
+      auditLog.push("Statut officiel récemment revalidé absent : aucune vidéo ni télémétrie Live ne sera affichée.");
+    } else {
+      const checkedAtIso = currentStatus.statusVerifiedAtIso || new Date().toISOString();
+      resolvedMatch = {
+        ...resolvedMatch,
+        state: currentStatus.state,
+        completed: currentStatus.completed,
+        statusText: currentStatus.statusText || resolvedMatch.statusText,
+        fetchedAtIso: checkedAtIso,
+        statusVerifiedAtIso: checkedAtIso,
+        statusVerificationSource: verificationSource,
+        isLiveNetwork: true,
+        isSnapshot: false,
+        isCached: false,
+      };
+      isTargetLiveNow = isVerifiedCurrentlyLiveMatch(resolvedMatch);
+      isTargetFinished = currentStatus.completed || currentStatus.state === "post";
+      preKickoff = currentStatus.state === "pre";
+      if (!isTargetLiveNow && !isTargetFinished && !preKickoff) {
+        auditLog.push("Le fournisseur officiel ne confirme pas que le match est actuellement en cours.");
+      }
+    }
+  } else {
+    isTargetLiveNow = false;
+    auditLog.push("Aucun identifiant officiel revalidable : la recherche vidéo est bloquée.");
+  }
 
   if (preKickoff) {
     auditLog.push(
-      `🕒 « ${resolvedMatch.home} vs ${resolvedMatch.away} » n'a pas encore débuté (coup d'envoi : ${resolvedMatch.fullDateFr || resolvedMatch.dateFr || "à venir"} ${resolvedMatch.timeStr || ""}). Sélectionnez ci-dessous un match 🔴 EN DIRECT pour parier en cours de jeu !`
+      `🕒 « ${resolvedMatch?.home || "Match"} vs ${resolvedMatch?.away || ""} » n'a pas encore commencé — aucune vidéo Live n'est recherchée.`
     );
-  } else if (liveOnly && isTargetFinished) {
+  } else if (isTargetFinished) {
     auditLog.push(
-      `🏁 « ${resolvedMatch.home} vs ${resolvedMatch.away} » est DÉJÀ TERMINÉ (${resolvedMatch.scoreHome ?? "?"}-${resolvedMatch.scoreAway ?? "?"}). Les paris en direct sont fermés : choisissez un des matchs 🔴 EN COURS ci-dessous pour analyser et parier avant la fin du match !`
+      `🏁 « ${resolvedMatch?.home || "Match"} vs ${resolvedMatch?.away || ""} » est terminé — les clips post-match sont rejetés.`
+    );
+  } else if (!isTargetLiveNow) {
+    auditLog.push(
+      "Statut « en cours » absent, périmé ou non vérifié : actualisez le flux officiel avant toute recherche vidéo."
     );
   }
 
-  // 1. Si le match cible est EN COURS (ou si l'utilisateur demande explicitement l'archive), interroger le flux Live ESPN
-  if (resolvedMatch?.sportPath && resolvedMatch?.rawEventId && (!liveOnly || isTargetLiveNow)) {
-    const summaryUrl = `https://site.api.espn.com/apis/site/v2/sports/${resolvedMatch.sportPath}/summary?event=${resolvedMatch.rawEventId}`;
-    espnSummaryJson = await fetchWithTimeout(summaryUrl, 6500);
-    if (espnSummaryJson) {
-      const rawVideos = espnSummaryJson.videos || [];
-      for (const v of rawVideos) {
-        const mp4Url = (
-          v.links?.source?.HD?.href ||
-          v.links?.source?.mezzanine?.href ||
-          v.links?.source?.full?.href ||
-          v.links?.mobile?.source?.href ||
-          ""
-        ).replace(/^http:\/\//i, "https://");
-        const cand = {
-          id: `espn-vid-${resolvedMatch.rawEventId}-${v.id || "clip"}`,
-          provider: "ESPN Direct Action Stream",
-          officialEventId: resolvedMatch.rawEventId,
-          homeTeam: resolvedMatch.home,
-          awayTeam: resolvedMatch.away,
-          competition: resolvedMatch.leagueLabel || "",
-          title: v.headline || v.shortHeadline || `${resolvedMatch.home} vs ${resolvedMatch.away} (Direct)`,
-          description: v.description || "",
-          dateIso: v.originalPublishDate || v.lastModified || resolvedMatch.kickoffIso,
-          durationSec: v.duration || 45,
-          mp4Url,
-          embedSrc: "",
-          thumbnail: v.thumbnail || "",
-        };
-        const check = verifyOfficialVideoCandidate(cand, resolvedMatch, { liveOnly });
-        if (check.verified) {
-          verifiedClips.push({ ...cand, verification: check });
-        } else {
-          auditLog.push(`⛔ Séquence filtrée (${cand.provider}) : ${check.rejectionReason}`);
-        }
-      }
+  // ESPN n'est interrogé que pour l'événement dont le statut courant vient d'être confirmé.
+  if (isTargetLiveNow && espnSummaryJson) {
+    const rawVideos = espnSummaryJson.videos || [];
+    for (const video of rawVideos) {
+      const mp4Url = (
+        video.links?.source?.HD?.href ||
+        video.links?.source?.mezzanine?.href ||
+        video.links?.source?.full?.href ||
+        video.links?.mobile?.source?.href ||
+        ""
+      ).replace(/^http:\/\//i, "https://");
+      const candidate = {
+        id: `espn-vid-${resolvedMatch.rawEventId}-${video.id || "clip"}`,
+        provider: "ESPN Direct Action Stream",
+        officialEventId: resolvedMatch.rawEventId,
+        homeTeam: resolvedMatch.home,
+        awayTeam: resolvedMatch.away,
+        competition: resolvedMatch.leagueLabel || "",
+        title: video.headline || video.shortHeadline || `${resolvedMatch.home} vs ${resolvedMatch.away} (Direct)`,
+        description: video.description || "",
+        dateIso: video.originalPublishDate || video.lastModified || "",
+        durationSec: video.duration || 45,
+        mp4Url,
+        embedSrc: "",
+        thumbnail: video.thumbnail || "",
+      };
+      const check = verifyOfficialVideoCandidate(candidate, resolvedMatch);
+      if (check.verified) verifiedClips.push({ ...candidate, verification: check });
+      else auditLog.push(`⛔ Séquence filtrée (${candidate.provider}) : ${check.rejectionReason}`);
+    }
 
-      // Même si la 1re action MP4 vient tout juste de se produire et n'est pas encore encodée MP4,
-      // si le match est OFFICIELLEMENT EN DIRECT (`isTargetLiveNow`), créer le flux Live Play-by-Play temps réel !
-      if (isTargetLiveNow && verifiedClips.length === 0) {
-        const plays = espnSummaryJson.plays || espnSummaryJson.keyEvents || [];
-        const latestPlay = plays.length > 0 ? plays[plays.length - 1] : null;
-        const liveTelemetryEntry = {
-          id: `espn-live-telemetry-${resolvedMatch.rawEventId}`,
-          provider: "ESPN Live Play-by-Play & Boxscore Temps Réel",
-          officialEventId: resolvedMatch.rawEventId,
-          homeTeam: resolvedMatch.home,
-          awayTeam: resolvedMatch.away,
-          competition: resolvedMatch.leagueLabel || "",
-          title: `🔴 EN DIRECT (${resolvedMatch.statusText || "LIVE"}) : ${resolvedMatch.home} ${resolvedMatch.scoreHome ?? 0} - ${resolvedMatch.scoreAway ?? 0} ${resolvedMatch.away}`,
-          description: latestPlay?.text || "Flux télémétrique temps réel du match actuellement en cours.",
-          dateIso: new Date().toISOString(),
-          durationSec: 0,
-          mp4Url: "",
-          embedSrc: "",
-          thumbnail: resolvedMatch.homeLogo || "",
-          isPureLiveTelemetry: true,
-        };
-        const check = verifyOfficialVideoCandidate(liveTelemetryEntry, resolvedMatch, { liveOnly: true });
-        if (check.verified) {
-          verifiedClips.push({ ...liveTelemetryEntry, verification: check });
-        }
-      }
+    if (verifiedClips.length === 0) {
+      const plays = espnSummaryJson.plays || espnSummaryJson.keyEvents || [];
+      const latestPlay = plays.length > 0 ? plays[plays.length - 1] : null;
+      const liveTelemetryEntry = {
+        id: `espn-live-telemetry-${resolvedMatch.rawEventId}`,
+        provider: "ESPN Live Play-by-Play & Boxscore Temps Réel",
+        officialEventId: resolvedMatch.rawEventId,
+        homeTeam: resolvedMatch.home,
+        awayTeam: resolvedMatch.away,
+        competition: resolvedMatch.leagueLabel || "",
+        title: `🔴 EN DIRECT (${resolvedMatch.statusText || "LIVE"}) : ${resolvedMatch.home} ${resolvedMatch.scoreHome ?? 0} - ${resolvedMatch.scoreAway ?? 0} ${resolvedMatch.away}`,
+        description: latestPlay?.text || "Flux télémétrique officiel du match en cours.",
+        dateIso: new Date().toISOString(),
+        durationSec: 0,
+        mp4Url: "",
+        embedSrc: "",
+        thumbnail: resolvedMatch.homeLogo || "",
+        isPureLiveTelemetry: true,
+      };
+      const check = verifyOfficialVideoCandidate(liveTelemetryEntry, resolvedMatch);
+      if (check.verified) verifiedClips.push({ ...liveTelemetryEntry, verification: check });
     }
   }
 
-  // 2. Interroger ScoreBat en ne retenant STRICTEMENT QUE les matchs EN COURS (`currentlyLiveMatches`) !
-  const scorebatJson = await fetchWithTimeout("https://www.scorebat.com/video-api/v3/", 6000);
   const liveVideoMatchesCatalog = [];
+  // Le catalogue vidéo tiers n'est pas consulté lorsqu'aucun match Live officiel et récent n'existe.
+  if (currentlyLiveMatches.length > 0 || isTargetLiveNow) {
+    const scorebatJson = await fetchWithTimeout("https://www.scorebat.com/video-api/v3/", 6000);
+    if (Array.isArray(scorebatJson?.response)) {
+      for (const item of scorebatJson.response) {
+        const parts = String(item.title || "").split(/\s+-\s+/);
+        if (parts.length < 2) continue;
+        const homeCand = parts[0].trim();
+        const awayCand = parts.slice(1).join(" - ").trim();
+        const firstClip = item.videos?.[0];
+        const entry = {
+          id: `sb-${normalizeKey(homeCand)}-${normalizeKey(awayCand)}-${item.date}`,
+          provider: "ScoreBat Live Goals & Actions",
+          officialEventId: "",
+          homeTeam: canonicalTeamName(homeCand),
+          awayTeam: canonicalTeamName(awayCand),
+          competition: item.competition || "",
+          title: `${item.title} (${firstClip?.title || "Action publiée"})`,
+          description: `Compétition : ${item.competition || "Football"}`,
+          dateIso: item.date || "",
+          durationSec: 60,
+          mp4Url: "",
+          embedSrc: extractSafeScorebatEmbedSrc(firstClip?.embed || item.embed || ""),
+          thumbnail: item.thumbnail || "",
+          clipsCount: item.videos?.length || 1,
+        };
 
-  if (Array.isArray(scorebatJson?.response)) {
-    for (const item of scorebatJson.response) {
-      const parts = String(item.title || "").split(/\s+-\s+/);
-      if (parts.length < 2) continue;
-      const homeCand = parts[0].trim();
-      const awayCand = parts.slice(1).join(" - ").trim();
-      const firstClip = item.videos?.[0];
-      const embedSrc = extractSafeScorebatEmbedSrc(firstClip?.embed || item.embed || "");
+        const livePartner = currentlyLiveMatches.find((match) =>
+          teamsMatchStrictly(entry.homeTeam, entry.awayTeam, match.home, match.away, match.homeRaw, match.awayRaw)
+        );
+        if (livePartner) liveVideoMatchesCatalog.push({ ...entry, liveMatchObj: livePartner });
 
-      const entry = {
-        id: `sb-${normalizeKey(homeCand)}-${normalizeKey(awayCand)}-${item.date}`,
-        provider: "ScoreBat Live Goals & Actions",
-        officialEventId: "",
-        homeTeam: canonicalTeamName(homeCand),
-        awayTeam: canonicalTeamName(awayCand),
-        competition: item.competition || "",
-        title: `🔴 LIVE : ${item.title} (${firstClip?.title || "But / Action en cours"})`,
-        description: `Compétition : ${item.competition || "Football Live"}`,
-        dateIso: item.date || "",
-        durationSec: 60,
-        mp4Url: "",
-        embedSrc,
-        thumbnail: item.thumbnail || "",
-        clipsCount: item.videos?.length || 1,
-      };
-
-      // Ne proposer dans le catalogue rapide QUE si ce match est réellement EN COURS sur ESPN en ce moment !
-      const livePartner = currentlyLiveMatches.find((m) =>
-        teamsMatchStrictly(entry.homeTeam, entry.awayTeam, m.home, m.away, m.homeRaw, m.awayRaw)
-      );
-      if (livePartner) {
-        liveVideoMatchesCatalog.push({ ...entry, liveMatchObj: livePartner });
-      }
-
-      if (resolvedMatch && (!liveOnly || isTargetLiveNow)) {
-        const check = verifyOfficialVideoCandidate(entry, resolvedMatch, { liveOnly });
-        if (check.verified) {
-          verifiedClips.push({ ...entry, verification: check });
+        if (isTargetLiveNow && resolvedMatch) {
+          const check = verifyOfficialVideoCandidate(entry, resolvedMatch);
+          if (check.verified) verifiedClips.push({ ...entry, verification: check });
+          else if (teamsMatchStrictly(entry.homeTeam, entry.awayTeam, resolvedMatch.home, resolvedMatch.away)) {
+            auditLog.push(`⛔ Séquence filtrée (ScoreBat) : ${check.rejectionReason}`);
+          }
         }
       }
     }
@@ -725,7 +794,13 @@ export async function analyzeOfficialInternetMatchClip(
   onProgress = () => {}
 ) {
   if (!verifiedClip?.verification?.verified) {
-    throw new Error("⛔ Impossible d'analyser une vidéo non certifiée sur le match et l'horaire en cours.");
+    throw new Error("Impossible d'analyser une vidéo non certifiée.");
+  }
+  const liveCheck = verifyOfficialVideoCandidate(verifiedClip, resolvedMatch);
+  if (!liveCheck.verified || !liveCheck.isLiveOngoing) {
+    throw new Error(
+      `⛔ Analyse refusée : le statut officiel ne confirme pas un match actuellement en cours. ${liveCheck.rejectionReason || ""}`
+    );
   }
 
   // 1. Tentative d'analyse pixel directe sur le flux MP4 officiel (avec crossOrigin = "anonymous")
@@ -745,7 +820,8 @@ export async function analyzeOfficialInternetMatchClip(
         targetHome: canonicalTeamName(resolvedMatch?.home || ""),
         targetAway: canonicalTeamName(resolvedMatch?.away || ""),
         isVerifiedInternetVideo: true,
-        isLiveOngoing: Boolean(verifiedClip.verification.isLiveOngoing),
+        isLiveOngoing: true,
+        verifiedAtIso: liveCheck.verifiedAtIso,
         provider: verifiedClip.provider,
         verifiedDateFr: verifiedClip.verification.videoDateFr,
         embedSrc: verifiedClip.embedSrc || "",
@@ -811,7 +887,8 @@ export async function analyzeOfficialInternetMatchClip(
   const metrics = {
     sourceType: "official_internet_video",
     isVerifiedInternetVideo: true,
-    isLiveOngoing: Boolean(verifiedClip.verification.isLiveOngoing),
+    isLiveOngoing: true,
+    verifiedAtIso: liveCheck.verifiedAtIso,
     targetHome: canonicalTeamName(resolvedMatch?.home || ""),
     targetAway: canonicalTeamName(resolvedMatch?.away || ""),
     liveClock: resolvedMatch?.statusText || "EN DIRECT",
@@ -841,9 +918,22 @@ export async function analyzeOfficialInternetMatchClip(
  * Vérifie strictement qu'un `videoInsight` appartient bien au duel `(home, away)` en cours d'analyse
  * afin d'interdire à 100 % toute pollution inter-matchs ([AUDIT3-P1-02]) !
  */
-export function doesVideoInsightMatchTeams(videoInsight, home, away) {
+export function doesVideoInsightMatchTeams(videoInsight, home, away, now = Date.now()) {
   if (!videoInsight || !home || !away) return false;
-  if (!videoInsight.targetHome || !videoInsight.targetAway) return false;
+  if (!videoInsight.targetHome || !videoInsight.targetAway || videoInsight.isLiveOngoing !== true) {
+    return false;
+  }
+  if (
+    !["official_internet_video", "official_live_telemetry", "live_screen_stream"].includes(
+      videoInsight.sourceType
+    )
+  ) {
+    return false;
+  }
+  const verifiedAt = videoInsight.verifiedAtIso ? new Date(videoInsight.verifiedAtIso).getTime() : NaN;
+  if (!Number.isFinite(verifiedAt) || now - verifiedAt < -120000 || now - verifiedAt > 5 * 60 * 1000) {
+    return false;
+  }
   return (
     normalizeKey(videoInsight.targetHome) === normalizeKey(canonicalTeamName(home)) &&
     normalizeKey(videoInsight.targetAway) === normalizeKey(canonicalTeamName(away))
@@ -860,9 +950,9 @@ export function analyzeLiveMatchTelemetryWithoutClip(
   espnSummaryJson,
   onProgress = () => {}
 ) {
-  if (!resolvedMatch || resolvedMatch.state !== "in" || resolvedMatch.completed) {
+  if (!isVerifiedCurrentlyLiveMatch(resolvedMatch)) {
     throw new Error(
-      "Analyse Live refusée : seuls les matchs actuellement EN COURS (`state === 'in'`) peuvent générer un Pari en Direct."
+      "Analyse Live refusée : statut officiel récent absent, périmé ou différent de « en cours ». Actualisez le flux avant de recommencer."
     );
   }
   const boxTeams = espnSummaryJson?.boxscore?.teams || [];
@@ -897,6 +987,7 @@ export function analyzeLiveMatchTelemetryWithoutClip(
     sourceType: "official_live_telemetry",
     isVerifiedInternetVideo: false,
     isLiveOngoing: true,
+    verifiedAtIso: new Date().toISOString(),
     targetHome: canonicalTeamName(resolvedMatch.home || ""),
     targetAway: canonicalTeamName(resolvedMatch.away || ""),
     liveClock: resolvedMatch.statusText || "EN DIRECT",
@@ -927,7 +1018,10 @@ export function analyzeLiveMatchTelemetryWithoutClip(
  * via `navigator.mediaDevices.getDisplayMedia` pour analyser les vraies images du match PENDANT qu'il se joue !
  */
 export async function analyzeLiveScreenStreamBurst(targetMatch, onProgress = () => {}) {
-  if (!navigator?.mediaDevices?.getDisplayMedia) {
+  if (!isVerifiedCurrentlyLiveMatch(targetMatch)) {
+    throw new Error("Capture refusée : aucun match officiellement en cours avec un statut réseau récent n'est sélectionné.");
+  }
+  if (typeof navigator === "undefined" || !navigator.mediaDevices?.getDisplayMedia) {
     throw new Error("Le partage d'onglet Live nécessite un navigateur compatible (Chrome, Edge, Brave, Safari récent).");
   }
   const stream = await navigator.mediaDevices.getDisplayMedia({
@@ -990,6 +1084,7 @@ export async function analyzeLiveScreenStreamBurst(targetMatch, onProgress = () 
       sourceType: "live_screen_stream",
       isVerifiedInternetVideo: true,
       isLiveOngoing: true,
+      verifiedAtIso: new Date().toISOString(),
       targetHome: canonicalTeamName(targetMatch?.home || ""),
       targetAway: canonicalTeamName(targetMatch?.away || ""),
       liveClock: targetMatch?.statusText || "EN DIRECT",
@@ -1029,22 +1124,22 @@ export async function analyzeMatchVideoFile(
     homeTeam,
     awayTeam
   );
-  if (homeTeam && awayTeam) {
-    return {
-      ...scanned,
-      liveBetRecommendation: buildLiveInPlayBetRecommendation(
-        { home: homeTeam, away: awayTeam, sport: "soccer", scoreHome: 0, scoreAway: 0, statusText: "EN DIRECT" },
-        scanned
-      ),
-    };
-  }
-  return scanned;
+  return {
+    ...scanned,
+    sourceType: "local_video_analysis",
+    isVerifiedInternetVideo: false,
+    isLiveOngoing: false,
+    targetHome: canonicalTeamName(homeTeam),
+    targetAway: canonicalTeamName(awayTeam),
+    tacticalVerdict: `${scanned.tacticalVerdict || "Analyse visuelle locale"} Cette vidéo locale n'est pas une preuve de match en cours et ne génère pas de recommandation de pari Live.`,
+  };
 }
 
 export function buildSyntheticVideoDemo(homeTeam = "Domicile", awayTeam = "Extérieur") {
   const metrics = {
     sourceType: "synthetic_calibration_demo",
     isVerifiedInternetVideo: false,
+    isLiveOngoing: false,
     targetHome: canonicalTeamName(homeTeam),
     targetAway: canonicalTeamName(awayTeam),
     fileName: `Calibration Vision IA (${homeTeam} vs ${awayTeam})`,
@@ -1057,11 +1152,5 @@ export function buildSyntheticVideoDemo(homeTeam = "Domicile", awayTeam = "Exté
     awayXgMult: 0.94,
     tacticalVerdict: `[Mode Démonstration] Pressing haut mesuré à 74/100 et occupation offensive à 61% pour ${homeTeam}.`,
   };
-  return {
-    ...metrics,
-    liveBetRecommendation: buildLiveInPlayBetRecommendation(
-      { home: homeTeam, away: awayTeam, sport: "soccer", scoreHome: 0, scoreAway: 0, statusText: "45'" },
-      metrics
-    ),
-  };
+  return metrics;
 }

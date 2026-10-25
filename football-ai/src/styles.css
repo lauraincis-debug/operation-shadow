@@ -560,3 +560,272 @@ select {
     grid-template-columns: 1fr !important;
   }
 }
+
+/* Performance réelle : accès permanent, compact sur mobile et explicite sur l'échantillon. */
+.fai-performance-bubble {
+  --performance-color: #8790b8;
+  position: fixed;
+  right: max(16px, env(safe-area-inset-right));
+  bottom: max(16px, env(safe-area-inset-bottom));
+  z-index: 230;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 184px;
+  min-height: 70px;
+  padding: 9px 12px 9px 9px;
+  border: 1px solid color-mix(in srgb, var(--performance-color) 72%, transparent);
+  border-radius: 20px;
+  background: linear-gradient(135deg, rgba(14, 17, 41, 0.97), rgba(8, 10, 26, 0.97));
+  color: #eef0ff;
+  text-align: left;
+  box-shadow: 0 10px 34px rgba(0, 0, 0, 0.55), 0 0 22px color-mix(in srgb, var(--performance-color) 18%, transparent);
+  backdrop-filter: blur(16px);
+  cursor: pointer;
+  transition: transform 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
+}
+
+.fai-performance-bubble:hover,
+.fai-performance-bubble:focus-visible {
+  transform: translateY(-2px);
+  outline: 2px solid color-mix(in srgb, var(--performance-color) 60%, white);
+  outline-offset: 3px;
+}
+
+.fai-performance-bubble-ring {
+  display: grid;
+  place-items: center;
+  flex: 0 0 48px;
+  width: 48px;
+  height: 48px;
+  border: 2px solid var(--performance-color);
+  border-radius: 50%;
+  background: radial-gradient(circle, color-mix(in srgb, var(--performance-color) 16%, #0e1129), #080a1a 72%);
+  color: var(--performance-color);
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 900;
+  box-shadow: inset 0 0 12px color-mix(in srgb, var(--performance-color) 15%, transparent), 0 0 14px color-mix(in srgb, var(--performance-color) 22%, transparent);
+}
+
+.fai-performance-bubble-copy {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.fai-performance-bubble-copy strong {
+  font-size: 11px;
+  letter-spacing: 0.035em;
+  white-space: nowrap;
+}
+
+.fai-performance-bubble-copy small {
+  color: #9aa3c7;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  white-space: nowrap;
+}
+
+.fai-performance-bubble-chevron {
+  margin-left: auto;
+  color: var(--performance-color);
+  font-size: 18px;
+  line-height: 1;
+}
+
+.fai-performance-panel {
+  position: fixed;
+  right: max(16px, env(safe-area-inset-right));
+  bottom: calc(96px + env(safe-area-inset-bottom));
+  z-index: 229;
+  width: min(390px, calc(100vw - 32px));
+  max-height: min(72vh, 620px);
+  overflow: auto;
+  padding: 17px;
+  border: 1px solid rgba(0, 229, 255, 0.35);
+  border-radius: 18px;
+  background: linear-gradient(150deg, rgba(14, 17, 41, 0.985), rgba(7, 9, 23, 0.985));
+  color: #eef0ff;
+  box-shadow: 0 18px 55px rgba(0, 0, 0, 0.7), 0 0 30px rgba(0, 229, 255, 0.09);
+  backdrop-filter: blur(18px);
+}
+
+.fai-performance-panel-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.fai-performance-eyebrow {
+  margin-bottom: 4px;
+  color: var(--cyan);
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.13em;
+}
+
+.fai-performance-panel h2 {
+  color: #fff;
+  font-size: 16px;
+  line-height: 1.25;
+}
+
+.fai-performance-close {
+  display: grid;
+  place-items: center;
+  flex: 0 0 34px;
+  width: 34px;
+  height: 34px;
+  border: 1px solid var(--border-muted);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.05);
+  color: #dfe5ff;
+  font-size: 23px;
+  cursor: pointer;
+}
+
+.fai-performance-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px;
+  border: 1px solid rgba(135, 144, 184, 0.35);
+  border-radius: 11px;
+  background: rgba(255, 255, 255, 0.035);
+  color: #cbd2f5;
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.fai-performance-status-dot {
+  flex: 0 0 8px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  box-shadow: 0 0 10px currentColor;
+}
+
+.fai-performance-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.fai-performance-stat {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+  padding: 10px;
+  border: 1px solid rgba(124, 77, 255, 0.19);
+  border-radius: 11px;
+  background: rgba(20, 24, 56, 0.52);
+}
+
+.fai-performance-stat span,
+.fai-performance-learning-list span {
+  color: #9aa3c7;
+  font-size: 10px;
+  line-height: 1.35;
+}
+
+.fai-performance-stat strong {
+  color: #f4f5ff;
+  font-family: var(--font-mono);
+  font-size: 16px;
+}
+
+.fai-performance-divider {
+  height: 1px;
+  margin: 14px 0 11px;
+  background: linear-gradient(90deg, transparent, rgba(0, 229, 255, 0.35), transparent);
+}
+
+.fai-performance-learning-title {
+  margin-bottom: 8px;
+  color: #e8ebff;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.fai-performance-learning-list {
+  display: grid;
+  gap: 7px;
+}
+
+.fai-performance-learning-list > div {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 10px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.055);
+}
+
+.fai-performance-learning-list strong {
+  color: var(--cyan);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.fai-performance-note {
+  margin-top: 12px;
+  color: #8790b8;
+  font-size: 10px;
+  line-height: 1.55;
+}
+
+.fai-performance-history-button {
+  width: 100%;
+  margin-top: 12px;
+  padding: 10px 12px;
+  border: 1px solid rgba(0, 229, 255, 0.38);
+  border-radius: 10px;
+  background: rgba(0, 229, 255, 0.09);
+  color: #00e5ff;
+  font-size: 11px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.fai-toast {
+  bottom: calc(96px + env(safe-area-inset-bottom));
+}
+
+@media (max-width: 680px) {
+  .fai-performance-bubble {
+    right: max(12px, env(safe-area-inset-right));
+    bottom: max(12px, env(safe-area-inset-bottom));
+    min-width: 164px;
+    min-height: 62px;
+    gap: 8px;
+    padding: 7px 9px 7px 7px;
+    border-radius: 17px;
+  }
+
+  .fai-performance-bubble-ring {
+    flex-basis: 44px;
+    width: 44px;
+    height: 44px;
+    font-size: 12px;
+  }
+
+  .fai-performance-panel {
+    right: max(12px, env(safe-area-inset-right));
+    bottom: calc(84px + env(safe-area-inset-bottom));
+    width: calc(100vw - 24px);
+    max-height: min(74dvh, 620px);
+    padding: 14px;
+  }
+
+  .fai-toast {
+    right: 12px;
+    bottom: calc(84px + env(safe-area-inset-bottom));
+    max-width: calc(100vw - 24px);
+  }
+}
